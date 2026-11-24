@@ -3,26 +3,21 @@
 THEME="$1"
 STATE="$HOME/.local/state/omarchy"
 LAST="$STATE/cupertino-last-theme"
+SETTINGS="$HOME/.config/omarchy-cupertino/settings.toml"
 PREVIOUS=$(cat "$LAST" 2>/dev/null || true)
 printf '%s\n' "$THEME" >"$LAST"
 
-case $THEME in
-  osx-light | osx-dark) ;;
-  *) exit 0 ;;
-esac
+grep -Eq '^[[:space:]]*wallpaper_keep[[:space:]]*=[[:space:]]*false[[:space:]]*$' "$SETTINGS" 2>/dev/null && exit 0
+[[ -n $PREVIOUS && ${PREVIOUS##*/} == "$PREVIOUS" && $PREVIOUS != "$THEME" ]] || exit 0
 
-[[ -n $PREVIOUS && ${PREVIOUS##*/} == "$PREVIOUS" ]] || exit 0
 KEPT=$(cat "$STATE/theme-backgrounds/$PREVIOUS" 2>/dev/null || true)
-if [[ $PREVIOUS != osx-* && ${KEPT%/*} == "$STATE/current/theme/backgrounds" ]]; then
+if [[ ${KEPT%/*} == "$STATE/current/theme/backgrounds" && ($PREVIOUS != osx-* || $THEME != osx-*) ]]; then
   for DIR in "$HOME/.config/omarchy/themes/$PREVIOUS" "${OMARCHY_PATH:-/usr/share/omarchy}/themes/$PREVIOUS"; do
     [[ -f $DIR/backgrounds/${KEPT##*/} ]] && { KEPT="$DIR/backgrounds/${KEPT##*/}"; break; }
   done
 fi
-if [[ ! -f $KEPT ]]; then
-  KEPT="$STATE/current/theme/backgrounds/1-gradient.webp"
-  [[ -f $KEPT ]] || exit 0
-fi
-[[ $(readlink -f "$STATE/current/background") != "$KEPT" ]] || exit 0
+[[ -f $KEPT ]] || exit 0
+[[ $(readlink -f "$STATE/current/background") != "$(readlink -f "$KEPT")" ]] || exit 0
 [[ $(cat "$STATE/current/theme.name" 2>/dev/null) == "$THEME" ]] || exit 0
 
 omarchy-theme-bg-set "$KEPT"

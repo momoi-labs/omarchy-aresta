@@ -17,9 +17,7 @@ It has:
   instead of a colored border.
 - Two Omarchy themes in macOS system colors: OSX Light and OSX Dark. Pick
   them in the Omarchy theme menu or with `omarchy-theme-set "osx light"`.
-  Each has the Yaru blue icons and an original gradient background, which
-  is only the fallback: switching to an OSX theme keeps the wallpaper you
-  had before.
+  Each has the Yaru blue icons and an original gradient background.
 
 It also adds macOS shortcuts on Super:
 
@@ -37,6 +35,40 @@ It also adds macOS shortcuts on Super:
   windows.
 - The Quake console moves from Super+` to Super+Alt+`.
 
+## Cupertino Settings
+
+Cupertino Settings is a small app in the style of macOS System Settings.
+Open it from the app launcher. It has these sections:
+
+- Appearance: switch between Light, Dark and Auto, pick the light and the
+  dark theme from the installed Omarchy themes, see the colors of the current
+  theme, and turn window shadows on or off. Auto picks the light theme at
+  sunrise and the dark theme at sunset.
+- Wallpaper: the current wallpaper, a switch that keeps it when the theme
+  changes, and the pictures of the theme, of
+  `~/.config/omarchy/backgrounds/<theme>` and of folders you add. Add Photo
+  copies a picture into `~/.config/omarchy/backgrounds/<theme>`.
+- Desktop & Dock: grey traffic lights on unfocused windows, icons in the
+  traffic lights on hover, and the window title alignment.
+- Menu Bar: desktops in the bar (after the menus, in the center or before
+  the status icons, as numbers or dots), the bar background opacity and the
+  clock format.
+- Keyboard: record new shortcuts for the plugin's bindings. Omarchy's own
+  bindings show as read-only.
+- Cupertino: options that macOS does not have, such as the corner radius and
+  shape, the border, the shadow, the traffic light size and the bar size.
+
+Changes apply at once. The app saves them to
+`~/.config/omarchy-cupertino/settings.toml`, which the Hyprland config and the
+bar read. Without that file, every option keeps its default.
+
+The app is written in Rust with [cxx-qt](https://github.com/KDAB/cxx-qt) and
+QML. To build it by hand you need Rust (`cargo`) and Qt 6:
+
+```sh
+cargo build --release --manifest-path app/Cargo.toml
+```
+
 ## Install
 
 ```sh
@@ -53,7 +85,14 @@ It links `hypr/omarchy-cupertino.lua` into `~/.config/hypr`, adds
 It links `themes/osx-light` and `themes/osx-dark` into
 `~/.config/omarchy/themes`, and links a `theme-set` hook into
 `~/.config/omarchy/hooks/theme-set.d` that keeps the current wallpaper on a
-switch to an OSX theme. Running it again changes nothing.
+theme switch unless you turn that off. Finally, it builds Cupertino Settings
+with `cargo` and installs it to `~/.local/bin/cupertino-settings`, with a
+launcher entry in `~/.local/share/applications`.
+It also installs the `cupertino-auto` systemd user timer, which runs
+`cupertino-settings --auto` every minute for Auto appearance. Auto reads your
+location from `~/.local/state/omarchy/settings/weather.json`, else from
+`https://geo.omarchy.org/`, and computes sunrise and sunset on your computer.
+Running the script again changes nothing.
 
 Turn a workspace floating with Omarchy's workspace layout toggle to see the
 title bars.
@@ -66,7 +105,9 @@ title bars.
 
 It restores `shell.json` from the backup (or selects the default bar when
 the file changed since), removes the plugin link, the theme links, the hook
-link, the `require` line and the Hyprland link, then reloads Hyprland.
+link, the `require` line, the Hyprland link, the Cupertino Settings binary
+and launcher entry and the `cupertino-auto` timer, then reloads Hyprland. It
+keeps your settings file.
 
 ## Credits
 

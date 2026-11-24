@@ -17,6 +17,9 @@ THEMES_DIR="$HOME/.config/omarchy/themes"
 HOOK_SOURCE="$REPO/hooks/cupertino-wallpaper"
 HOOK_LINK="$HOME/.config/omarchy/hooks/theme-set.d/cupertino-wallpaper"
 LAST_THEME_FILE="$HOME/.local/state/omarchy/cupertino-last-theme"
+APP_BIN="$HOME/.local/bin/cupertino-settings"
+APP_DESKTOP="$HOME/.local/share/applications/cupertino-settings.desktop"
+UNIT_DIR="$HOME/.config/systemd/user"
 
 say() { echo -e "\e[32m==>\e[0m $*"; }
 
@@ -61,6 +64,20 @@ if [[ -L $HOOK_LINK && $(readlink -f "$HOOK_LINK") == "$(readlink -f "$HOOK_SOUR
   rm "$HOOK_LINK"
 fi
 rm -f "$LAST_THEME_FILE"
+
+if [[ -f $UNIT_DIR/cupertino-auto.timer ]]; then
+  say "Removing the Auto appearance timer"
+  systemctl --user disable --now cupertino-auto.timer >/dev/null 2>&1 || true
+fi
+
+for file in "$APP_BIN" "$APP_DESKTOP" "$UNIT_DIR/cupertino-auto.timer" "$UNIT_DIR/cupertino-auto.service"; do
+  if [[ -f $file ]]; then
+    say "Removing $file"
+    rm "$file"
+  fi
+done
+
+systemctl --user daemon-reload || true
 
 say "Reloading Hyprland"
 hyprctl reload >/dev/null
