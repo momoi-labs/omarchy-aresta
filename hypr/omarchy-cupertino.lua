@@ -137,8 +137,7 @@ package.loaded["omarchy-cupertino.switcher"] = switcher
 hl.define_submap(SWITCHER, function()
   hl.bind("SUPER + code:23", switcher_step("next"), { repeating = true })
   hl.bind("SUPER + SHIFT + code:23", switcher_step("previous"), { repeating = true })
-  hl.bind("SUPER + code:9", function() switcher_finish("cancel") end)
-  hl.bind("code:9", function() switcher_finish("cancel") end)
+  hl.bind("code:9", function() switcher_finish("cancel") end, { ignore_mods = true })
 end)
 
 hl.on("input.keyboard.key", function(keycode, _, value)
