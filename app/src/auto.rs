@@ -8,6 +8,7 @@ use sunrise::{Coordinates, SolarDay, SolarEvent};
 
 use crate::settings::{Settings, Value};
 use crate::theme;
+use crate::wallpaper;
 
 const LOCATION_LIFETIME: Duration = Duration::from_secs(24 * 60 * 60);
 
@@ -156,7 +157,10 @@ pub fn run() -> Result<(), String> {
         return Ok(());
     }
     let keep = matches!(settings.get("wallpaper_keep"), Some(Value::Flag(true)));
-    theme::set_command(slug, keep)
+    if keep {
+        wallpaper::pin(slug);
+    }
+    theme::set_command(slug)
         .stdin(Stdio::null())
         .status()
         .map_err(|error| format!("omarchy-theme-set: {error}"))?;

@@ -143,10 +143,7 @@ pub fn with_mode() -> Vec<(String, bool)> {
         .collect()
 }
 
-pub fn set_command(slug: &str, keep_wallpaper: bool) -> Command {
-    if keep_wallpaper {
-        crate::wallpaper::pin(slug);
-    }
+pub fn set_command(slug: &str) -> Command {
     let mut command = Command::new("omarchy-theme-set");
     command.arg(slug);
     command

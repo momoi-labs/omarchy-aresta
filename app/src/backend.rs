@@ -298,7 +298,10 @@ impl qobject::Backend {
 
     fn apply_theme(mut self: Pin<&mut Self>, slug: &str) {
         let keep = matches!(self.settings.get("wallpaper_keep"), Some(Value::Flag(true)));
-        let command = theme::set_command(slug, keep);
+        if keep {
+            wallpaper::pin(slug);
+        }
+        let command = theme::set_command(slug);
         let result = run_detached(command, "omarchy-theme-set");
         self.as_mut().report(result);
     }
