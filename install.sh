@@ -19,6 +19,7 @@ HOOK_LINK="$HOME/.config/omarchy/hooks/theme-set.d/cupertino-wallpaper"
 LAST_THEME_FILE="$HOME/.local/state/omarchy/cupertino-last-theme"
 APP_BIN="$HOME/.local/bin/cupertino-settings"
 APP_DESKTOP="$HOME/.local/share/applications/cupertino-settings.desktop"
+UNIT_DIR="$HOME/.config/systemd/user"
 
 say() { echo -e "\e[32m==>\e[0m $*"; }
 fail() { echo -e "install.sh: $*" >&2; exit 1; }
@@ -116,5 +117,32 @@ Icon=preferences-system
 Categories=Settings;
 StartupWMClass=cupertino-settings
 EOF
+
+say "Installing the Auto appearance timer"
+mkdir -p "$UNIT_DIR"
+cat >"$UNIT_DIR/cupertino-auto.service" <<EOF
+[Unit]
+Description=Cupertino Settings Auto appearance
+
+[Service]
+Type=oneshot
+KillMode=process
+ExecStart=$APP_BIN --auto
+EOF
+cat >"$UNIT_DIR/cupertino-auto.timer" <<EOF
+[Unit]
+Description=Cupertino Settings Auto appearance
+
+[Timer]
+OnCalendar=minutely
+OnStartupSec=15
+AccuracySec=1s
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+systemctl --user daemon-reload
+systemctl --user enable --now cupertino-auto.timer >/dev/null 2>&1
 
 say "Done."

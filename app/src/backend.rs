@@ -18,6 +18,9 @@ pub mod qobject {
         #[qproperty(i32, revision)]
         #[qproperty(QString, recording)]
         #[qproperty(QString, error)]
+        #[qproperty(f64, auto_next, cxx_name = "autoNext")]
+        #[qproperty(bool, auto_next_dark, cxx_name = "autoNextDark")]
+        #[qproperty(QString, auto_error, cxx_name = "autoError")]
         type Backend = super::BackendRust;
 
         #[qinvokable]
@@ -111,6 +114,7 @@ pub mod qobject {
     impl cxx_qt::Initialize for Backend {}
 }
 
+use crate::auto;
 use crate::keys;
 use crate::settings::{Settings, Value};
 use crate::theme;
@@ -134,10 +138,14 @@ pub struct BackendRust {
     revision: i32,
     recording: QString,
     error: QString,
+    auto_next: f64,
+    auto_next_dark: bool,
+    auto_error: QString,
     modes: Vec<(String, bool)>,
     settings: Settings,
     settings_stamp: Option<SystemTime>,
     colors_stamp: Option<SystemTime>,
+    auto_stamp: Option<SystemTime>,
     reload_at: Option<Instant>,
 }
 
@@ -152,10 +160,14 @@ impl Default for BackendRust {
             revision: 0,
             recording: QString::default(),
             error: QString::default(),
+            auto_next: 0.0,
+            auto_next_dark: false,
+            auto_error: QString::default(),
             modes: Vec::new(),
             settings: Settings::load(),
             settings_stamp: modified(&Settings::path()),
             colors_stamp: None,
+            auto_stamp: None,
             reload_at: None,
         }
     }
@@ -193,6 +205,7 @@ impl cxx_qt::Initialize for qobject::Backend {
         self.as_mut().rust_mut().modes = modes;
         self.as_mut().set_themes(themes);
         self.as_mut().refresh_theme();
+        self.as_mut().refresh_auto();
     }
 }
 
@@ -222,6 +235,26 @@ impl qobject::Backend {
         }
     }
 
+    fn refresh_auto(mut self: Pin<&mut Self>) {
+        let stamp = modified(&auto::status_path());
+        if stamp == self.auto_stamp {
+            return;
+        }
+        self.as_mut().rust_mut().auto_stamp = stamp;
+        let text = fs::read_to_string(auto::status_path()).unwrap_or_default();
+        let field = |name: &str| {
+            text.lines()
+                .find_map(|line| line.strip_prefix(name)?.strip_prefix('='))
+                .unwrap_or_default()
+                .to_string()
+        };
+        let next = field("next").parse::<f64>().unwrap_or_default() * 1000.0;
+        self.as_mut().set_auto_next(next);
+        self.as_mut()
+            .set_auto_next_dark(field("next_dark") == "true");
+        self.as_mut().set_auto_error(QString::from(&field("error")));
+    }
+
     fn slug_of(&self, key: &str) -> String {
         match self.settings.get(key) {
             Some(Value::Text(slug)) => slug.clone(),
@@ -232,6 +265,18 @@ impl qobject::Backend {
     fn apply_theme(mut self: Pin<&mut Self>, slug: &str) {
         let command = theme::set_command(slug);
         let result = run_detached(command, "omarchy-theme-set");
+        self.as_mut().report(result);
+    }
+
+    fn run_auto(mut self: Pin<&mut Self>) {
+        let _ = fs::remove_file(auto::transition_path());
+        let result = std::env::current_exe()
+            .map_err(|error| error.to_string())
+            .and_then(|exe| {
+                let mut command = Command::new(exe);
+                command.arg("--auto");
+                run_detached(command, "cupertino-settings --auto")
+            });
         self.as_mut().report(result);
     }
 
@@ -266,6 +311,7 @@ impl qobject::Backend {
 
     pub fn tick(mut self: Pin<&mut Self>) {
         self.as_mut().refresh_theme();
+        self.as_mut().refresh_auto();
 
         let stamp = modified(&Settings::path());
         if stamp != self.settings_stamp {
@@ -436,8 +482,15 @@ impl qobject::Backend {
             .unwrap_or_default()
     }
 
-    pub fn set_appearance(self: Pin<&mut Self>, mode: &QString) {
+    pub fn set_appearance(mut self: Pin<&mut Self>, mode: &QString) {
         let mode = mode.to_string();
+        let auto = mode == "auto";
+        self.as_mut()
+            .store(&QString::from("appearance_auto"), Value::Flag(auto));
+        if auto {
+            self.run_auto();
+            return;
+        }
         let key = if mode == "dark" {
             "dark_theme"
         } else {

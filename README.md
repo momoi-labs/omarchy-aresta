@@ -42,9 +42,10 @@ It also adds macOS shortcuts on Super:
 Cupertino Settings is a small app in the style of macOS System Settings.
 Open it from the app launcher. It has these sections:
 
-- Appearance: switch between Light and Dark, pick the light and the
+- Appearance: switch between Light, Dark and Auto, pick the light and the
   dark theme from the installed Omarchy themes, see the colors of the current
-  theme, and turn window shadows on or off.
+  theme, and turn window shadows on or off. Auto picks the light theme at
+  sunrise and the dark theme at sunset.
 - Desktop & Dock: grey traffic lights on unfocused windows, icons in the
   traffic lights on hover, and the window title alignment.
 - Menu Bar: the bar background opacity and the clock format.
@@ -82,7 +83,12 @@ It links `themes/osx-light` and `themes/osx-dark` into
 `~/.config/omarchy/hooks/theme-set.d` that keeps the current wallpaper on a
 switch to an OSX theme. Finally, it builds Cupertino Settings with `cargo`
 and installs it to `~/.local/bin/cupertino-settings`, with a launcher entry in
-`~/.local/share/applications`. Running it again changes nothing.
+`~/.local/share/applications`.
+It also installs the `cupertino-auto` systemd user timer, which runs
+`cupertino-settings --auto` every minute for Auto appearance. Auto reads your
+location from `~/.local/state/omarchy/settings/weather.json`, else from
+`https://geo.omarchy.org/`, and computes sunrise and sunset on your computer.
+Running the script again changes nothing.
 
 Turn a workspace floating with Omarchy's workspace layout toggle to see the
 title bars.
@@ -95,8 +101,9 @@ title bars.
 
 It restores `shell.json` from the backup (or selects the default bar when
 the file changed since), removes the plugin link, the theme links, the hook
-link, the `require` line, the Hyprland link and the Cupertino Settings binary
-and launcher entry, then reloads Hyprland. It keeps your settings file.
+link, the `require` line, the Hyprland link, the Cupertino Settings binary
+and launcher entry and the `cupertino-auto` timer, then reloads Hyprland. It
+keeps your settings file.
 
 ## Credits
 

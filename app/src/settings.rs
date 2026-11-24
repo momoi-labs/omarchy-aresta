@@ -58,6 +58,7 @@ fn defaults() -> Vec<Entry> {
         ("status_item_width", Number(38.0)),
         ("light_theme", Text("osx-light".into())),
         ("dark_theme", Text("osx-dark".into())),
+        ("appearance_auto", Flag(false)),
     ];
     hyprland
         .into_iter()

@@ -13,11 +13,20 @@ Item {
 
   readonly property int revision: backend.revision
   readonly property bool recording: setting.type === "shortcut" && backend.recording === setting.key
+  readonly property bool auto: revision >= 0 && setting.type === "appearance" && backend.flag("appearance_auto")
   readonly property string hint: {
     if (recording) return qsTr("Esc cancels. Backspace removes the shortcut.")
     if (setting.type === "theme") {
       let count = Array.from(backend.themeNames(setting.dark)).length
       return setting.dark ? qsTr("%n dark theme(s) installed", "", count) : qsTr("%n light theme(s) installed", "", count)
+    }
+    if (auto) {
+      if (backend.autoError !== "") return qsTr("No location. Auto changes nothing until weather.json or the network gives one.")
+      if (backend.autoNext <= 0) return qsTr("Finding sunrise and sunset...")
+      let next = new Date(backend.autoNext)
+      let day = next.toDateString() === new Date().toDateString() ? qsTr("today") : Qt.formatDate(next, "ddd")
+      return (backend.autoNextDark ? qsTr("Switches to Dark %1 at %2, at sunset") : qsTr("Switches to Light %1 at %2, at sunrise"))
+        .arg(day).arg(Qt.formatTime(next, "HH:mm"))
     }
     return setting.hint || ""
   }
@@ -179,9 +188,10 @@ Item {
       ui: row.ui
       options: [
         { value: "light", label: qsTr("Light") },
-        { value: "dark", label: qsTr("Dark") }
+        { value: "dark", label: qsTr("Dark") },
+        { value: "auto", label: qsTr("Auto") }
       ]
-      value: row.backend.themeDark(row.backend.themeName) ? "dark" : "light"
+      value: row.auto ? "auto" : row.backend.themeDark(row.backend.themeName) ? "dark" : "light"
       onPicked: value => row.backend.setAppearance(value)
     }
   }

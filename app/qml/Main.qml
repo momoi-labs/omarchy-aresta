@@ -34,7 +34,7 @@ Window {
   readonly property var sections: [
     { id: "appearance", name: qsTr("Appearance"), block: 1, groups: [
       { title: qsTr("Appearance"), rows: [
-        { type: "appearance", label: qsTr("Appearance") },
+        { type: "appearance", label: qsTr("Appearance"), hint: qsTr("Auto follows sunrise and sunset") },
         { type: "theme", key: "light_theme", dark: false, label: qsTr("Light theme") },
         { type: "theme", key: "dark_theme", dark: true, label: qsTr("Dark theme") }
       ], note: qsTr("Each list shows only themes of its mode. \"osx light\" and \"osx dark\" are the defaults.") },
