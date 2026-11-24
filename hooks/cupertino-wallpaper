@@ -13,6 +13,11 @@ esac
 
 [[ -n $PREVIOUS && ${PREVIOUS##*/} == "$PREVIOUS" ]] || exit 0
 KEPT=$(cat "$STATE/theme-backgrounds/$PREVIOUS" 2>/dev/null || true)
+if [[ $PREVIOUS != osx-* && ${KEPT%/*} == "$STATE/current/theme/backgrounds" ]]; then
+  for DIR in "$HOME/.config/omarchy/themes/$PREVIOUS" "${OMARCHY_PATH:-/usr/share/omarchy}/themes/$PREVIOUS"; do
+    [[ -f $DIR/backgrounds/${KEPT##*/} ]] && { KEPT="$DIR/backgrounds/${KEPT##*/}"; break; }
+  done
+fi
 [[ -f $KEPT ]] || exit 0
 [[ $(readlink -f "$STATE/current/background") != "$KEPT" ]] || exit 0
 [[ $(cat "$STATE/current/theme.name" 2>/dev/null) == "$THEME" ]] || exit 0
