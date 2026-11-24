@@ -13,6 +13,10 @@ BACKUP_DIR="${CUPERTINO_BACKUP_DIR:-${TMPDIR:-/tmp}/omarchy-cupertino}"
 PLUGIN_ID="$(jq -r .id "$REPO/manifest.json")"
 PLUGIN_LINK="$HOME/.config/omarchy/plugins/$PLUGIN_ID"
 SHELL_CONFIG="$HOME/.config/omarchy/shell.json"
+THEMES_DIR="$HOME/.config/omarchy/themes"
+HOOK_SOURCE="$REPO/hooks/cupertino-wallpaper"
+HOOK_LINK="$HOME/.config/omarchy/hooks/theme-set.d/cupertino-wallpaper"
+LAST_THEME_FILE="$HOME/.local/state/omarchy/cupertino-last-theme"
 
 say() { echo -e "\e[32m==>\e[0m $*"; }
 fail() { echo -e "install.sh: $*" >&2; exit 1; }
@@ -63,6 +67,34 @@ if [[ $(jq -r '.bar.id // ""' "$SHELL_CONFIG" 2>/dev/null) != "$PLUGIN_ID" ]]; t
   fi
   say "Selecting the Cupertino bar"
   omarchy-bar use "$PLUGIN_ID" >/dev/null
+fi
+
+for theme in "$REPO"/themes/*/; do
+  theme="${theme%/}"
+  link="$THEMES_DIR/$(basename "$theme")"
+  if [[ -L $link && $(readlink -f "$link") == "$theme" ]]; then
+    :
+  elif [[ -e $link || -L $link ]]; then
+    fail "$link already exists and is not a link to $theme"
+  else
+    say "Linking $link"
+    mkdir -p "$THEMES_DIR"
+    ln -s "$theme" "$link"
+  fi
+done
+
+if [[ -L $HOOK_LINK && $(readlink -f "$HOOK_LINK") == "$(readlink -f "$HOOK_SOURCE")" ]]; then
+  :
+elif [[ -e $HOOK_LINK || -L $HOOK_LINK ]]; then
+  fail "$HOOK_LINK already exists and is not a link to $HOOK_SOURCE"
+else
+  say "Linking $HOOK_LINK"
+  mkdir -p "$(dirname "$HOOK_LINK")"
+  ln -s "$HOOK_SOURCE" "$HOOK_LINK"
+fi
+
+if [[ ! -f $LAST_THEME_FILE && -f $HOME/.local/state/omarchy/current/theme.name ]]; then
+  cp "$HOME/.local/state/omarchy/current/theme.name" "$LAST_THEME_FILE"
 fi
 
 say "Done."
