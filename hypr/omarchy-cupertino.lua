@@ -92,3 +92,5 @@ hl.plugin.load = function(path, ...)
   end
   return result
 end
+
+hl.layer_rule({ match = { namespace = "^omarchy-cupertino-bar$" }, no_anim = true, animation = "none" })

@@ -23,9 +23,15 @@ Item {
   readonly property string position: "top"
   readonly property bool vertical: false
   readonly property int barSize: 29
-  readonly property string fontFamily: Qt.fontFamilies().indexOf("Inter") !== -1 ? "Inter" : "sans-serif"
-  readonly property string clockFormat: "ddd d MMM HH:mm"
-  readonly property color foreground: Commons.Color.bar.text
+  readonly property string fontFamily: {
+    var families = Qt.fontFamilies()
+    var preferred = ["SF Pro Text", "SF Pro", "System Font", "Inter"]
+    for (var i = 0; i < preferred.length; i++)
+      if (families.indexOf(preferred[i]) !== -1) return preferred[i]
+    return "sans-serif"
+  }
+  readonly property string clockFormat: "ddd d MMM  HH:mm"
+  readonly property color foreground: "#ffffff"
   readonly property color background: Commons.Color.bar.background
   readonly property color urgent: Commons.Color.bar.active
 
@@ -252,7 +258,11 @@ Item {
     readonly property var settings: root.settingsFor(entry)
     readonly property var activeItem: loader.item
 
-    implicitWidth: activeItem && activeItem.visible ? activeItem.implicitWidth : 0
+    property real itemScale: 1
+    property real cellWidth: 0
+    readonly property real scaledWidth: activeItem ? activeItem.implicitWidth * itemScale : 0
+
+    implicitWidth: activeItem && activeItem.visible ? Math.max(cellWidth, Math.ceil(scaledWidth)) : 0
     implicitHeight: root.barSize
 
     function inject() {
@@ -272,7 +282,10 @@ Item {
       id: loader
 
       anchors.verticalCenter: parent.verticalCenter
-      width: slot.implicitWidth
+      x: Math.round((slot.width - slot.scaledWidth) / 2)
+      width: item ? item.implicitWidth : 0
+      scale: slot.itemScale
+      transformOrigin: Item.Left
       height: item ? item.implicitHeight : 0
       sourceComponent: slot.registered ? slot.registered.component : null
       onLoaded: {
@@ -296,19 +309,19 @@ Item {
         implicitHeight: root.barSize
         exclusiveZone: root.barSize
         color: "transparent"
-        WlrLayershell.namespace: "omarchy-bar"
+        WlrLayershell.namespace: "omarchy-cupertino-bar"
         WlrLayershell.layer: WlrLayer.Top
 
         Rectangle {
           anchors.fill: parent
-          color: Qt.rgba(root.background.r, root.background.g, root.background.b, 0.6)
+          color: Qt.rgba(root.background.r, root.background.g, root.background.b, 0.3)
         }
 
         RowLayout {
           anchors.left: parent.left
-          anchors.leftMargin: 8
+          anchors.leftMargin: 12
           anchors.verticalCenter: parent.verticalCenter
-          spacing: 6
+          spacing: 10
 
           WidgetSlot { entry: ({ id: "omarchy.menu" }) }
 
@@ -325,13 +338,14 @@ Item {
             color: root.foreground
             font.family: root.fontFamily
             font.pixelSize: 13
+            font.letterSpacing: 0.4
             font.weight: Font.Bold
           }
         }
 
         RowLayout {
           anchors.right: parent.right
-          anchors.rightMargin: 12
+          anchors.rightMargin: 5
           anchors.verticalCenter: parent.verticalCenter
           spacing: 0
 
@@ -340,11 +354,13 @@ Item {
             delegate: WidgetSlot {
               required property string modelData
               entry: root.statusEntries.entries[modelData] || ({ id: "" })
+              itemScale: 1.2
+              cellWidth: 38
             }
           }
 
           WidgetSlot {
-            Layout.leftMargin: 6
+            Layout.leftMargin: 3
             entry: root.clockEntry
           }
         }
