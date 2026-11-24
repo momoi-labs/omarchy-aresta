@@ -860,7 +860,7 @@ Window {
           id: source
           required property string modelData
           readonly property var parts: modelData.split("\t")
-          readonly property var images: store.wallpaperImages(parts[2])
+          readonly property var images: store.revision >= 0 ? store.wallpaperImages(parts[2]) : []
           property bool expanded: false
           width: sources.width
           spacing: 8
