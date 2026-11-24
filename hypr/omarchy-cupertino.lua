@@ -91,13 +91,18 @@ hl.config({
   },
 })
 
-o.window("cupertino-settings", { float = true, center = true, size = { 1040, 690 } })
-
 local MINIMIZED = "special:minimized"
 
 local function target(window)
   return "address:" .. tostring(window.address)
 end
+
+hl.on("window.open", function(window)
+  if window.class == "cupertino-settings" and window.floating then
+    hl.dispatch(hl.dsp.window.resize({ x = 1040, y = 690, relative = false, window = target(window) }))
+    hl.dispatch(hl.dsp.window.center({ window = target(window) }))
+  end
+end)
 
 local function app_windows(class, visible_only)
   local windows = {}
