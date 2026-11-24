@@ -17,6 +17,8 @@ THEMES_DIR="$HOME/.config/omarchy/themes"
 HOOK_SOURCE="$REPO/hooks/cupertino-wallpaper"
 HOOK_LINK="$HOME/.config/omarchy/hooks/theme-set.d/cupertino-wallpaper"
 LAST_THEME_FILE="$HOME/.local/state/omarchy/cupertino-last-theme"
+APP_BIN="$HOME/.local/bin/cupertino-settings"
+APP_DESKTOP="$HOME/.local/share/applications/cupertino-settings.desktop"
 
 say() { echo -e "\e[32m==>\e[0m $*"; }
 
@@ -61,6 +63,13 @@ if [[ -L $HOOK_LINK && $(readlink -f "$HOOK_LINK") == "$(readlink -f "$HOOK_SOUR
   rm "$HOOK_LINK"
 fi
 rm -f "$LAST_THEME_FILE"
+
+for file in "$APP_BIN" "$APP_DESKTOP"; do
+  if [[ -f $file ]]; then
+    say "Removing $file"
+    rm "$file"
+  fi
+done
 
 say "Reloading Hyprland"
 hyprctl reload >/dev/null

@@ -37,6 +37,32 @@ It also adds macOS shortcuts on Super:
   windows.
 - The Quake console moves from Super+` to Super+Alt+`.
 
+## Cupertino Settings
+
+Cupertino Settings is a small app in the style of macOS System Settings.
+Open it from the app launcher. It has these sections:
+
+- Appearance: switch between OSX Light and OSX Dark, pick any installed
+  Omarchy theme, and turn window shadows on or off.
+- Desktop & Dock: grey traffic lights on unfocused windows, icons in the
+  traffic lights on hover, and the window title alignment.
+- Menu Bar: the bar background opacity and the clock format.
+- Keyboard: record new shortcuts for the plugin's bindings. Omarchy's own
+  bindings show as read-only.
+- Cupertino: options that macOS does not have, such as the corner radius and
+  shape, the border, the shadow, the traffic light size and the bar size.
+
+Changes apply at once. The app saves them to
+`~/.config/omarchy-cupertino/settings.toml`, which the Hyprland config and the
+bar read. Without that file, every option keeps its default.
+
+The app is written in Rust with [cxx-qt](https://github.com/KDAB/cxx-qt) and
+QML. To build it by hand you need Rust (`cargo`) and Qt 6:
+
+```sh
+cargo build --release --manifest-path app/Cargo.toml
+```
+
 ## Install
 
 ```sh
@@ -53,7 +79,9 @@ It links `hypr/omarchy-cupertino.lua` into `~/.config/hypr`, adds
 It links `themes/osx-light` and `themes/osx-dark` into
 `~/.config/omarchy/themes`, and links a `theme-set` hook into
 `~/.config/omarchy/hooks/theme-set.d` that keeps the current wallpaper on a
-switch to an OSX theme. Running it again changes nothing.
+switch to an OSX theme. Finally, it builds Cupertino Settings with `cargo`
+and installs it to `~/.local/bin/cupertino-settings`, with a launcher entry in
+`~/.local/share/applications`. Running it again changes nothing.
 
 Turn a workspace floating with Omarchy's workspace layout toggle to see the
 title bars.
@@ -66,7 +94,8 @@ title bars.
 
 It restores `shell.json` from the backup (or selects the default bar when
 the file changed since), removes the plugin link, the theme links, the hook
-link, the `require` line and the Hyprland link, then reloads Hyprland.
+link, the `require` line, the Hyprland link and the Cupertino Settings binary
+and launcher entry, then reloads Hyprland. It keeps your settings file.
 
 ## Credits
 

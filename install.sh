@@ -17,6 +17,8 @@ THEMES_DIR="$HOME/.config/omarchy/themes"
 HOOK_SOURCE="$REPO/hooks/cupertino-wallpaper"
 HOOK_LINK="$HOME/.config/omarchy/hooks/theme-set.d/cupertino-wallpaper"
 LAST_THEME_FILE="$HOME/.local/state/omarchy/cupertino-last-theme"
+APP_BIN="$HOME/.local/bin/cupertino-settings"
+APP_DESKTOP="$HOME/.local/share/applications/cupertino-settings.desktop"
 
 say() { echo -e "\e[32m==>\e[0m $*"; }
 fail() { echo -e "install.sh: $*" >&2; exit 1; }
@@ -24,6 +26,10 @@ fail() { echo -e "install.sh: $*" >&2; exit 1; }
 [[ -f $CONFIG ]] || fail "$CONFIG not found"
 grep -qxF "$TOGGLES" "$CONFIG" || grep -qxF "$REQUIRE" "$CONFIG" ||
   fail "can't find $TOGGLES in $CONFIG; add $REQUIRE before it by hand"
+command -v cargo >/dev/null || fail "cargo not found; it builds Cupertino Settings"
+
+say "Building Cupertino Settings"
+cargo build --release --locked --manifest-path "$REPO/app/Cargo.toml"
 
 if [[ -L $TARGET && $(readlink -f "$TARGET") == "$(readlink -f "$SOURCE")" ]]; then
   :
@@ -96,5 +102,19 @@ fi
 if [[ ! -f $LAST_THEME_FILE && -f $HOME/.local/state/omarchy/current/theme.name ]]; then
   cp "$HOME/.local/state/omarchy/current/theme.name" "$LAST_THEME_FILE"
 fi
+
+say "Installing $APP_BIN"
+install -Dm755 "$REPO/app/target/release/cupertino-settings" "$APP_BIN"
+mkdir -p "$(dirname "$APP_DESKTOP")"
+cat >"$APP_DESKTOP" <<EOF
+[Desktop Entry]
+Type=Application
+Name=Cupertino Settings
+Comment=Settings for the Omarchy Cupertino plugin
+Exec=$APP_BIN
+Icon=preferences-system
+Categories=Settings;
+StartupWMClass=cupertino-settings
+EOF
 
 say "Done."
