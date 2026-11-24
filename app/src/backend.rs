@@ -64,20 +64,48 @@ pub mod qobject {
         fn clear_shortcut(self: Pin<&mut Self>);
 
         #[qinvokable]
-        #[cxx_name = "selectTheme"]
-        fn select_theme(self: Pin<&mut Self>, name: &QString);
-
-        #[qinvokable]
         #[cxx_name = "themeSlug"]
         fn theme_slug(&self, name: &QString) -> QString;
 
         #[qinvokable]
-        #[cxx_name = "themePreview"]
-        fn theme_preview(&self, name: &QString) -> QString;
+        #[cxx_name = "themeTitle"]
+        fn theme_title(&self, slug: &QString) -> QString;
+
+        #[qinvokable]
+        #[cxx_name = "themeNames"]
+        fn theme_names(&self, dark: bool) -> QStringList;
+
+        #[qinvokable]
+        #[cxx_name = "themeDark"]
+        fn theme_dark(&self, name: &QString) -> bool;
 
         #[qinvokable]
         #[cxx_name = "themeColors"]
         fn theme_colors(&self, name: &QString) -> QStringList;
+
+        #[qinvokable]
+        #[cxx_name = "themePalette"]
+        fn theme_palette(&self, name: &QString) -> QStringList;
+
+        #[qinvokable]
+        #[cxx_name = "themeLuminance"]
+        fn theme_luminance(&self, name: &QString) -> f64;
+
+        #[qinvokable]
+        #[cxx_name = "themeFile"]
+        fn theme_file(&self, name: &QString) -> QString;
+
+        #[qinvokable]
+        #[cxx_name = "setAppearance"]
+        fn set_appearance(self: Pin<&mut Self>, mode: &QString);
+
+        #[qinvokable]
+        #[cxx_name = "pickTheme"]
+        fn pick_theme(self: Pin<&mut Self>, dark: bool, name: &QString);
+
+        #[qinvokable]
+        #[cxx_name = "shortPath"]
+        fn short_path(&self, path: &QString) -> QString;
     }
 
     impl cxx_qt::Initialize for Backend {}
@@ -90,7 +118,7 @@ use core::pin::Pin;
 use cxx_qt::CxxQtType;
 use cxx_qt_lib::{QString, QStringList};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant, SystemTime};
 
@@ -106,6 +134,7 @@ pub struct BackendRust {
     revision: i32,
     recording: QString,
     error: QString,
+    modes: Vec<(String, bool)>,
     settings: Settings,
     settings_stamp: Option<SystemTime>,
     colors_stamp: Option<SystemTime>,
@@ -123,6 +152,7 @@ impl Default for BackendRust {
             revision: 0,
             recording: QString::default(),
             error: QString::default(),
+            modes: Vec::new(),
             settings: Settings::load(),
             settings_stamp: modified(&Settings::path()),
             colors_stamp: None,
@@ -136,8 +166,13 @@ fn modified(path: &Path) -> Option<SystemTime> {
 }
 
 fn spawn(program: &str, args: &[&str]) -> Result<(), String> {
-    let mut child = Command::new(program)
-        .args(args)
+    let mut command = Command::new(program);
+    command.args(args);
+    run_detached(command, program)
+}
+
+fn run_detached(mut command: Command, program: &str) -> Result<(), String> {
+    let mut child = command
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
@@ -153,7 +188,9 @@ fn hyprctl_dispatch(expression: &str) -> Result<(), String> {
 
 impl cxx_qt::Initialize for qobject::Backend {
     fn initialize(mut self: Pin<&mut Self>) {
-        let themes: QStringList = theme::installed().iter().map(QString::from).collect();
+        let modes = theme::with_mode();
+        let themes: QStringList = modes.iter().map(|(name, _)| QString::from(name)).collect();
+        self.as_mut().rust_mut().modes = modes;
         self.as_mut().set_themes(themes);
         self.as_mut().refresh_theme();
     }
@@ -183,6 +220,19 @@ impl qobject::Backend {
                 .set_foreground(QString::from(&colors.foreground));
             self.as_mut().set_accent(QString::from(&colors.accent));
         }
+    }
+
+    fn slug_of(&self, key: &str) -> String {
+        match self.settings.get(key) {
+            Some(Value::Text(slug)) => slug.clone(),
+            _ => String::new(),
+        }
+    }
+
+    fn apply_theme(mut self: Pin<&mut Self>, slug: &str) {
+        let command = theme::set_command(slug);
+        let result = run_detached(command, "omarchy-theme-set");
+        self.as_mut().report(result);
     }
 
     fn bump(mut self: Pin<&mut Self>) {
@@ -312,19 +362,39 @@ impl qobject::Backend {
         self.store(&key, Value::Text(String::new()));
     }
 
-    pub fn select_theme(mut self: Pin<&mut Self>, name: &QString) {
-        let result = spawn("omarchy-theme-set", &[&name.to_string()]);
-        self.as_mut().report(result);
-    }
-
     pub fn theme_slug(&self, name: &QString) -> QString {
         QString::from(&theme::slug(&name.to_string()))
     }
 
-    pub fn theme_preview(&self, name: &QString) -> QString {
-        theme::preview(&name.to_string())
-            .map(|path| QString::from(&format!("file://{}", path.display())))
-            .unwrap_or_default()
+    pub fn theme_title(&self, slug: &QString) -> QString {
+        let slug = slug.to_string();
+        self.modes
+            .iter()
+            .find(|(name, _)| theme::slug(name) == slug)
+            .map(|(name, _)| QString::from(name))
+            .unwrap_or_else(|| QString::from(&slug))
+    }
+
+    pub fn theme_names(&self, dark: bool) -> QStringList {
+        let default = if dark { "osx-dark" } else { "osx-light" };
+        let mut names: Vec<&String> = self
+            .modes
+            .iter()
+            .filter(|(_, mode)| *mode == dark)
+            .map(|(name, _)| name)
+            .collect();
+        names.sort_by_key(|name| theme::slug(name) != default);
+        names.into_iter().map(QString::from).collect()
+    }
+
+    pub fn theme_dark(&self, name: &QString) -> bool {
+        let slug = theme::slug(&name.to_string());
+        self.modes
+            .iter()
+            .find(|(name, _)| theme::slug(name) == slug)
+            .map(|(_, dark)| *dark)
+            .or_else(|| theme::directory(&slug).and_then(|directory| theme::is_dark(&directory)))
+            .unwrap_or(true)
     }
 
     pub fn theme_colors(&self, name: &QString) -> QStringList {
@@ -337,5 +407,63 @@ impl qobject::Backend {
                     .collect()
             })
             .unwrap_or_default()
+    }
+
+    pub fn theme_palette(&self, name: &QString) -> QStringList {
+        theme::directory(&name.to_string())
+            .map(|directory| {
+                theme::palette(&directory)
+                    .iter()
+                    .map(|(key, value)| QString::from(&format!("{key}|{value}")))
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
+    pub fn theme_luminance(&self, name: &QString) -> f64 {
+        theme::directory(&name.to_string())
+            .and_then(|directory| theme::read_colors(&directory))
+            .and_then(|colors| theme::luminance(&colors.background))
+            .unwrap_or_default()
+    }
+
+    pub fn theme_file(&self, name: &QString) -> QString {
+        theme::directory(&name.to_string())
+            .map(|directory| {
+                let path = directory.join("colors.toml").display().to_string();
+                self.short_path(&QString::from(&path))
+            })
+            .unwrap_or_default()
+    }
+
+    pub fn set_appearance(self: Pin<&mut Self>, mode: &QString) {
+        let mode = mode.to_string();
+        let key = if mode == "dark" {
+            "dark_theme"
+        } else {
+            "light_theme"
+        };
+        let slug = self.slug_of(key);
+        self.apply_theme(&slug);
+    }
+
+    pub fn pick_theme(mut self: Pin<&mut Self>, dark: bool, name: &QString) {
+        let slug = theme::slug(&name.to_string());
+        let key = if dark { "dark_theme" } else { "light_theme" };
+        self.as_mut()
+            .store(&QString::from(key), Value::Text(slug.clone()));
+        let current = self.theme_name().clone();
+        if self.theme_dark(&current) == dark && current.to_string() != slug {
+            self.apply_theme(&slug);
+        }
+    }
+
+    pub fn short_path(&self, path: &QString) -> QString {
+        let path = PathBuf::from(path.to_string());
+        let shown = path
+            .strip_prefix(theme::home())
+            .map(|rest| format!("~/{}", rest.display()))
+            .unwrap_or_else(|_| path.display().to_string());
+        QString::from(&shown)
     }
 }

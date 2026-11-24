@@ -42,8 +42,9 @@ It also adds macOS shortcuts on Super:
 Cupertino Settings is a small app in the style of macOS System Settings.
 Open it from the app launcher. It has these sections:
 
-- Appearance: switch between OSX Light and OSX Dark, pick any installed
-  Omarchy theme, and turn window shadows on or off.
+- Appearance: switch between Light and Dark, pick the light and the
+  dark theme from the installed Omarchy themes, see the colors of the current
+  theme, and turn window shadows on or off.
 - Desktop & Dock: grey traffic lights on unfocused windows, icons in the
   traffic lights on hover, and the window title alignment.
 - Menu Bar: the bar background opacity and the clock format.

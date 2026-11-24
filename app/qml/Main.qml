@@ -28,12 +28,17 @@ Window {
     { value: "right", label: qsTr("Right") }
   ]
 
+
+  readonly property string themeTitle: store.themeTitle(store.themeName)
+
   readonly property var sections: [
     { id: "appearance", name: qsTr("Appearance"), block: 1, groups: [
-      { title: qsTr("Appearance"), rows: [{ type: "appearance", label: qsTr("Appearance"), hint: qsTr("Light, Dark") }],
-        note: qsTr("Light is the Omarchy theme \"osx light\". Dark is \"osx dark\".") },
-      { title: qsTr("Theme"), rows: [{ type: "themes", label: qsTr("Theme"), hint: qsTr("Installed Omarchy themes") }],
-        note: qsTr("Every installed Omarchy theme. Settings always uses the colors of the current theme.") },
+      { title: qsTr("Appearance"), rows: [
+        { type: "appearance", label: qsTr("Appearance") },
+        { type: "theme", key: "light_theme", dark: false, label: qsTr("Light theme") },
+        { type: "theme", key: "dark_theme", dark: true, label: qsTr("Dark theme") }
+      ], note: qsTr("Each list shows only themes of its mode. \"osx light\" and \"osx dark\" are the defaults.") },
+      { kind: "colors", rows: [{ type: "colors", label: qsTr("Colors"), hint: qsTr("Colors of the current theme") }] },
       { title: qsTr("Windows"), rows: [{ type: "toggle", key: "shadow_enabled", label: qsTr("Show window shadows"), hint: qsTr("Floating workspaces always show shadows") }] }
     ] },
     { id: "desktop", name: qsTr("Desktop & Dock"), block: 1, groups: [
@@ -469,15 +474,34 @@ Window {
             width: page.width
             spacing: 8
 
-            Text {
-              visible: !!group.modelData.title
+            readonly property bool colors: group.modelData.kind === "colors"
+
+            Row {
+              id: groupTitle
+              visible: !!group.modelData.title || group.colors
               leftPadding: 10
-              text: group.modelData.title || ""
-              color: look.text
-              font.family: look.fontFamily
-              font.pixelSize: 13
-              font.weight: Font.Bold
+              spacing: 8
+
+              Text {
+                id: groupName
+                text: group.colors ? qsTr("Colors of %1").arg(window.themeTitle) : group.modelData.title || ""
+                color: look.text
+                font.family: look.fontFamily
+                font.pixelSize: 13
+                font.weight: Font.Bold
+              }
+
+              Text {
+                visible: group.colors
+                width: Math.max(0, group.width - groupTitle.leftPadding - groupName.width - groupTitle.spacing - 10)
+                elide: Text.ElideMiddle
+                text: group.colors ? store.themeFile(store.themeName) : ""
+                color: look.textSecondary
+                font.family: look.fontFamily
+                font.pixelSize: 12
+              }
             }
+
 
             Rectangle {
               width: parent.width
@@ -499,8 +523,7 @@ Window {
                     readonly property bool targeted: window.target !== "" && window.target === modelData.label
                     width: rows.width
                     onTargetedChanged: if (targeted) Qt.callLater(window.reveal, rowLoader)
-                    sourceComponent: modelData.type === "appearance" ? appearanceRow
-                      : modelData.type === "themes" ? themesRow : settingRow
+                    sourceComponent: modelData.type === "colors" ? colorsRow : settingRow
 
                     Component {
                       id: settingRow
@@ -534,62 +557,105 @@ Window {
   }
 
   Component {
-    id: appearanceRow
+    id: colorsRow
 
     Item {
-      implicitHeight: modes.implicitHeight + 28
+      id: colors
+      readonly property var palette: store.themePalette(store.themeName)
+      readonly property int columns: Math.max(3, Math.min(7, Math.floor((width - 16) / 84)))
+      readonly property real swatchWidth: (width - 24 - (columns - 1) * 8) / columns
+      implicitHeight: header.height + swatches.implicitHeight + 28
 
-      Row {
-        id: modes
-        anchors.centerIn: parent
-        spacing: 26
+      function label(key) {
+        return key.split("_").map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1) }).join(" ")
+      }
 
-        Repeater {
-          model: [
-            { name: qsTr("Light"), theme: "Osx Light", slug: "osx-light" },
-            { name: qsTr("Dark"), theme: "Osx Dark", slug: "osx-dark" }
-          ]
+      Item {
+        id: header
+        width: parent.width
+        height: 104
 
-          ThemeTile {
-            required property var modelData
-            ui: look
-            name: modelData.name
-            tileWidth: 120
-            tileHeight: 76
-            colors: store.themeColors(modelData.theme)
-            selected: store.themeName === modelData.slug
-            onClicked: store.selectTheme(modelData.theme)
+        ThemeTile {
+          x: 12
+          y: 12
+          ui: look
+          tileWidth: 112
+          tileHeight: 70
+          colors: store.themeColors(store.themeName)
+        }
+
+        Column {
+          x: 144
+          width: parent.width - x - 12
+          anchors.verticalCenter: parent.verticalCenter
+          spacing: 2
+
+          Text {
+            text: window.themeTitle
+            color: look.text
+            font.family: look.fontFamily
+            font.pixelSize: 14
+          }
+
+          Text {
+            width: parent.width
+            wrapMode: Text.WordWrap
+            text: (store.themeDark(store.themeName) ? qsTr("Dark theme, background luminance %1") : qsTr("Light theme, background luminance %1"))
+              .arg(Math.round(store.themeLuminance(store.themeName) * 100) / 100)
+            color: look.textSecondary
+            font.family: look.fontFamily
+            font.pixelSize: 12
           }
         }
+
+        Rectangle {
+          anchors.bottom: parent.bottom
+          width: parent.width
+          height: 1
+          color: look.separator
+        }
       }
-    }
-  }
-
-  Component {
-    id: themesRow
-
-    Item {
-      implicitHeight: grid.implicitHeight + 22
 
       Flow {
-        id: grid
-        x: 8
-        y: 12
-        width: parent.width - 16
-        spacing: 10
+        id: swatches
+        x: 12
+        y: header.height + 14
+        width: parent.width - 24
+        spacing: 8
 
         Repeater {
-          model: store.themes
+          model: colors.palette
 
-          ThemeTile {
+          Column {
+            id: swatch
             required property string modelData
-            ui: look
-            width: 96
-            name: modelData
-            preview: store.themePreview(modelData)
-            colors: store.themeColors(modelData)
-            selected: store.themeName === store.themeSlug(modelData)
-            onClicked: store.selectTheme(modelData)
+            width: colors.swatchWidth
+            spacing: 2
+
+            Rectangle {
+              width: parent.width
+              height: 26
+              radius: 6
+              color: swatch.modelData.split("|")[1]
+              border.width: 1
+              border.color: look.controlBorder
+            }
+
+            Text {
+              width: parent.width
+              elide: Text.ElideRight
+              text: colors.label(swatch.modelData.split("|")[0])
+              color: look.text
+              font.family: look.fontFamily
+              font.pixelSize: 11
+            }
+
+            Text {
+              text: swatch.modelData.split("|")[1]
+              color: look.textSecondary
+              font.family: look.fontFamily
+              font.pixelSize: 10
+            }
           }
         }
       }

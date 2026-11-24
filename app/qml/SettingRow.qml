@@ -13,7 +13,14 @@ Item {
 
   readonly property int revision: backend.revision
   readonly property bool recording: setting.type === "shortcut" && backend.recording === setting.key
-  readonly property string hint: recording ? qsTr("Esc cancels. Backspace removes the shortcut.") : setting.hint || ""
+  readonly property string hint: {
+    if (recording) return qsTr("Esc cancels. Backspace removes the shortcut.")
+    if (setting.type === "theme") {
+      let count = Array.from(backend.themeNames(setting.dark)).length
+      return setting.dark ? qsTr("%n dark theme(s) installed", "", count) : qsTr("%n light theme(s) installed", "", count)
+    }
+    return setting.hint || ""
+  }
 
   implicitHeight: Math.max(42, labels.implicitHeight + 14, control.implicitHeight + 14)
 
@@ -66,6 +73,8 @@ Item {
       case "text": return textControl
       case "shortcut": return shortcutControl
       case "omarchy": return omarchyControl
+      case "appearance": return appearanceControl
+      case "theme": return themeControl
       }
       return null
     }
@@ -161,6 +170,30 @@ Item {
       ui: row.ui
       labels: row.setting.keys
       locked: true
+    }
+  }
+
+  Component {
+    id: appearanceControl
+    MacSegmented {
+      ui: row.ui
+      options: [
+        { value: "light", label: qsTr("Light") },
+        { value: "dark", label: qsTr("Dark") }
+      ]
+      value: row.backend.themeDark(row.backend.themeName) ? "dark" : "light"
+      onPicked: value => row.backend.setAppearance(value)
+    }
+  }
+
+  Component {
+    id: themeControl
+    ThemePicker {
+      ui: row.ui
+      backend: row.backend
+      names: row.revision >= 0 ? row.backend.themeNames(row.setting.dark) : []
+      value: row.revision >= 0 ? row.backend.text(row.setting.key) : ""
+      onPicked: name => row.backend.pickTheme(row.setting.dark, name)
     }
   }
 }

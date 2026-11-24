@@ -56,6 +56,8 @@ fn defaults() -> Vec<Entry> {
         ("clock_format", Text("ddd d MMM  HH:mm".into())),
         ("status_icon_scale", Number(120.0)),
         ("status_item_width", Number(38.0)),
+        ("light_theme", Text("osx-light".into())),
+        ("dark_theme", Text("osx-dark".into())),
     ];
     hyprland
         .into_iter()
@@ -144,7 +146,7 @@ impl Settings {
             let value = match &entry.value {
                 Value::Number(number) => format!("{number}"),
                 Value::Flag(flag) => flag.to_string(),
-                Value::Text(text) => format!("\"{}\"", text.replace('"', "")),
+                Value::Text(text) => quote(text),
             };
             text.push_str(&format!("{} = {}\n", entry.key, value));
         }
@@ -155,6 +157,10 @@ impl Settings {
         fs::write(&temporary, text)?;
         fs::rename(&temporary, &self.path)
     }
+}
+
+fn quote(text: &str) -> String {
+    format!("\"{}\"", text.replace('"', ""))
 }
 
 fn parse(default: &Value, raw: &str) -> Option<Value> {
