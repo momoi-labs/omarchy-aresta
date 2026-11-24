@@ -13,6 +13,7 @@ PLUGIN_ID="$(jq -r .id "$REPO/manifest.json")"
 PLUGIN_LINK="$HOME/.config/omarchy/plugins/$PLUGIN_ID"
 SHELL_CONFIG="$HOME/.config/omarchy/shell.json"
 SHELL_BACKUP="$BACKUP_DIR/shell.json.orig"
+THEMES_DIR="$HOME/.config/omarchy/themes"
 
 say() { echo -e "\e[32m==>\e[0m $*"; }
 
@@ -42,6 +43,15 @@ if [[ -L $TARGET && $(readlink -f "$TARGET") == "$(readlink -f "$SOURCE")" ]]; t
   say "Removing $TARGET"
   rm "$TARGET"
 fi
+
+for theme in "$REPO"/themes/*/; do
+  theme="${theme%/}"
+  link="$THEMES_DIR/$(basename "$theme")"
+  if [[ -L $link && $(readlink -f "$link") == "$theme" ]]; then
+    say "Removing $link"
+    rm "$link"
+  fi
+done
 
 say "Reloading Hyprland"
 hyprctl reload >/dev/null

@@ -15,6 +15,9 @@ It has:
 - Tiled windows get no title bar.
 - Every window gets rounded corners, a soft shadow and a thin neutral outline
   instead of a colored border.
+- Two Omarchy themes in macOS system colors: OSX Light and OSX Dark. Pick
+  them in the Omarchy theme menu or with `omarchy-theme-set "osx light"`.
+  Each has an original gradient background and the Yaru blue icons.
 
 It also adds macOS shortcuts on Super:
 
@@ -45,7 +48,8 @@ It links `hypr/omarchy-cupertino.lua` into `~/.config/hypr`, adds
 (default `/tmp/omarchy-cupertino`). It also links the repository into
 `~/.config/omarchy/plugins` and selects the Cupertino bar, after it copies
 `~/.config/omarchy/shell.json` to `$CUPERTINO_BACKUP_DIR/shell.json.orig`.
-Running it again changes nothing.
+It links `themes/osx-light` and `themes/osx-dark` into
+`~/.config/omarchy/themes`. Running it again changes nothing.
 
 Turn a workspace floating with Omarchy's workspace layout toggle to see the
 title bars.
@@ -57,8 +61,8 @@ title bars.
 ```
 
 It restores `shell.json` from the backup (or selects the default bar when
-the file changed since), removes the plugin link, the `require` line and the
-Hyprland link, then reloads Hyprland.
+the file changed since), removes the plugin link, the theme links, the
+`require` line and the Hyprland link, then reloads Hyprland.
 
 ## Credits
 

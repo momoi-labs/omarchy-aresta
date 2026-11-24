@@ -13,6 +13,7 @@ BACKUP_DIR="${CUPERTINO_BACKUP_DIR:-${TMPDIR:-/tmp}/omarchy-cupertino}"
 PLUGIN_ID="$(jq -r .id "$REPO/manifest.json")"
 PLUGIN_LINK="$HOME/.config/omarchy/plugins/$PLUGIN_ID"
 SHELL_CONFIG="$HOME/.config/omarchy/shell.json"
+THEMES_DIR="$HOME/.config/omarchy/themes"
 
 say() { echo -e "\e[32m==>\e[0m $*"; }
 fail() { echo -e "install.sh: $*" >&2; exit 1; }
@@ -64,5 +65,19 @@ if [[ $(jq -r '.bar.id // ""' "$SHELL_CONFIG" 2>/dev/null) != "$PLUGIN_ID" ]]; t
   say "Selecting the Cupertino bar"
   omarchy-bar use "$PLUGIN_ID" >/dev/null
 fi
+
+for theme in "$REPO"/themes/*/; do
+  theme="${theme%/}"
+  link="$THEMES_DIR/$(basename "$theme")"
+  if [[ -L $link && $(readlink -f "$link") == "$theme" ]]; then
+    :
+  elif [[ -e $link || -L $link ]]; then
+    fail "$link already exists and is not a link to $theme"
+  else
+    say "Linking $link"
+    mkdir -p "$THEMES_DIR"
+    ln -s "$theme" "$link"
+  fi
+done
 
 say "Done."
