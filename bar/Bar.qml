@@ -3,6 +3,7 @@
 
 import Quickshell
 import Quickshell.Hyprland
+import Quickshell.Io
 import Quickshell.Wayland
 import QtQuick
 import QtQuick.Layouts
@@ -22,7 +23,22 @@ Item {
 
   readonly property string position: "top"
   readonly property bool vertical: false
-  readonly property int barSize: 29
+  readonly property var settings: {
+    var values = { bar_height: 29, bar_opacity: 30, clock_format: "ddd d MMM  HH:mm", status_icon_scale: 120, status_item_width: 38 }
+    var lines = settingsFile.text().split("\n")
+    for (var i = 0; i < lines.length; i++) {
+      var match = lines[i].match(/^\s*(\w+)\s*=\s*(.*?)\s*$/)
+      if (!match || !(match[1] in values)) continue
+      if (typeof values[match[1]] === "string") {
+        var text = match[2].match(/^"(.*)"$/)
+        if (text) values[match[1]] = text[1]
+      } else if (match[2] !== "" && !isNaN(Number(match[2]))) {
+        values[match[1]] = Number(match[2])
+      }
+    }
+    return values
+  }
+  readonly property int barSize: Math.round(settings.bar_height)
   readonly property string fontFamily: {
     var families = Qt.fontFamilies()
     var preferred = ["SF Pro Text", "SF Pro", "System Font", "Inter"]
@@ -30,7 +46,7 @@ Item {
       if (families.indexOf(preferred[i]) !== -1) return preferred[i]
     return "sans-serif"
   }
-  readonly property string clockFormat: "ddd d MMM  HH:mm"
+  readonly property string clockFormat: settings.clock_format
   readonly property color foreground: "#ffffff"
   readonly property color background: Commons.Color.bar.background
   readonly property color urgent: Commons.Color.bar.active
@@ -67,6 +83,21 @@ Item {
         if (list[i] && list[i].id === "omarchy.clock") return list[i]
     }
     return { id: "omarchy.clock" }
+  }
+
+  FileView {
+    id: settingsFile
+    path: Quickshell.env("HOME") + "/.config/omarchy-cupertino/settings.toml"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoadFailed: settingsRetry.restart()
+  }
+
+  Timer {
+    id: settingsRetry
+    interval: 2000
+    onTriggered: settingsFile.reload()
   }
 
   property var activePopout: null
@@ -314,7 +345,7 @@ Item {
 
         Rectangle {
           anchors.fill: parent
-          color: Qt.rgba(root.background.r, root.background.g, root.background.b, 0.3)
+          color: Qt.rgba(root.background.r, root.background.g, root.background.b, root.settings.bar_opacity / 100)
         }
 
         RowLayout {
@@ -354,8 +385,8 @@ Item {
             delegate: WidgetSlot {
               required property string modelData
               entry: root.statusEntries.entries[modelData] || ({ id: "" })
-              itemScale: 1.2
-              cellWidth: 38
+              itemScale: root.settings.status_icon_scale / 100
+              cellWidth: root.settings.status_item_width
             }
           }
 
