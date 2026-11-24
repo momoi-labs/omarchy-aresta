@@ -7,6 +7,12 @@ derived from Rafael Bertholdo's macOS Dock plugin for Omarchy:
 
 Copyright (c) 2026 Rafael Bertholdo
 
+The app switcher (switcher/Switcher.qml and its bindings in
+hypr/omarchy-cupertino.lua) is derived from Renan Tonheiro's Switch Magic
+plugin for Omarchy:
+
+Copyright (c) 2026 Renan Tonheiro
+
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
 "Software"), to deal in the Software without restriction, including

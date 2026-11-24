@@ -1,5 +1,6 @@
 -- Copyright (c) 2026 Sebastian Webber
 -- Copyright (c) 2026 Rafael Bertholdo
+-- Copyright (c) 2026 Renan Tonheiro
 -- Licensed under the MIT License. See LICENSE.
 
 local TITLEBARS = "/usr/lib/omarchy-hyprland-titlebars/titlebars.so"
@@ -86,6 +87,78 @@ function apps.cycle()
 end
 
 package.loaded["omarchy-cupertino.apps"] = apps
+
+local SWITCHER = "omarchy-cupertino-switcher"
+local SUPER_KEYCODES = { [133] = true, [134] = true }
+local switcher = { open = false }
+
+local function emit(name)
+  hl.dispatch(hl.dsp.global("omarchy-cupertino:" .. name))
+end
+
+local function switcher_step(name)
+  return function()
+    if not switcher.open then
+      switcher.open = true
+      hl.dispatch(hl.dsp.submap(SWITCHER))
+    end
+    emit(name)
+  end
+end
+
+local function switcher_finish(name)
+  if not switcher.open then
+    return
+  end
+  switcher.open = false
+  hl.dispatch(hl.dsp.submap("reset"))
+  emit(name)
+end
+
+function switcher.activate(address)
+  local window = hl.get_window("address:" .. address)
+  if not window then
+    return
+  end
+  local workspace = window.workspace and window.workspace.name
+  if workspace == MINIMIZED then
+    local active = hl.get_active_workspace()
+    if not active or active.id < 1 then
+      return
+    end
+    hl.dispatch(hl.dsp.window.move({ workspace = tostring(active.id), window = target(window) }))
+  end
+  hl.dispatch(hl.dsp.focus({ window = target(window) }))
+  hl.dispatch(hl.dsp.window.alter_zorder({ mode = "top", window = target(window) }))
+end
+
+switcher.finish = switcher_finish
+
+package.loaded["omarchy-cupertino.switcher"] = switcher
+
+hl.define_submap(SWITCHER, function()
+  hl.bind("SUPER + code:23", switcher_step("next"), { repeating = true })
+  hl.bind("SUPER + SHIFT + code:23", switcher_step("previous"), { repeating = true })
+  hl.bind("code:9", function() switcher_finish("cancel") end, { ignore_mods = true })
+end)
+
+hl.on("input.keyboard.key", function(keycode, _, value)
+  if not switcher.open or value ~= 0 or not SUPER_KEYCODES[keycode] then
+    return
+  end
+  hl.timer(function()
+    if not hl.is_key_down("Super_L") and not hl.is_key_down("Super_R") then
+      switcher_finish("commit")
+    end
+  end, { timeout = 1, type = "oneshot" })
+end)
+
+hl.layer_rule({ match = { namespace = "^" .. SWITCHER .. "$" }, no_anim = true, animation = "none" })
+
+hl.unbind("SUPER + TAB")
+hl.unbind("SUPER + SHIFT + TAB")
+o.bind("SUPER + code:23", "Switch apps", switcher_step("next"), { repeating = true })
+o.bind("SUPER + SHIFT + code:23", "Switch apps backwards", switcher_step("previous"), { repeating = true })
 
 hl.unbind("SUPER + Q")
 hl.unbind("SUPER + grave")
