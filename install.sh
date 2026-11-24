@@ -12,6 +12,8 @@ TOGGLES='require("default.hypr.toggles")'
 BACKUP_DIR="${CUPERTINO_BACKUP_DIR:-${TMPDIR:-/tmp}/omarchy-cupertino}"
 PLUGIN_ID="$(jq -r .id "$REPO/manifest.json")"
 PLUGIN_LINK="$HOME/.config/omarchy/plugins/$PLUGIN_ID"
+MENU_ID="$(jq -r .id "$REPO/menu/manifest.json")"
+MENU_LINK="$HOME/.config/omarchy/plugins/$MENU_ID"
 SHELL_CONFIG="$HOME/.config/omarchy/shell.json"
 THEMES_DIR="$HOME/.config/omarchy/themes"
 HOOK_SOURCE="$REPO/hooks/cupertino-wallpaper"
@@ -64,6 +66,21 @@ else
   mkdir -p "$(dirname "$PLUGIN_LINK")"
   ln -s "$REPO" "$PLUGIN_LINK"
   omarchy-shell shell rescanPlugins >/dev/null
+fi
+
+if [[ -L $MENU_LINK && $(readlink -f "$MENU_LINK") == "$REPO/menu" ]]; then
+  :
+elif [[ -e $MENU_LINK || -L $MENU_LINK ]]; then
+  fail "$MENU_LINK already exists and is not a link to $REPO/menu"
+else
+  say "Linking $MENU_LINK"
+  ln -s "$REPO/menu" "$MENU_LINK"
+  omarchy-shell shell rescanPlugins >/dev/null
+fi
+
+if ! omarchy-plugin-list | grep -qE "^$MENU_ID +enabled "; then
+  say "Enabling the Spotlight menu"
+  omarchy-plugin-enable "$MENU_ID" >/dev/null
 fi
 
 if [[ $(jq -r '.bar.id // ""' "$SHELL_CONFIG" 2>/dev/null) != "$PLUGIN_ID" ]]; then

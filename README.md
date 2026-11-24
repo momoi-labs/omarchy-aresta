@@ -15,6 +15,14 @@ It has:
 - Tiled windows get no title bar.
 - Every window gets rounded corners, a soft shadow and a thin neutral outline
   instead of a colored border.
+- The Omarchy menu drawn as macOS Spotlight. Super+Space, the bar's menu
+  button and `omarchy-menu` open one search field that ranks apps first,
+  then menu rows with their path. A submenu shows as a chip in the field,
+  and Backspace on an empty field goes back. A row of filter buttons above
+  the results opens Apps, as an icon grid, or a menu section. Ctrl+1 to
+  Ctrl+9 pick a filter, because Super+1 to Super+9 switch workspaces. Scripts
+  that use the menu as a picker, such as `omarchy-menu-keybindings`, keep
+  working.
 - Two Omarchy themes in macOS system colors: OSX Light and OSX Dark. Pick
   them in the Omarchy theme menu or with `omarchy-theme-set "osx light"`.
   Each has the Yaru blue icons and an original gradient background.
@@ -82,6 +90,8 @@ It links `hypr/omarchy-cupertino.lua` into `~/.config/hypr`, adds
 (default `/tmp/omarchy-cupertino`). It also links the repository into
 `~/.config/omarchy/plugins` and selects the Cupertino bar, after it copies
 `~/.config/omarchy/shell.json` to `$CUPERTINO_BACKUP_DIR/shell.json.orig`.
+It links `menu/` into `~/.config/omarchy/plugins` and enables it, which
+turns off the Omarchy menu.
 It links `themes/osx-light` and `themes/osx-dark` into
 `~/.config/omarchy/themes`, and links a `theme-set` hook into
 `~/.config/omarchy/hooks/theme-set.d` that keeps the current wallpaper on a
@@ -104,7 +114,8 @@ title bars.
 ```
 
 It restores `shell.json` from the backup (or selects the default bar when
-the file changed since), removes the plugin link, the theme links, the hook
+the file changed since), disables the Spotlight menu so the Omarchy menu
+comes back, removes the plugin links, the theme links, the hook
 link, the `require` line, the Hyprland link, the Cupertino Settings binary
 and launcher entry and the `cupertino-auto` timer, then reloads Hyprland. It
 keeps your settings file.

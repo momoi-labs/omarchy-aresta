@@ -11,6 +11,8 @@ REQUIRE='require("hypr.omarchy-cupertino")'
 BACKUP_DIR="${CUPERTINO_BACKUP_DIR:-${TMPDIR:-/tmp}/omarchy-cupertino}"
 PLUGIN_ID="$(jq -r .id "$REPO/manifest.json")"
 PLUGIN_LINK="$HOME/.config/omarchy/plugins/$PLUGIN_ID"
+MENU_ID="$(jq -r .id "$REPO/menu/manifest.json")"
+MENU_LINK="$HOME/.config/omarchy/plugins/$MENU_ID"
 SHELL_CONFIG="$HOME/.config/omarchy/shell.json"
 SHELL_BACKUP="$BACKUP_DIR/shell.json.orig"
 THEMES_DIR="$HOME/.config/omarchy/themes"
@@ -32,6 +34,17 @@ if [[ -f $SHELL_CONFIG && $(jq -r '.bar.id // ""' "$SHELL_CONFIG") == "$PLUGIN_I
     say "Selecting the default Omarchy bar"
     omarchy-bar reset >/dev/null
   fi
+fi
+
+if omarchy-plugin-list | grep -qE "^$MENU_ID +enabled "; then
+  say "Disabling the Spotlight menu"
+  omarchy-plugin-disable "$MENU_ID" >/dev/null
+fi
+
+if [[ -L $MENU_LINK && $(readlink -f "$MENU_LINK") == "$REPO/menu" ]]; then
+  say "Removing $MENU_LINK"
+  rm "$MENU_LINK"
+  omarchy-shell shell rescanPlugins >/dev/null
 fi
 
 if [[ -L $PLUGIN_LINK && $(readlink -f "$PLUGIN_LINK") == "$REPO" ]]; then
