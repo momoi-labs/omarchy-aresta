@@ -20,8 +20,9 @@ It also adds macOS shortcuts on Super:
 
 - Super+Tab opens an app switcher like Cmd+Tab: one icon per app in
   most-recently-used order, in a rounded strip in the middle of the screen.
-  Hold Super, press Tab or Shift+Tab to move, release Super to switch, or
-  press Esc to cancel. Switching to a minimized app brings its window back.
+  Hold Super, press Tab or Shift+Tab or point at an icon to move, release
+  Super to switch, click an icon to switch at once, or press Esc to cancel.
+  Switching to a minimized app brings its window back.
   It replaces Omarchy's next and previous workspace bindings on Super+Tab and
   Super+Shift+Tab, and runs while the Cupertino bar is selected.
 - Super+Q quits the app: it closes every window of the focused window's class,

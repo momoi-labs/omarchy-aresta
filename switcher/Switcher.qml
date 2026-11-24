@@ -45,6 +45,7 @@ Item {
   property var focusOrder: []
   property var iconIndex: ({})
   property var targetScreen: null
+  property var pointerOrigin: null
 
   readonly property real naturalWidth: padding * 2 + apps.length * cell + Math.max(0, apps.length - 1) * gap
   readonly property real fit: targetScreen ? Math.min(1, (targetScreen.width - screenMargin * 2) / Math.max(1, naturalWidth)) : 1
@@ -120,6 +121,7 @@ Item {
       if (apps.length === 0) return
       targetScreen = screenForFocus()
       selected = delta > 0 ? Math.min(1, apps.length - 1) : apps.length - 1
+      pointerOrigin = null
       opened = true
       return
     }
@@ -151,6 +153,31 @@ Item {
     close()
     if (!app || !/^0x[0-9a-fA-F]+$/.test(app.address)) return
     Quickshell.execDetached(["hyprctl", "eval", "package.loaded[\"omarchy-cupertino.switcher\"].activate(\"" + app.address + "\")"])
+  }
+
+  function slotAt(x, y) {
+    var index = Math.floor((x - padding) / (cell + gap))
+    if (index < 0 || index >= apps.length) return -1
+    if (x - padding - index * (cell + gap) > cell || y < paddingTop || y > paddingTop + cell) return -1
+    return index
+  }
+
+  function hover(x, y) {
+    if (!pointerOrigin) {
+      pointerOrigin = { x: x, y: y, moved: false }
+      return
+    }
+    if (!pointerOrigin.moved && pointerOrigin.x === x && pointerOrigin.y === y) return
+    pointerOrigin.moved = true
+    var index = slotAt(x, y)
+    if (index >= 0) selected = index
+  }
+
+  function pick(x, y) {
+    var index = slotAt(x, y)
+    if (!opened || index < 0) return
+    selected = index
+    Quickshell.execDetached(["hyprctl", "eval", "package.loaded[\"omarchy-cupertino.switcher\"].finish(\"commit\")"])
   }
 
   function scoreIcon(path) {
@@ -240,6 +267,13 @@ Item {
         color: Qt.tint(Commons.Color.popups.background, Qt.alpha(Commons.Color.popups.text, 0.1))
         border.width: 1
         border.color: Qt.alpha(Commons.Color.popups.text, 0.12)
+      }
+
+      MouseArea {
+        anchors.fill: parent
+        hoverEnabled: true
+        onPositionChanged: mouse => root.hover(mouse.x, mouse.y)
+        onClicked: mouse => root.pick(mouse.x, mouse.y)
       }
 
       Repeater {

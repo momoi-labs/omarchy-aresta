@@ -132,6 +132,8 @@ function switcher.activate(address)
   hl.dispatch(hl.dsp.window.alter_zorder({ mode = "top", window = target(window) }))
 end
 
+switcher.finish = switcher_finish
+
 package.loaded["omarchy-cupertino.switcher"] = switcher
 
 hl.define_submap(SWITCHER, function()
