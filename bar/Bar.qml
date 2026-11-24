@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE.
 
 import Quickshell
+import Quickshell.Hyprland
 import Quickshell.Wayland
 import QtQuick
 import QtQuick.Layouts
@@ -29,7 +30,7 @@ Item {
   readonly property color urgent: Commons.Color.bar.active
 
   readonly property var leftOnlyIds: ["omarchy.menu", "omarchy.workspaces", "omarchy.active-window", "omarchy.spacer", "omarchy.clock"]
-  readonly property var sectionOrder: ["left", "centerBegin", "center", "centerEnd", "right"]
+  readonly property var sectionOrder: ["left", "centerBegin", "center", "centerEnd", "right", "tray"]
 
   readonly property var layout: barConfig && barConfig.layout ? barConfig.layout : ({})
 
@@ -111,6 +112,45 @@ Item {
     return items
   }
 
+  function findPanelWidget(id) {
+    var focused = Hyprland.focusedMonitor ? String(Hyprland.focusedMonitor.name || "") : ""
+    var best = null
+    var bestRank = -1
+    for (var i = 0; i < widgetSlots.length; i++) {
+      var slot = widgetSlots[i]
+      var item = slot ? slot.activeItem : null
+      if (!item || slot.moduleName !== id) continue
+      if (typeof item.open !== "function" || typeof item.close !== "function" || item.opened === undefined) continue
+      var window = slot.QsWindow ? slot.QsWindow.window : null
+      var onFocused = !!window && !!window.screen && window.screen.name === focused
+      var rank = (item.opened === true ? 2 : 0) + (onFocused ? 1 : 0)
+      if (rank > bestRank) {
+        best = item
+        bestRank = rank
+      }
+    }
+    return best
+  }
+
+  function summonBarWidget(id) {
+    var item = findPanelWidget(id)
+    if (!item) return false
+    item.open()
+    return true
+  }
+
+  function hideBarWidget(id) {
+    var item = findPanelWidget(id)
+    if (!item) return false
+    item.close()
+    return true
+  }
+
+  function isBarWidgetOpen(id) {
+    var item = findPanelWidget(id)
+    return !!item && item.opened === true
+  }
+
   function showTooltip(target, text) {
     tooltipTarget = target
     tooltipText = String(text || "")
@@ -186,7 +226,7 @@ Item {
 
       function serviceFor(id) { return facade.serviceFor(id) }
       function firstPartyServiceFor(id) { return host ? host.firstPartyServiceFor(id) : null }
-      function summon(id, payloadJson) { return facade.summon(id, payloadJson) }
+      function summon(id, payloadJson) { return host.summon(id, payloadJson) }
       function hide(id) { return facade.hide(id) }
       function toggle(id, payloadJson) { return facade.toggle(id, payloadJson) }
       function isPluginOpen(id) { return facade.isPluginOpen(id) }
