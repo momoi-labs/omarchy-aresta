@@ -45,7 +45,6 @@ Item {
   property var focusOrder: []
   property var iconIndex: ({})
   property var targetScreen: null
-  property var pointerOrigin: null
 
   readonly property real naturalWidth: padding * 2 + apps.length * cell + Math.max(0, apps.length - 1) * gap
   readonly property real fit: targetScreen ? Math.min(1, (targetScreen.width - screenMargin * 2) / Math.max(1, naturalWidth)) : 1
@@ -121,7 +120,6 @@ Item {
       if (apps.length === 0) return
       targetScreen = screenForFocus()
       selected = delta > 0 ? Math.min(1, apps.length - 1) : apps.length - 1
-      pointerOrigin = null
       opened = true
       return
     }
@@ -163,12 +161,6 @@ Item {
   }
 
   function hover(x, y) {
-    if (!pointerOrigin) {
-      pointerOrigin = { x: x, y: y, moved: false }
-      return
-    }
-    if (!pointerOrigin.moved && pointerOrigin.x === x && pointerOrigin.y === y) return
-    pointerOrigin.moved = true
     var index = slotAt(x, y)
     if (index >= 0) selected = index
   }
