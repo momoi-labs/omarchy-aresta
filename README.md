@@ -17,7 +17,9 @@ It has:
   instead of a colored border.
 - Two Omarchy themes in macOS system colors: OSX Light and OSX Dark. Pick
   them in the Omarchy theme menu or with `omarchy-theme-set "osx light"`.
-  Each has an original gradient background and the Yaru blue icons.
+  Each has the Yaru blue icons and an original gradient background, which
+  is only the fallback: switching to an OSX theme keeps the wallpaper you
+  had before.
 
 It also adds macOS shortcuts on Super:
 
@@ -49,7 +51,9 @@ It links `hypr/omarchy-cupertino.lua` into `~/.config/hypr`, adds
 `~/.config/omarchy/plugins` and selects the Cupertino bar, after it copies
 `~/.config/omarchy/shell.json` to `$CUPERTINO_BACKUP_DIR/shell.json.orig`.
 It links `themes/osx-light` and `themes/osx-dark` into
-`~/.config/omarchy/themes`. Running it again changes nothing.
+`~/.config/omarchy/themes`, and links a `theme-set` hook into
+`~/.config/omarchy/hooks/theme-set.d` that keeps the current wallpaper on a
+switch to an OSX theme. Running it again changes nothing.
 
 Turn a workspace floating with Omarchy's workspace layout toggle to see the
 title bars.
@@ -61,8 +65,8 @@ title bars.
 ```
 
 It restores `shell.json` from the backup (or selects the default bar when
-the file changed since), removes the plugin link, the theme links, the
-`require` line and the Hyprland link, then reloads Hyprland.
+the file changed since), removes the plugin link, the theme links, the hook
+link, the `require` line and the Hyprland link, then reloads Hyprland.
 
 ## Credits
 

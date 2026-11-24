@@ -14,6 +14,9 @@ PLUGIN_ID="$(jq -r .id "$REPO/manifest.json")"
 PLUGIN_LINK="$HOME/.config/omarchy/plugins/$PLUGIN_ID"
 SHELL_CONFIG="$HOME/.config/omarchy/shell.json"
 THEMES_DIR="$HOME/.config/omarchy/themes"
+HOOK_SOURCE="$REPO/hooks/cupertino-wallpaper"
+HOOK_LINK="$HOME/.config/omarchy/hooks/theme-set.d/cupertino-wallpaper"
+LAST_THEME_FILE="$HOME/.local/state/omarchy/cupertino-last-theme"
 
 say() { echo -e "\e[32m==>\e[0m $*"; }
 fail() { echo -e "install.sh: $*" >&2; exit 1; }
@@ -79,5 +82,19 @@ for theme in "$REPO"/themes/*/; do
     ln -s "$theme" "$link"
   fi
 done
+
+if [[ -L $HOOK_LINK && $(readlink -f "$HOOK_LINK") == "$(readlink -f "$HOOK_SOURCE")" ]]; then
+  :
+elif [[ -e $HOOK_LINK || -L $HOOK_LINK ]]; then
+  fail "$HOOK_LINK already exists and is not a link to $HOOK_SOURCE"
+else
+  say "Linking $HOOK_LINK"
+  mkdir -p "$(dirname "$HOOK_LINK")"
+  ln -s "$HOOK_SOURCE" "$HOOK_LINK"
+fi
+
+if [[ ! -f $LAST_THEME_FILE && -f $HOME/.local/state/omarchy/current/theme.name ]]; then
+  cp "$HOME/.local/state/omarchy/current/theme.name" "$LAST_THEME_FILE"
+fi
 
 say "Done."

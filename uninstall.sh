@@ -14,6 +14,9 @@ PLUGIN_LINK="$HOME/.config/omarchy/plugins/$PLUGIN_ID"
 SHELL_CONFIG="$HOME/.config/omarchy/shell.json"
 SHELL_BACKUP="$BACKUP_DIR/shell.json.orig"
 THEMES_DIR="$HOME/.config/omarchy/themes"
+HOOK_SOURCE="$REPO/hooks/cupertino-wallpaper"
+HOOK_LINK="$HOME/.config/omarchy/hooks/theme-set.d/cupertino-wallpaper"
+LAST_THEME_FILE="$HOME/.local/state/omarchy/cupertino-last-theme"
 
 say() { echo -e "\e[32m==>\e[0m $*"; }
 
@@ -52,6 +55,12 @@ for theme in "$REPO"/themes/*/; do
     rm "$link"
   fi
 done
+
+if [[ -L $HOOK_LINK && $(readlink -f "$HOOK_LINK") == "$(readlink -f "$HOOK_SOURCE")" ]]; then
+  say "Removing $HOOK_LINK"
+  rm "$HOOK_LINK"
+fi
+rm -f "$LAST_THEME_FILE"
 
 say "Reloading Hyprland"
 hyprctl reload >/dev/null

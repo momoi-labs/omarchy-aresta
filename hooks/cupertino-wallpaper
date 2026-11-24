@@ -1,0 +1,20 @@
+#!/bin/bash
+
+THEME="$1"
+STATE="$HOME/.local/state/omarchy"
+LAST="$STATE/cupertino-last-theme"
+PREVIOUS=$(cat "$LAST" 2>/dev/null || true)
+printf '%s\n' "$THEME" >"$LAST"
+
+case $THEME in
+  osx-light | osx-dark) ;;
+  *) exit 0 ;;
+esac
+
+[[ -n $PREVIOUS && ${PREVIOUS##*/} == "$PREVIOUS" ]] || exit 0
+KEPT=$(cat "$STATE/theme-backgrounds/$PREVIOUS" 2>/dev/null || true)
+[[ -f $KEPT ]] || exit 0
+[[ $(readlink -f "$STATE/current/background") != "$KEPT" ]] || exit 0
+[[ $(cat "$STATE/current/theme.name" 2>/dev/null) == "$THEME" ]] || exit 0
+
+omarchy-theme-bg-set "$KEPT"
