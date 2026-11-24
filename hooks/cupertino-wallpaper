@@ -18,7 +18,10 @@ if [[ $PREVIOUS != osx-* && ${KEPT%/*} == "$STATE/current/theme/backgrounds" ]];
     [[ -f $DIR/backgrounds/${KEPT##*/} ]] && { KEPT="$DIR/backgrounds/${KEPT##*/}"; break; }
   done
 fi
-[[ -f $KEPT ]] || exit 0
+if [[ ! -f $KEPT ]]; then
+  KEPT="$STATE/current/theme/backgrounds/1-gradient.webp"
+  [[ -f $KEPT ]] || exit 0
+fi
 [[ $(readlink -f "$STATE/current/background") != "$KEPT" ]] || exit 0
 [[ $(cat "$STATE/current/theme.name" 2>/dev/null) == "$THEME" ]] || exit 0
 
