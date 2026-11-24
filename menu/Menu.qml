@@ -119,7 +119,7 @@ Item {
   // Bound to the central [menu] section in shell.toml via Commons.Color.qml.
   // Each color already includes its alpha companion (composed in the
   // singleton), so consumers can drop them straight into a Rectangle.
-  property color background: Util.alpha(Commons.Color.menu.background, Math.min(Commons.Color.menu.background.a, 0.86))
+  property color background: Commons.Color.menu.background
   property color foreground: Commons.Color.menu.text
   property color border: Util.alpha(Commons.Color.menu.text, 0.16)
   property color scrim: "transparent"
