@@ -82,6 +82,7 @@ Item {
       case "text": return textControl
       case "shortcut": return shortcutControl
       case "omarchy": return omarchyControl
+      case "segment": return segmentControl
       case "appearance": return appearanceControl
       case "theme": return themeControl
       }
@@ -179,6 +180,16 @@ Item {
       ui: row.ui
       labels: row.setting.keys
       locked: true
+    }
+  }
+
+  Component {
+    id: segmentControl
+    MacSegmented {
+      ui: row.ui
+      options: row.setting.options
+      value: row.revision >= 0 ? row.backend.text(row.setting.key) : ""
+      onPicked: value => row.backend.setText(row.setting.key, value)
     }
   }
 

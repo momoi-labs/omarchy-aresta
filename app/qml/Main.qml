@@ -29,6 +29,73 @@ Window {
     { value: "right", label: qsTr("Right") }
   ]
 
+  readonly property var desktopPositions: [
+    { value: "menus", label: qsTr("After the menus") },
+    { value: "center", label: qsTr("Center") },
+    { value: "status", label: qsTr("Before the status icons") }
+  ]
+
+  readonly property var desktopStyles: [
+    { value: "numbers", label: qsTr("Numbers") },
+    { value: "dots", label: qsTr("Dots") }
+  ]
+
+  readonly property var previewDesktops: [
+    { id: 1, occupied: true, current: false },
+    { id: 2, occupied: true, current: true },
+    { id: 3, occupied: false, current: false },
+    { id: 4, occupied: true, current: false },
+    { id: 5, occupied: false, current: false }
+  ]
+
+  component Desktops: Row {
+    id: desktops
+    required property Theme ui
+    required property color ink
+    property var items: []
+    property string style: "numbers"
+    property bool occupiedOnly: false
+    spacing: style === "dots" ? 7 : 3
+
+    Repeater {
+      model: desktops.items.filter(function(item) { return !desktops.occupiedOnly || item.occupied || item.current })
+
+      Item {
+        id: desktop
+        required property var modelData
+        width: desktops.style === "dots" ? (modelData.current ? 18 : 7) : 20
+        height: 18
+
+        Rectangle {
+          visible: desktops.style === "numbers" && desktop.modelData.current
+          anchors.fill: parent
+          radius: 5
+          color: desktops.ui.accent
+        }
+
+        Text {
+          visible: desktops.style === "numbers"
+          anchors.centerIn: parent
+          text: desktop.modelData.id
+          color: desktop.modelData.current ? desktops.ui.accentText : desktop.modelData.occupied ? desktops.ink : Qt.alpha(desktops.ink, 0.4)
+          font.family: desktops.ui.fontFamily
+          font.pixelSize: 12
+          font.weight: desktop.modelData.current ? Font.Bold : Font.Medium
+        }
+
+        Rectangle {
+          visible: desktops.style === "dots"
+          anchors.centerIn: parent
+          width: parent.width
+          height: 7
+          radius: 3.5
+          color: desktop.modelData.current ? desktops.ui.accent : desktop.modelData.occupied ? Qt.alpha(desktops.ink, 0.7) : "transparent"
+          border.width: desktop.modelData.current || desktop.modelData.occupied ? 0 : 1.2
+          border.color: Qt.alpha(desktops.ink, 0.6)
+        }
+      }
+    }
+  }
 
   readonly property string themeTitle: store.themeTitle(store.themeName)
 
@@ -71,6 +138,13 @@ Window {
       ], note: qsTr("Title bars show on floating workspaces.") }
     ] },
     { id: "menubar", name: qsTr("Menu Bar"), block: 1, groups: [
+      { title: qsTr("Desktops"), rows: [
+        { type: "bar", label: qsTr("Menu bar preview") },
+        { type: "toggle", key: "bar_desktops", label: qsTr("Show desktops in the menu bar"), hint: qsTr("Click a desktop to go there. Scroll over the row to move to the next one.") },
+        { type: "segment", key: "bar_desktops_position", label: qsTr("Position"), options: desktopPositions },
+        { type: "segment", key: "bar_desktops_style", label: qsTr("Style"), options: desktopStyles },
+        { type: "toggle", key: "bar_desktops_occupied_only", label: qsTr("Only desktops with windows"), hint: qsTr("The current desktop always shows") }
+      ], note: qsTr("Desktops are the Hyprland workspaces of this monitor. In the preview: desktop 2 is current, 1 and 4 have windows, 3 and 5 are empty.") },
       { rows: [
         { type: "slider", key: "bar_opacity", label: qsTr("Menu bar background opacity"), hint: qsTr("Uses your theme background color"), min: 0, max: 100, step: 5, unit: "%" }
       ] },
@@ -555,7 +629,8 @@ Window {
                     onTargetedChanged: if (targeted) Qt.callLater(window.reveal, rowLoader)
                     sourceComponent: group.sources ? null
                       : modelData.type === "colors" ? colorsRow
-                      : modelData.type === "wallpaper" ? wallpaperRow : settingRow
+                      : modelData.type === "wallpaper" ? wallpaperRow
+                      : modelData.type === "bar" ? barRow : settingRow
 
                     Component {
                       id: settingRow
@@ -957,6 +1032,160 @@ Window {
               id: buttonArea
               anchors.fill: parent
               onClicked: button.modelData.dialog.open()
+            }
+          }
+        }
+      }
+    }
+  }
+
+  Component {
+    id: barRow
+
+    Item {
+      id: preview
+      readonly property bool shown: store.revision >= 0 && store.flag("bar_desktops")
+      readonly property string position: store.revision >= 0 ? store.text("bar_desktops_position") : ""
+      readonly property string style: store.revision >= 0 ? store.text("bar_desktops_style") : ""
+      readonly property bool occupiedOnly: store.revision >= 0 && store.flag("bar_desktops_occupied_only")
+      readonly property color ink: look.text
+      implicitHeight: 174
+
+      Timer {
+        id: minute
+        property date now: new Date()
+        interval: 1000
+        running: true
+        repeat: true
+        onTriggered: now = new Date()
+      }
+
+      Rectangle {
+        x: 12
+        y: 12
+        width: parent.width - 24
+        height: 150
+        radius: 10
+        color: look.controlSoft
+        border.width: 1
+        border.color: look.separator
+        clip: true
+
+        Image {
+          anchors.fill: parent
+          anchors.margins: 1
+          source: window.fileUrl(store.currentWallpaper)
+          sourceSize.width: 1400
+          fillMode: Image.PreserveAspectCrop
+          asynchronous: true
+        }
+
+        Rectangle {
+          id: strip
+          x: 1
+          y: 1
+          width: parent.width - 2
+          height: 28
+          color: Qt.alpha(look.background, (store.revision >= 0 ? store.number("bar_opacity") : 80) / 100)
+
+          Row {
+            x: 12
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 14
+
+            Rectangle {
+              anchors.verticalCenter: parent.verticalCenter
+              width: 13
+              height: 13
+              radius: 3
+              color: "transparent"
+              border.width: 1.3
+              border.color: preview.ink
+            }
+
+            Repeater {
+              model: strip.width >= 560 ? [qsTr("Ghostty"), qsTr("File"), qsTr("Edit"), qsTr("View")] : [qsTr("Ghostty")]
+              Text {
+                required property string modelData
+                required property int index
+                anchors.verticalCenter: parent.verticalCenter
+                text: modelData
+                color: preview.ink
+                font.family: look.fontFamily
+                font.pixelSize: 12
+                font.weight: index === 0 ? Font.Bold : Font.Normal
+              }
+            }
+
+            Desktops {
+              visible: preview.shown && preview.position === "menus"
+              anchors.verticalCenter: parent.verticalCenter
+              ui: look
+              ink: preview.ink
+              items: window.previewDesktops
+              style: preview.style
+              occupiedOnly: preview.occupiedOnly
+            }
+          }
+
+          Desktops {
+            visible: preview.shown && preview.position === "center"
+            anchors.centerIn: parent
+            ui: look
+            ink: preview.ink
+            items: window.previewDesktops
+            style: preview.style
+            occupiedOnly: preview.occupiedOnly
+          }
+
+          Row {
+            anchors.right: parent.right
+            anchors.rightMargin: 12
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 16
+
+            Desktops {
+              visible: preview.shown && preview.position === "status"
+              anchors.verticalCenter: parent.verticalCenter
+              ui: look
+              ink: preview.ink
+              items: window.previewDesktops
+              style: preview.style
+              occupiedOnly: preview.occupiedOnly
+            }
+
+            Shape {
+              anchors.verticalCenter: parent.verticalCenter
+              width: 16
+              height: 12
+              preferredRendererType: Shape.CurveRenderer
+              ShapePath {
+                strokeColor: preview.ink
+                strokeWidth: 1.5
+                fillColor: "transparent"
+                capStyle: ShapePath.RoundCap
+                PathSvg { path: "M1 4.5 Q8 -1.5 15 4.5 M3.5 7 Q8 3.5 12.5 7 M6 9.5 Q8 8 10 9.5" }
+              }
+            }
+
+            Rectangle {
+              anchors.verticalCenter: parent.verticalCenter
+              width: 18
+              height: 9
+              radius: 2.5
+              color: "transparent"
+              border.width: 1.2
+              border.color: preview.ink
+
+              Rectangle { x: 2; y: 2; width: 10; height: 5; radius: 1; color: preview.ink }
+            }
+
+            Text {
+              anchors.verticalCenter: parent.verticalCenter
+              text: Qt.formatDateTime(minute.now, store.revision >= 0 ? store.text("clock_format") : "")
+              color: preview.ink
+              font.family: look.fontFamily
+              font.pixelSize: 12
             }
           }
         }

@@ -24,12 +24,14 @@ Item {
   readonly property string position: "top"
   readonly property bool vertical: false
   readonly property var settings: {
-    var values = { bar_height: 29, bar_opacity: 30, clock_format: "ddd d MMM  HH:mm", status_icon_scale: 120, status_item_width: 38 }
+    var values = { bar_height: 29, bar_opacity: 30, clock_format: "ddd d MMM  HH:mm", status_icon_scale: 120, status_item_width: 38, bar_desktops: false, bar_desktops_position: "menus", bar_desktops_style: "numbers", bar_desktops_occupied_only: false }
     var lines = settingsFile.text().split("\n")
     for (var i = 0; i < lines.length; i++) {
       var match = lines[i].match(/^\s*(\w+)\s*=\s*(.*?)\s*$/)
       if (!match || !(match[1] in values)) continue
-      if (typeof values[match[1]] === "string") {
+      if (typeof values[match[1]] === "boolean") {
+        if (match[2] === "true" || match[2] === "false") values[match[1]] = match[2] === "true"
+      } else if (typeof values[match[1]] === "string") {
         var text = match[2].match(/^"(.*)"$/)
         if (text) values[match[1]] = text[1]
       } else if (match[2] !== "" && !isNaN(Number(match[2]))) {
@@ -276,6 +278,116 @@ Item {
     interval: 400
   }
 
+  component Desktops: Row {
+    id: desktops
+
+    required property var screen
+    readonly property var monitor: screen ? Hyprland.monitorFor(screen) : Hyprland.focusedMonitor
+    readonly property string monitorName: monitor ? String(monitor.name || "") : ""
+    readonly property int activeId: monitor && monitor.activeWorkspace ? monitor.activeWorkspace.id : -1
+    readonly property int base: activeId > 0 ? Math.floor((activeId - 1) / 10) * 10 : 0
+    readonly property bool dots: root.settings.bar_desktops_style === "dots"
+    readonly property var items: {
+      var ids = [base + 1, base + 2, base + 3, base + 4, base + 5]
+      var occupied = {}
+      var values = Hyprland.workspaces.values
+      for (var i = 0; i < values.length; i++) {
+        var id = values[i].id
+        if (id <= base || id > base + 10) continue
+        occupied[id] = values[i].toplevels.values.length > 0
+        if (ids.indexOf(id) === -1) ids.push(id)
+      }
+      ids.sort(function(left, right) { return left - right })
+      var out = []
+      for (var j = 0; j < ids.length; j++) {
+        var item = { id: ids[j], slot: ids[j] - base, current: ids[j] === activeId, occupied: !!occupied[ids[j]] }
+        if (root.settings.bar_desktops_occupied_only && !item.occupied && !item.current) continue
+        out.push(item)
+      }
+      return out
+    }
+
+    property real wheelAccumulator: 0
+
+    function show(item) {
+      if (!item.current) root.run("hyprctl dispatch " + Util.shellQuote("o.workspaces.focus(" + item.slot + ", \"" + monitorName + "\")"))
+    }
+
+    function step(delta) {
+      var wheel = Util.wheelSteps(wheelAccumulator, delta)
+      wheelAccumulator = wheel.remainder
+      if (wheel.steps === 0) return
+      var index = -1
+      for (var i = 0; i < items.length; i++) if (items[i].current) index = i
+      if (index === -1) return
+      show(items[Math.max(0, Math.min(items.length - 1, index - wheel.steps))])
+    }
+
+    visible: root.settings.bar_desktops
+    spacing: dots ? 7 : 3
+    height: root.barSize
+
+    Connections {
+      target: Hyprland
+      function onRawEvent(event) {
+        var name = event ? String(event.name) : ""
+        if (name === "openwindow" || name === "closewindow" || name === "movewindowv2" || name === "workspacev2") Hyprland.refreshWorkspaces()
+      }
+    }
+
+    Repeater {
+      model: desktops.items
+
+      Item {
+        id: desktop
+
+        required property var modelData
+
+        width: desktops.dots ? (modelData.current ? 18 : 7) : 20
+        height: root.barSize
+
+        Rectangle {
+          visible: !desktops.dots && desktop.modelData.current
+          anchors.centerIn: parent
+          width: parent.width
+          height: 18
+          radius: 5
+          color: Commons.Color.accent
+        }
+
+        Text {
+          visible: !desktops.dots
+          anchors.centerIn: parent
+          text: desktop.modelData.slot === 10 ? "0" : desktop.modelData.slot
+          color: desktop.modelData.current || desktop.modelData.occupied ? root.foreground : Qt.alpha(root.foreground, 0.45)
+          font.family: root.fontFamily
+          font.pixelSize: 12
+          font.weight: desktop.modelData.current ? Font.Bold : Font.Medium
+        }
+
+        Rectangle {
+          visible: desktops.dots
+          anchors.centerIn: parent
+          width: parent.width
+          height: 7
+          radius: 3.5
+          color: desktop.modelData.current ? root.foreground : desktop.modelData.occupied ? Qt.alpha(root.foreground, 0.7) : "transparent"
+          border.width: desktop.modelData.current || desktop.modelData.occupied ? 0 : 1.2
+          border.color: Qt.alpha(root.foreground, 0.6)
+        }
+
+        MouseArea {
+          anchors.fill: parent
+          anchors.leftMargin: -2
+          anchors.rightMargin: -2
+          cursorShape: Qt.PointingHandCursor
+          onClicked: desktops.show(desktop.modelData)
+          onWheel: function(wheel) { desktops.step(wheel.angleDelta.y) }
+        }
+      }
+    }
+  }
+
   component WidgetSlot: Item {
     id: slot
 
@@ -372,6 +484,18 @@ Item {
             font.letterSpacing: 0.4
             font.weight: Font.Bold
           }
+
+          Desktops {
+            screen: barWindow.modelData
+            Layout.leftMargin: 6
+            visible: root.settings.bar_desktops && root.settings.bar_desktops_position === "menus"
+          }
+        }
+
+        Desktops {
+          anchors.centerIn: parent
+          screen: barWindow.modelData
+          visible: root.settings.bar_desktops && root.settings.bar_desktops_position === "center"
         }
 
         RowLayout {
@@ -379,6 +503,12 @@ Item {
           anchors.rightMargin: 5
           anchors.verticalCenter: parent.verticalCenter
           spacing: 0
+
+          Desktops {
+            screen: barWindow.modelData
+            Layout.rightMargin: 10
+            visible: root.settings.bar_desktops && root.settings.bar_desktops_position === "status"
+          }
 
           Repeater {
             model: ScriptModel { values: root.statusEntries.keys }

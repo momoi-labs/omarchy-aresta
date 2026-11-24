@@ -50,7 +50,9 @@ Open it from the app launcher. It has these sections:
   copies a picture into `~/.config/omarchy/backgrounds/<theme>`.
 - Desktop & Dock: grey traffic lights on unfocused windows, icons in the
   traffic lights on hover, and the window title alignment.
-- Menu Bar: the bar background opacity and the clock format.
+- Menu Bar: desktops in the bar (after the menus, in the center or before
+  the status icons, as numbers or dots), the bar background opacity and the
+  clock format.
 - Keyboard: record new shortcuts for the plugin's bindings. Omarchy's own
   bindings show as read-only.
 - Cupertino: options that macOS does not have, such as the corner radius and
