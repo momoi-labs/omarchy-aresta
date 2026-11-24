@@ -168,6 +168,11 @@ Window {
         { type: "shortcut", key: "shortcut_quake_move", label: qsTr("Move window to Quake console") }
       ] }
     ] },
+    { id: "spotlight", name: qsTr("Spotlight"), block: 2, groups: [
+      { rows: [
+        { type: "plugin", plugin: "dev.momoi-labs.omarchy-cupertino.menu", label: qsTr("Use Cupertino Spotlight"), hint: qsTr("Off brings back the Omarchy menu") }
+      ] }
+    ] },
     { id: "cupertino", name: qsTr("Cupertino"), block: 3, lead: qsTr("Options that macOS System Settings does not have."), groups: [
       { title: qsTr("Window Corners"), rows: [
         { type: "slider", key: "window_rounding", label: qsTr("Window corner radius"), min: 0, max: 24, step: 1, unit: "px" },

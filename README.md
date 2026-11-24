@@ -65,6 +65,7 @@ Open it from the app launcher. It has these sections:
   clock format.
 - Keyboard: record new shortcuts for the plugin's bindings. Omarchy's own
   bindings show as read-only.
+- Spotlight: turn Cupertino Spotlight off to get the Omarchy menu back.
 - Cupertino: options that macOS does not have, such as the corner radius and
   shape, the border, the shadow, the traffic light size and the bar size.
 

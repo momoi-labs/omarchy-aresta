@@ -13,6 +13,7 @@ Rectangle {
     desktop: { color: "#1d1d1f", stroke: "M4 3.5 H12 Q14 3.5 14 5.5 V10.5 Q14 12.5 12 12.5 H4 Q2 12.5 2 10.5 V5.5 Q2 3.5 4 3.5 Z", fill: "M5.4 9.2 H10.6 Q11.5 9.2 11.5 10.15 Q11.5 11.1 10.6 11.1 H5.4 Q4.5 11.1 4.5 10.15 Q4.5 9.2 5.4 9.2 Z" },
     menubar: { color: "#8e8e93", stroke: "M4 3.5 H12 Q14 3.5 14 5.5 V10.5 Q14 12.5 12 12.5 H4 Q2 12.5 2 10.5 V5.5 Q2 3.5 4 3.5 Z", fill: "M3.2 3.5 H12.8 Q14 3.5 14 4.7 V6.3 H2 V4.7 Q2 3.5 3.2 3.5 Z" },
     keyboard: { color: "#8e8e93", stroke: "M3.8 4 H12.2 Q14.2 4 14.2 6 V10 Q14.2 12 12.2 12 H3.8 Q1.8 12 1.8 10 V6 Q1.8 4 3.8 4 Z M4.5 6.8 H4.6 M7 6.8 H7.1 M9.5 6.8 H9.6 M11.8 6.8 H11.9 M5 9.6 H11", fill: "" },
+    spotlight: { color: "#8e8e93", stroke: "M7 3 A4 4 0 1 1 7 11 A4 4 0 1 1 7 3 M9.9 9.9 L13 13", fill: "" },
     cupertino: { color: "#0a7aff", stroke: "M6.6 3 H9.4 Q13 3 13 6.6 V9.4 Q13 13 9.4 13 H6.6 Q3 13 3 9.4 V6.6 Q3 3 6.6 3 Z M6 8 H10 M8 6 V10", fill: "" }
   })
   readonly property var shape: shapes[kind] || shapes.cupertino

@@ -130,6 +130,18 @@ pub mod qobject {
         #[qinvokable]
         #[cxx_name = "shortPath"]
         fn short_path(&self, path: &QString) -> QString;
+
+        #[qinvokable]
+        #[cxx_name = "pluginInstalled"]
+        fn plugin_installed(&self, id: &QString) -> bool;
+
+        #[qinvokable]
+        #[cxx_name = "pluginEnabled"]
+        fn plugin_enabled(&self, id: &QString) -> bool;
+
+        #[qinvokable]
+        #[cxx_name = "setPluginEnabled"]
+        fn set_plugin_enabled(self: Pin<&mut Self>, id: &QString, value: bool, fallback: &QString);
     }
 
     impl cxx_qt::Initialize for Backend {}
@@ -165,6 +177,7 @@ pub struct BackendRust {
     auto_next_dark: bool,
     auto_error: QString,
     modes: Vec<(String, bool)>,
+    plugins: Vec<String>,
     settings: Settings,
     settings_stamp: Option<SystemTime>,
     colors_stamp: Option<SystemTime>,
@@ -188,6 +201,7 @@ impl Default for BackendRust {
             auto_next_dark: false,
             auto_error: QString::default(),
             modes: Vec::new(),
+            plugins: Vec::new(),
             settings: Settings::load(),
             settings_stamp: modified(&Settings::path()),
             colors_stamp: None,
@@ -218,6 +232,24 @@ fn run_detached(mut command: Command, program: &str) -> Result<(), String> {
     Ok(())
 }
 
+fn enabled_plugins() -> Result<Vec<String>, String> {
+    let output = Command::new("omarchy-plugin-list")
+        .arg("--json")
+        .stdin(Stdio::null())
+        .stderr(Stdio::null())
+        .output()
+        .map_err(|error| format!("omarchy-plugin-list: {error}"))?;
+    let list: serde_json::Value = serde_json::from_slice(&output.stdout)
+        .map_err(|_| "Could not read the Omarchy plugin list".to_string())?;
+    Ok(list
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter(|plugin| plugin["enabled"].as_bool() == Some(true))
+        .filter_map(|plugin| plugin["id"].as_str().map(String::from))
+        .collect())
+}
+
 fn hyprctl_dispatch(expression: &str) -> Result<(), String> {
     spawn("hyprctl", &["dispatch", expression])
 }
@@ -231,6 +263,7 @@ impl cxx_qt::Initialize for qobject::Backend {
         self.as_mut().refresh_theme();
         self.as_mut().refresh_wallpaper();
         self.as_mut().refresh_auto();
+        self.as_mut().refresh_plugins();
     }
 }
 
@@ -287,6 +320,13 @@ impl qobject::Backend {
         self.as_mut()
             .set_auto_next_dark(field("next_dark") == "true");
         self.as_mut().set_auto_error(QString::from(&field("error")));
+    }
+
+    fn refresh_plugins(mut self: Pin<&mut Self>) {
+        match enabled_plugins() {
+            Ok(plugins) => self.as_mut().rust_mut().plugins = plugins,
+            Err(message) => self.as_mut().report(Err(message)),
+        }
     }
 
     fn slug_of(&self, key: &str) -> String {
@@ -609,5 +649,43 @@ impl qobject::Backend {
             .map(|rest| format!("~/{}", rest.display()))
             .unwrap_or_else(|_| path.display().to_string());
         QString::from(&shown)
+    }
+
+    pub fn plugin_installed(&self, id: &QString) -> bool {
+        theme::home()
+            .join(".config/omarchy/plugins")
+            .join(id.to_string())
+            .join("manifest.json")
+            .is_file()
+    }
+
+    pub fn plugin_enabled(&self, id: &QString) -> bool {
+        self.plugins.contains(&id.to_string())
+    }
+
+    pub fn set_plugin_enabled(
+        mut self: Pin<&mut Self>,
+        id: &QString,
+        value: bool,
+        fallback: &QString,
+    ) {
+        let (program, target) = match (value, fallback.is_empty()) {
+            (true, _) => ("omarchy-plugin-enable", id.to_string()),
+            (false, true) => ("omarchy-plugin-disable", id.to_string()),
+            (false, false) => ("omarchy-plugin-enable", fallback.to_string()),
+        };
+        let result = Command::new(program)
+            .arg(&target)
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .output()
+            .map_err(|error| format!("{program}: {error}"))
+            .and_then(|output| match output.status.success() {
+                true => Ok(()),
+                false => Err(String::from_utf8_lossy(&output.stderr).trim().to_string()),
+            });
+        self.as_mut().report(result);
+        self.as_mut().refresh_plugins();
+        self.bump();
     }
 }
