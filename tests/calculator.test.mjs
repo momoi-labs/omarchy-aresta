@@ -26,7 +26,7 @@ const cases = {
   "e*1": "2.71828182846",
 }
 
-const rejected = ["1+", "firefox", "42", "1/0", "0/0", "sqrt(-1)", "pi", "e", "(1+2", "1+2)", "sqrt 4", "2..3+1", "1+x", "", "-", "settings"]
+const rejected = ["1+", "firefox", "42", "-42", "+42", "1/0", "0/0", "sqrt(-1)", "pi", "e", "(1+2", "1+2)", "sqrt 4", "2..3+1", "1+x", "", "-", "settings"]
 
 test("evaluates full expressions", () => {
   for (const [query, result] of Object.entries(cases)) assert.equal(calc.evaluate(query), result, query)

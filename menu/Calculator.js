@@ -115,6 +115,7 @@ function format(value) {
 function evaluate(query) {
   var text = String(query || "").trim()
   if (!/[-+*\/^%×÷]|sqrt/i.test(text)) return ""
+  if (/^[-+]?\s*(\d+\.?\d*|\.\d+)$/.test(text)) return ""
   var tokens = tokenize(text)
   if (!tokens || tokens.length === 0) return ""
   var value
