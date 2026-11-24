@@ -151,18 +151,18 @@ pub fn run() -> Result<(), String> {
     let Some(Value::Text(slug)) = settings.get(key) else {
         return Ok(());
     };
+    if theme::current_name() != *slug {
+        if matches!(settings.get("wallpaper_keep"), Some(Value::Flag(true))) {
+            wallpaper::pin(slug);
+        }
+        let status = theme::set_command(slug)
+            .stdin(Stdio::null())
+            .status()
+            .map_err(|error| format!("omarchy-theme-set: {error}"))?;
+        if !status.success() {
+            return Err(format!("omarchy-theme-set: {status}"));
+        }
+    }
     fs::write(transition_path(), format!("{}\n", plan.current.at))
-        .map_err(|error| format!("{}: {error}", transition_path().display()))?;
-    if theme::current_name() == *slug {
-        return Ok(());
-    }
-    let keep = matches!(settings.get("wallpaper_keep"), Some(Value::Flag(true)));
-    if keep {
-        wallpaper::pin(slug);
-    }
-    theme::set_command(slug)
-        .stdin(Stdio::null())
-        .status()
-        .map_err(|error| format!("omarchy-theme-set: {error}"))?;
-    Ok(())
+        .map_err(|error| format!("{}: {error}", transition_path().display()))
 }
