@@ -14,10 +14,15 @@ local BUTTON_SIZE = 14
 
 hl.config({
   general = {
-    border_size = 0,
+    border_size = 1,
+    col = {
+      active_border = "rgba(ffffff33)",
+      inactive_border = "rgba(ffffff1a)",
+    },
   },
   decoration = {
-    rounding = 10,
+    rounding = 16,
+    rounding_power = 3.4,
     shadow = {
       enabled = true,
       range = 28,

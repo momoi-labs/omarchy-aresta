@@ -8,7 +8,8 @@ This first version styles windows:
   minimize and maximize on the left, grey when the window is unfocused, icons
   on hover, and the title centered.
 - Tiled windows get no title bar.
-- Every window gets rounded corners, a soft shadow and no colored border.
+- Every window gets rounded corners, a soft shadow and a thin neutral outline
+  instead of a colored border.
 
 ## Install
 
