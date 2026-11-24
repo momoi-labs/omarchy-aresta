@@ -97,18 +97,20 @@ if settings.corners_enabled then
   })
 end
 
-hl.config({
-  decoration = {
-    shadow = {
-      enabled = settings.shadow_enabled,
-      range = math.floor(settings.shadow_range),
-      render_power = 3,
-      offset = "0 " .. math.floor(settings.shadow_offset),
-      color = "rgba(000000" .. alpha(settings.shadow_active_opacity) .. ")",
-      color_inactive = "rgba(000000" .. alpha(settings.shadow_inactive_opacity) .. ")",
+if settings.shadow_enabled then
+  hl.config({
+    decoration = {
+      shadow = {
+        enabled = true,
+        range = math.floor(settings.shadow_range),
+        render_power = 3,
+        offset = "0 " .. math.floor(settings.shadow_offset),
+        color = "rgba(000000" .. alpha(settings.shadow_active_opacity) .. ")",
+        color_inactive = "rgba(000000" .. alpha(settings.shadow_inactive_opacity) .. ")",
+      },
     },
-  },
-})
+  })
+end
 
 local MINIMIZED = "special:minimized"
 
