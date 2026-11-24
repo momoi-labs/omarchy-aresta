@@ -219,7 +219,7 @@ Item {
   // Uses panel.cardTop rather than effectiveCardTop: the centered top is
   // derived from the card height, which this value feeds.
   function availableRowsHeight() {
-    var top = panel.cardTop >= 0 ? panel.cardTop : Style.gapsOut
+    var top = panel.cardTop >= 0 ? panel.cardTop : (root.dmenuActive ? Style.gapsOut : panel.centeredTop)
     var available = panel.height - top - Style.gapsOut - root.chromeHeight
     // The starting menu sets the ceiling along with the offset: drilling into
     // a longer submenu scrolls behind the fold instead of growing the card.
@@ -784,6 +784,10 @@ Item {
         for (var d = 0; d < drilldownRows.length; d++) drilldownRows[d].section = "drilldown"
       }
       rows = currentRows.concat(drilldownRows)
+      var appRows = rows.filter(function(r) { return r.kind === "app" })
+      for (var a = 0; a < appRows.length; a++) appRows[a].section = ""
+      rows = appRows.concat(rows.filter(function(r) { return r.kind !== "app" }))
+      root.searchDivider = rows.some(function(r) { return r.section === "drilldown" })
     } else {
       for (var j = 0; j < root.itemOrder.length; j++) {
         var child = root.item(root.itemOrder[j])
