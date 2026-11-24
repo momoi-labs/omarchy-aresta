@@ -17,7 +17,9 @@ It has:
   instead of a colored border.
 - The Omarchy menu drawn as macOS Spotlight. Super+Space, the bar's menu
   button and `omarchy-menu` open one search field that ranks apps first,
-  then menu rows with their path. A submenu shows as a chip in the field,
+  then menu rows with their path. A math expression such as `2^10` or
+  `sqrt(2)*pi` shows its result first, and Enter copies it. A submenu shows
+  as a chip in the field,
   and Backspace on an empty field goes back. A row of filter buttons above
   the results opens Apps, as an icon grid, or a menu section. Ctrl+1 to
   Ctrl+9 pick a filter, because Super+1 to Super+9 switch workspaces. Scripts

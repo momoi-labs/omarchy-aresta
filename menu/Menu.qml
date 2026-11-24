@@ -6,6 +6,7 @@ import qs.Commons
 import qs.Commons as Commons
 import qs.Ui
 import "MenuModel.js" as MenuModel
+import "Calculator.js" as Calculator
 
 Item {
   id: root
@@ -134,6 +135,7 @@ Item {
   readonly property int chromeHeight: headerHeight + filterBarHeight + footerHeight + 2 + (mode === "input" ? 0 : contentMargin * 2)
   property int baseRowHeight: Math.max(Style.space(32), Style.font.heading + Style.spacing.rowPaddingX)
   property int detailRowHeight: Math.max(Style.space(46), Style.font.body + Style.font.caption + Style.spacing.rowPaddingX * 2)
+  readonly property int calcRowHeight: Math.max(Style.space(64), Style.font.body + Style.font.displayLarge + Style.spacing.rowPaddingX * 2)
   // How much of the first hidden row stays visible at the fold — enough to
   // read as a cut-off row rather than a bottom border.
   property int rowPeek: Math.round(baseRowHeight * 0.55)
@@ -256,7 +258,7 @@ Item {
       var row = displayModel.get(i)
       if (i > 0) total += root.rowSpacing
       if (row.section === "drilldown" && previousSection !== "drilldown") total += root.dividerHeight
-      total += root.rowHeightForDetail(row.detail)
+      total += row.kind === "calc" ? root.calcRowHeight : root.rowHeightForDetail(row.detail)
       previousSection = row.section
       totals.push(total)
     }
@@ -788,6 +790,14 @@ Item {
       for (var a = 0; a < appRows.length; a++) appRows[a].section = ""
       rows = appRows.concat(rows.filter(function(r) { return r.kind !== "app" }))
       root.searchDivider = rows.some(function(r) { return r.section === "drilldown" })
+      var result = active === "root" ? Calculator.evaluate(query) : ""
+      if (result) {
+        rows.unshift({
+          itemId: "calculator", disabled: false, kind: "calc", icon: "󰃬", iconFont: "",
+          appIcon: "", appId: "", label: query, target: "", detail: "= " + result, path: "",
+          childCount: 0, action: result, provider: "", score: -1, section: ""
+        })
+      }
     } else {
       for (var j = 0; j < root.itemOrder.length; j++) {
         var child = root.item(root.itemOrder[j])
@@ -942,7 +952,12 @@ Item {
     if (!root.rowSelectable(index)) return
 
     var row = displayModel.get(index)
-    if (row.kind === "menu" || row.kind === "link") {
+    if (row.kind === "calc") {
+      root.applySerial = root.requestSerial
+      root.opened = false
+      root.filterText = ""
+      Util.execArgv(["wl-copy", "--", row.action])
+    } else if (row.kind === "menu" || row.kind === "link") {
       root.setActiveMenu(row.target || row.itemId, true, fromPointer)
     } else if (row.kind === "app") {
       var appId = row.appId
@@ -1684,11 +1699,12 @@ Item {
 
                 readonly property bool hasCursor: root.cursorActive && row.index === root.selectedIndex
                 readonly property bool isApp: row.kind === "app"
+                readonly property bool isCalc: row.kind === "calc"
                 readonly property bool hasIcon: row.icon.length > 0 || row.isApp
-                readonly property bool inlineDetail: !root.dmenuActive && root.filterText.length > 0 && row.detail.length > 0
+                readonly property bool inlineDetail: !root.dmenuActive && !row.isCalc && root.filterText.length > 0 && row.detail.length > 0
 
                 width: ListView.view.width
-                height: root.rowHeightForDetail(row.detail)
+                height: row.isCalc ? root.calcRowHeight : root.rowHeightForDetail(row.detail)
                 // Faded: the row is here to say the software is already
                 // installed, not to be picked.
                 opacity: row.disabled ? 0.4 : 1
@@ -1702,13 +1718,13 @@ Item {
                   text: row.icon
                   color: row.hasCursor ? root.selectedText : root.foreground
                   font.family: row.iconFont.length > 0 ? row.iconFont : root.fontFamily
-                  font.pixelSize: Style.font.heading
-                  width: Style.space(28)
+                  font.pixelSize: row.isCalc ? Style.font.displayLarge : Style.font.heading
+                  width: Style.space(row.isCalc ? 40 : 28)
                   horizontalAlignment: Text.AlignHCenter
                   verticalAlignment: Text.AlignVCenter
                   anchors.left: parent.left
                   anchors.leftMargin: Style.space(6)
-                  y: contentColumn.y + labelText.y + (labelText.height - height) / 2
+                  y: row.isCalc ? (row.height - height) / 2 : contentColumn.y + labelText.y + (labelText.height - height) / 2
                 }
 
                 Image {
@@ -1743,8 +1759,20 @@ Item {
                     width: parent.width
                     text: row.label
                     color: row.hasCursor ? root.selectedText : root.foreground
+                    opacity: row.isCalc ? 0.6 : 1
                     font.family: root.fontFamily
-                    font.pixelSize: Style.font.title
+                    font.pixelSize: row.isCalc ? Style.font.body : Style.font.title
+                    elide: Text.ElideRight
+                  }
+
+                  Text {
+                    textFormat: Text.PlainText
+                    width: parent.width
+                    text: row.detail
+                    visible: row.isCalc
+                    color: row.hasCursor ? root.selectedText : root.foreground
+                    font.family: root.fontFamily
+                    font.pixelSize: Style.font.displayLarge
                     elide: Text.ElideRight
                   }
 
@@ -1964,7 +1992,7 @@ Item {
                 { show: !root.dmenuActive, text: "⌃1–9 filter" },
                 { show: !root.dmenuActive && root.activeMenu !== "root" && !root.filterText, text: "⌫ back" },
                 { show: true, text: "esc " + (root.filterText ? "clear" : "close") },
-                { show: root.dmenuActive || !!footerRow.current, text: "↵ " + (root.dmenuActive ? "select" : (footerRow.current && footerRow.current.kind === "action" ? "run" : "open")) }
+                { show: root.dmenuActive || !!footerRow.current, text: "↵ " + (root.dmenuActive ? "select" : (footerRow.current && footerRow.current.kind === "action" ? "run" : (footerRow.current && footerRow.current.kind === "calc" ? "copy" : "open"))) }
               ]
 
               delegate: Text {
