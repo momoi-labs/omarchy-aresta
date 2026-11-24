@@ -21,9 +21,8 @@ It also adds macOS shortcuts on Super:
 - Super+Q quits the app: it closes every window of the focused window's class,
   on all workspaces. Super+W still closes only the window.
 - Super+M minimizes the window to the dock (Omarchy's binding, unchanged).
-- Super+H hides the app: every window of its class moves to `special:hidden`.
-- Super+` cycles between windows of the same app, skipping minimized and
-  hidden ones.
+- Super+` cycles between windows of the same app, skipping minimized
+  windows.
 - The Quake console moves from Super+` to Super+Alt+`.
 
 ## Install
