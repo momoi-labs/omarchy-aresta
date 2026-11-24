@@ -14,6 +14,8 @@ PLUGIN_ID="$(jq -r .id "$REPO/manifest.json")"
 PLUGIN_LINK="$HOME/.config/omarchy/plugins/$PLUGIN_ID"
 MENU_ID="$(jq -r .id "$REPO/menu/manifest.json")"
 MENU_LINK="$HOME/.config/omarchy/plugins/$MENU_ID"
+SWITCHER_ID="$(jq -r .id "$REPO/switcher/manifest.json")"
+SWITCHER_LINK="$HOME/.config/omarchy/plugins/$SWITCHER_ID"
 SHELL_CONFIG="$HOME/.config/omarchy/shell.json"
 THEMES_DIR="$HOME/.config/omarchy/themes"
 HOOK_SOURCE="$REPO/hooks/cupertino-wallpaper"
@@ -81,6 +83,21 @@ fi
 if ! omarchy-plugin-list | grep -qE "^$MENU_ID +enabled "; then
   say "Enabling the Spotlight menu"
   omarchy-plugin-enable "$MENU_ID" >/dev/null
+fi
+
+if [[ -L $SWITCHER_LINK && $(readlink -f "$SWITCHER_LINK") == "$REPO/switcher" ]]; then
+  :
+elif [[ -e $SWITCHER_LINK || -L $SWITCHER_LINK ]]; then
+  fail "$SWITCHER_LINK already exists and is not a link to $REPO/switcher"
+else
+  say "Linking $SWITCHER_LINK"
+  ln -s "$REPO/switcher" "$SWITCHER_LINK"
+  omarchy-shell shell rescanPlugins >/dev/null
+fi
+
+if ! omarchy-plugin-list | grep -qE "^$SWITCHER_ID +enabled "; then
+  say "Enabling the app switcher"
+  omarchy-plugin-enable "$SWITCHER_ID" >/dev/null
 fi
 
 if [[ $(jq -r '.bar.id // ""' "$SHELL_CONFIG" 2>/dev/null) != "$PLUGIN_ID" ]]; then

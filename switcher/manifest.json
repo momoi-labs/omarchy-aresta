@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "dev.momoi-labs.omarchy-cupertino.switcher",
+  "name": "Cupertino App Switcher",
+  "version": "0.1.0",
+  "author": "Sebastian Webber",
+  "description": "A Cmd+Tab style app switcher",
+  "kinds": [
+    "service"
+  ],
+  "entryPoints": {
+    "service": "Switcher.qml"
+  }
+}

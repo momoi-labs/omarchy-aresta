@@ -21,6 +21,13 @@ pub struct Entry {
 fn defaults() -> Vec<Entry> {
     use Value::{Flag, List, Number, Text};
     let hyprland = [
+        ("corners_enabled", Flag(true)),
+        ("border_enabled", Flag(true)),
+        ("traffic_lights_enabled", Flag(true)),
+        ("switcher_enabled", Flag(true)),
+        ("quit_enabled", Flag(true)),
+        ("cycle_enabled", Flag(true)),
+        ("quake_enabled", Flag(true)),
         ("window_rounding", Number(16.0)),
         ("window_rounding_power", Number(3.4)),
         ("border_size", Number(1.0)),

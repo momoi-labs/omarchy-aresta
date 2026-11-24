@@ -13,6 +13,8 @@ PLUGIN_ID="$(jq -r .id "$REPO/manifest.json")"
 PLUGIN_LINK="$HOME/.config/omarchy/plugins/$PLUGIN_ID"
 MENU_ID="$(jq -r .id "$REPO/menu/manifest.json")"
 MENU_LINK="$HOME/.config/omarchy/plugins/$MENU_ID"
+SWITCHER_ID="$(jq -r .id "$REPO/switcher/manifest.json")"
+SWITCHER_LINK="$HOME/.config/omarchy/plugins/$SWITCHER_ID"
 SHELL_CONFIG="$HOME/.config/omarchy/shell.json"
 SHELL_BACKUP="$BACKUP_DIR/shell.json.orig"
 THEMES_DIR="$HOME/.config/omarchy/themes"
@@ -44,6 +46,12 @@ fi
 if [[ -L $MENU_LINK && $(readlink -f "$MENU_LINK") == "$REPO/menu" ]]; then
   say "Removing $MENU_LINK"
   rm "$MENU_LINK"
+  omarchy-shell shell rescanPlugins >/dev/null
+fi
+
+if [[ -L $SWITCHER_LINK && $(readlink -f "$SWITCHER_LINK") == "$REPO/switcher" ]]; then
+  say "Removing $SWITCHER_LINK"
+  rm "$SWITCHER_LINK"
   omarchy-shell shell rescanPlugins >/dev/null
 fi
 

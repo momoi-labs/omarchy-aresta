@@ -4,13 +4,11 @@
   "name": "Cupertino",
   "version": "0.1.0",
   "author": "Sebastian Webber",
-  "description": "macOS look for Omarchy: a Mac-style top bar, a Cmd+Tab style app switcher, traffic-light title bars on floating workspaces, rounded corners and soft shadows on every window",
+  "description": "macOS look for Omarchy: a Mac-style top bar, traffic-light title bars on floating workspaces, rounded corners and soft shadows on every window",
   "kinds": [
-    "bar",
-    "service"
+    "bar"
   ],
   "entryPoints": {
-    "bar": "bar/Bar.qml",
-    "service": "switcher/Switcher.qml"
+    "bar": "bar/Bar.qml"
   }
 }

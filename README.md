@@ -37,7 +37,8 @@ It also adds macOS shortcuts on Super:
   Super to switch, click an icon to switch at once, or press Esc to cancel.
   Switching to a minimized app brings its window back.
   It replaces Omarchy's next and previous workspace bindings on Super+Tab and
-  Super+Shift+Tab, and runs while the Cupertino bar is selected.
+  Super+Shift+Tab. It is its own shell plugin, so it keeps working when you
+  switch back to the Omarchy bar.
 - Super+Q quits the app: it closes every window of the focused window's class,
   on all workspaces. Super+W still closes only the window.
 - Super+M minimizes the window to the dock (Omarchy's binding, unchanged).
@@ -58,16 +59,24 @@ Open it from the app launcher. It has these sections:
   changes, and the pictures of the theme, of
   `~/.config/omarchy/backgrounds/<theme>` and of folders you add. Add Photo
   copies a picture into `~/.config/omarchy/backgrounds/<theme>`.
-- Desktop & Dock: grey traffic lights on unfocused windows, icons in the
-  traffic lights on hover, and the window title alignment.
-- Menu Bar: desktops in the bar (after the menus, in the center or before
-  the status icons, as numbers or dots), the bar background opacity and the
-  clock format.
-- Keyboard: record new shortcuts for the plugin's bindings. Omarchy's own
+- Desktop & Dock: traffic lights on title bars, grey traffic lights on
+  unfocused windows, icons in the traffic lights on hover, and the window
+  title alignment.
+- Menu Bar: the Cupertino menu bar itself, desktops in the bar (after the
+  menus, in the center or before the status icons, as numbers or dots), the
+  bar background opacity and the clock format.
+- Keyboard: turn Quit app, Cycle windows, the app switcher and the Quake
+  console keys on or off, and record new shortcuts for them. Omarchy's own
   bindings show as read-only.
 - Spotlight: turn Cupertino Spotlight off to get the Omarchy menu back.
-- Cupertino: options that macOS does not have, such as the corner radius and
-  shape, the border, the shadow, the traffic light size and the bar size.
+- Cupertino: options that macOS does not have, such as rounded corners and
+  their radius and shape, the thin border, the shadow, the traffic light size
+  and the bar size.
+
+Each part of the plugin has a switch. Turning one off gives back Omarchy's own
+behavior: the Omarchy bar, title bar buttons, square corners, colored border,
+menu, or its Super+Q, Super+`, Super+Shift+`, Super+Tab and Super+Shift+Tab
+bindings.
 
 Changes apply at once. The app saves them to
 `~/.config/omarchy-cupertino/settings.toml`, which the Hyprland config and the
@@ -93,8 +102,9 @@ It links `hypr/omarchy-cupertino.lua` into `~/.config/hypr`, adds
 (default `/tmp/omarchy-cupertino`). It also links the repository into
 `~/.config/omarchy/plugins` and selects the Cupertino bar, after it copies
 `~/.config/omarchy/shell.json` to `$CUPERTINO_BACKUP_DIR/shell.json.orig`.
-It links `menu/` into `~/.config/omarchy/plugins` and enables it, which
-turns off the Omarchy menu.
+It links `switcher/` into `~/.config/omarchy/plugins` and enables it. It
+links `menu/` into `~/.config/omarchy/plugins` and enables it, which turns off
+the Omarchy menu.
 It links `themes/osx-light` and `themes/osx-dark` into
 `~/.config/omarchy/themes`, and links a `theme-set` hook into
 `~/.config/omarchy/hooks/theme-set.d` that keeps the current wallpaper on a
