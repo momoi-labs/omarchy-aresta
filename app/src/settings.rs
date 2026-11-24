@@ -2,6 +2,8 @@ use std::fs;
 use std::io;
 use std::path::PathBuf;
 
+use crate::keys;
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     Number(f64),
@@ -128,10 +130,11 @@ impl Settings {
     }
 
     pub fn shortcut_in_use(&self, binding: &str, except: &str) -> bool {
+        let binding = keys::normalize(binding);
         self.entries.iter().any(|entry| {
             entry.key.starts_with("shortcut_")
                 && entry.key != except
-                && entry.value == Value::Text(binding.into())
+                && matches!(&entry.value, Value::Text(text) if keys::normalize(text) == binding)
         })
     }
 

@@ -81,3 +81,19 @@ pub fn binding(modifiers: u32, keycode: i32) -> Option<String> {
     parts.push(format!("code:{keycode}"));
     Some(parts.join(" + "))
 }
+
+pub fn normalize(binding: &str) -> String {
+    binding
+        .split('+')
+        .map(str::trim)
+        .map(|part| {
+            if MODIFIERS.iter().any(|(name, _, _)| *name == part) {
+                return part.to_string();
+            }
+            (9..=119)
+                .find(|code| keycode_label(*code).eq_ignore_ascii_case(part))
+                .map_or_else(|| part.to_string(), |code| format!("code:{code}"))
+        })
+        .collect::<Vec<_>>()
+        .join(" + ")
+}

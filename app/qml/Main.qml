@@ -171,10 +171,10 @@ Window {
   onActiveChanged: if (!active) store.stopRecording()
   Component.onDestruction: store.stopRecording()
 
-  Shortcut { sequences: [StandardKey.Find]; onActivated: search.forceActiveFocus() }
-  Shortcut { sequences: [StandardKey.Quit, StandardKey.Close]; onActivated: Qt.quit() }
-  Shortcut { sequence: "Alt+Left"; onActivated: window.goBack() }
-  Shortcut { sequence: "Alt+Right"; onActivated: window.goForward() }
+  Shortcut { enabled: store.recording === ""; sequences: [StandardKey.Find]; onActivated: search.forceActiveFocus() }
+  Shortcut { enabled: store.recording === ""; sequences: [StandardKey.Quit, StandardKey.Close]; onActivated: Qt.quit() }
+  Shortcut { enabled: store.recording === ""; sequence: "Alt+Left"; onActivated: window.goBack() }
+  Shortcut { enabled: store.recording === ""; sequence: "Alt+Right"; onActivated: window.goForward() }
 
   Item {
     id: recorder

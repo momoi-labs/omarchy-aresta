@@ -153,17 +153,18 @@ local MODIFIER_KEYS = {
   ALT = { codes = { [64] = true, [108] = true }, names = { "Alt_L", "Alt_R" } },
   CTRL = { codes = { [37] = true, [105] = true }, names = { "Control_L", "Control_R" } },
 }
-local HOLD = MODIFIER_KEYS[settings.shortcut_switcher_next:match("^(%u+) %+")] or MODIFIER_KEYS.SUPER
-local switcher = { open = false }
+local switcher = { open = false, hold = MODIFIER_KEYS.SUPER }
 
 local function emit(name)
   hl.dispatch(hl.dsp.global("omarchy-cupertino:" .. name))
 end
 
-local function switcher_step(name)
+local function switcher_step(name, key)
+  local hold = MODIFIER_KEYS[settings[key]:match("^(%u+) %+")] or MODIFIER_KEYS.SUPER
   return function()
     if not switcher.open then
       switcher.open = true
+      switcher.hold = hold
       hl.dispatch(hl.dsp.submap(SWITCHER))
     end
     emit(name)
@@ -202,10 +203,10 @@ package.loaded["omarchy-cupertino.switcher"] = switcher
 
 hl.define_submap(SWITCHER, function()
   if settings.shortcut_switcher_next ~= "" then
-    hl.bind(settings.shortcut_switcher_next, switcher_step("next"), { repeating = true })
+    hl.bind(settings.shortcut_switcher_next, switcher_step("next", "shortcut_switcher_next"), { repeating = true })
   end
   if settings.shortcut_switcher_previous ~= "" then
-    hl.bind(settings.shortcut_switcher_previous, switcher_step("previous"), { repeating = true })
+    hl.bind(settings.shortcut_switcher_previous, switcher_step("previous", "shortcut_switcher_previous"), { repeating = true })
   end
   hl.bind("code:9", function() switcher_finish("cancel") end, { ignore_mods = true })
 end)
@@ -215,11 +216,11 @@ hl.define_submap(RECORDER, function()
 end)
 
 hl.on("input.keyboard.key", function(keycode, _, value)
-  if not switcher.open or value ~= 0 or not HOLD.codes[keycode] then
+  if not switcher.open or value ~= 0 or not switcher.hold.codes[keycode] then
     return
   end
   hl.timer(function()
-    if not hl.is_key_down(HOLD.names[1]) and not hl.is_key_down(HOLD.names[2]) then
+    if not hl.is_key_down(switcher.hold.names[1]) and not hl.is_key_down(switcher.hold.names[2]) then
       switcher_finish("commit")
     end
   end, { timeout = 1, type = "oneshot" })
@@ -229,8 +230,8 @@ hl.layer_rule({ match = { namespace = "^" .. SWITCHER .. "$" }, no_anim = true, 
 
 hl.unbind("SUPER + TAB")
 hl.unbind("SUPER + SHIFT + TAB")
-bind("shortcut_switcher_next", "Switch apps", switcher_step("next"), { repeating = true })
-bind("shortcut_switcher_previous", "Switch apps backwards", switcher_step("previous"), { repeating = true })
+bind("shortcut_switcher_next", "Switch apps", switcher_step("next", "shortcut_switcher_next"), { repeating = true })
+bind("shortcut_switcher_previous", "Switch apps backwards", switcher_step("previous", "shortcut_switcher_previous"), { repeating = true })
 
 hl.unbind("SUPER + Q")
 hl.unbind("SUPER + grave")
