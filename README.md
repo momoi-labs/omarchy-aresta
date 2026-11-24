@@ -18,6 +18,12 @@ It has:
 
 It also adds macOS shortcuts on Super:
 
+- Super+Tab opens an app switcher like Cmd+Tab: one icon per app in
+  most-recently-used order, in a rounded strip in the middle of the screen.
+  Hold Super, press Tab or Shift+Tab to move, release Super to switch, or
+  press Esc to cancel. Switching to a minimized app brings its window back.
+  It replaces Omarchy's next and previous workspace bindings on Super+Tab and
+  Super+Shift+Tab, and runs while the Cupertino bar is selected.
 - Super+Q quits the app: it closes every window of the focused window's class,
   on all workspaces. Super+W still closes only the window.
 - Super+M minimizes the window to the dock (Omarchy's binding, unchanged).
@@ -57,4 +63,5 @@ Hyprland link, then reloads Hyprland.
 
 The title bar code is based on the
 [macOS Dock plugin](https://github.com/rafabertholdo/omarchy-macos) by Rafael Bertholdo
+(MIT). The app switcher is based on Renan Tonheiro's Switch Magic plugin
 (MIT). See `LICENSE`.
