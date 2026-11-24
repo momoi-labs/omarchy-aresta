@@ -34,6 +34,67 @@ hl.config({
   },
 })
 
+local MINIMIZED = "special:minimized"
+
+local function target(window)
+  return "address:" .. tostring(window.address)
+end
+
+local function app_windows(class, visible_only)
+  local windows = {}
+  for _, window in ipairs(hl.get_windows()) do
+    local workspace = window.workspace and window.workspace.name
+    if window.class == class and window.mapped
+        and not (visible_only and workspace == MINIMIZED) then
+      windows[#windows + 1] = window
+    end
+  end
+  return windows
+end
+
+local apps = {}
+
+function apps.quit()
+  local active = hl.get_active_window()
+  if not active then
+    return
+  end
+  for _, window in ipairs(app_windows(active.class)) do
+    hl.dispatch(hl.dsp.window.close({ window = target(window) }))
+  end
+end
+
+function apps.cycle()
+  local active = hl.get_active_window()
+  if not active then
+    return
+  end
+  local windows = app_windows(active.class, true)
+  if #windows < 2 then
+    return
+  end
+  table.sort(windows, function(a, b)
+    return tostring(a.address) < tostring(b.address)
+  end)
+  for index, window in ipairs(windows) do
+    if tostring(window.address) == tostring(active.address) then
+      local next_window = windows[index % #windows + 1]
+      hl.dispatch(hl.dsp.focus({ window = target(next_window) }))
+      return
+    end
+  end
+end
+
+package.loaded["omarchy-cupertino.apps"] = apps
+
+hl.unbind("SUPER + Q")
+hl.unbind("SUPER + grave")
+hl.unbind("SUPER + SHIFT + grave")
+o.bind("SUPER + Q", "Quit app (close all its windows)", apps.quit)
+o.bind("SUPER + code:49", "Cycle windows of the same app", apps.cycle)
+o.bind("SUPER + ALT + code:49", "Toggle Quake console", hl.dsp.workspace.toggle_special("qconsole"))
+o.bind("SUPER + SHIFT + code:49", "Move window to Quake console", hl.dsp.window.move({ workspace = "special:qconsole", follow = false }))
+
 if package.loaded["hypr.titlebars"] then
   return
 end

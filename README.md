@@ -16,6 +16,15 @@ It has:
 - Every window gets rounded corners, a soft shadow and a thin neutral outline
   instead of a colored border.
 
+It also adds macOS shortcuts on Super:
+
+- Super+Q quits the app: it closes every window of the focused window's class,
+  on all workspaces. Super+W still closes only the window.
+- Super+M minimizes the window to the dock (Omarchy's binding, unchanged).
+- Super+` cycles between windows of the same app, skipping minimized
+  windows.
+- The Quake console moves from Super+` to Super+Alt+`.
+
 ## Install
 
 ```sh
