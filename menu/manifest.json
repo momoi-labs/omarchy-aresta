@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "dev.momoi-labs.omarchy-cupertino.menu",
+  "name": "Cupertino Spotlight",
+  "version": "0.1.0",
+  "author": "Sebastian Webber",
+  "description": "The Omarchy menu drawn as macOS Spotlight",
+  "kinds": [
+    "menu",
+    "bar-widget"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "menu": "Menu.qml",
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Cupertino Spotlight",
+    "description": "Launches the Omarchy menu",
+    "category": "Compositor",
+    "allowMultiple": false
+  },
+  "omarchy": {
+    "clonedFrom": "omarchy.menu"
+  }
+}
