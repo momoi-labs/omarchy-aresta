@@ -40,7 +40,7 @@ pub fn pin(slug: &str) {
         return;
     };
     let path = match bundled(&path) {
-        Some(_) if theme::current_name().starts_with("osx-") => return,
+        Some(_) if theme::current_name().starts_with("osx-") && slug.starts_with("osx-") => path,
         Some(source) => source,
         None => path,
     };
@@ -117,6 +117,9 @@ pub fn add_photo(file: &Path) -> io::Result<PathBuf> {
     let directory = user_root().join(theme::current_name());
     fs::create_dir_all(&directory)?;
     let target = directory.join(name);
+    if target.exists() && fs::canonicalize(file)? == fs::canonicalize(&target)? {
+        return Ok(target);
+    }
     fs::copy(file, &target)?;
     Ok(target)
 }

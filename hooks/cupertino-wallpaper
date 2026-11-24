@@ -11,8 +11,7 @@ grep -Eq '^[[:space:]]*wallpaper_keep[[:space:]]*=[[:space:]]*false[[:space:]]*$
 [[ -n $PREVIOUS && ${PREVIOUS##*/} == "$PREVIOUS" && $PREVIOUS != "$THEME" ]] || exit 0
 
 KEPT=$(cat "$STATE/theme-backgrounds/$PREVIOUS" 2>/dev/null || true)
-if [[ ${KEPT%/*} == "$STATE/current/theme/backgrounds" ]]; then
-  [[ $PREVIOUS != osx-* ]] || exit 0
+if [[ ${KEPT%/*} == "$STATE/current/theme/backgrounds" && ($PREVIOUS != osx-* || $THEME != osx-*) ]]; then
   for DIR in "$HOME/.config/omarchy/themes/$PREVIOUS" "${OMARCHY_PATH:-/usr/share/omarchy}/themes/$PREVIOUS"; do
     [[ -f $DIR/backgrounds/${KEPT##*/} ]] && { KEPT="$DIR/backgrounds/${KEPT##*/}"; break; }
   done
