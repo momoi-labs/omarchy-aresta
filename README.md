@@ -17,9 +17,7 @@ It has:
   instead of a colored border.
 - Two Omarchy themes in macOS system colors: OSX Light and OSX Dark. Pick
   them in the Omarchy theme menu or with `omarchy-theme-set "osx light"`.
-  Each has the Yaru blue icons and an original gradient background, which
-  is only the fallback: switching to an OSX theme keeps the wallpaper you
-  had before.
+  Each has the Yaru blue icons and an original gradient background.
 
 It also adds macOS shortcuts on Super:
 
@@ -46,6 +44,10 @@ Open it from the app launcher. It has these sections:
   dark theme from the installed Omarchy themes, see the colors of the current
   theme, and turn window shadows on or off. Auto picks the light theme at
   sunrise and the dark theme at sunset.
+- Wallpaper: the current wallpaper, a switch that keeps it when the theme
+  changes, and the pictures of the theme, of
+  `~/.config/omarchy/backgrounds/<theme>` and of folders you add. Add Photo
+  copies a picture into `~/.config/omarchy/backgrounds/<theme>`.
 - Desktop & Dock: grey traffic lights on unfocused windows, icons in the
   traffic lights on hover, and the window title alignment.
 - Menu Bar: the bar background opacity and the clock format.
@@ -81,9 +83,9 @@ It links `hypr/omarchy-cupertino.lua` into `~/.config/hypr`, adds
 It links `themes/osx-light` and `themes/osx-dark` into
 `~/.config/omarchy/themes`, and links a `theme-set` hook into
 `~/.config/omarchy/hooks/theme-set.d` that keeps the current wallpaper on a
-switch to an OSX theme. Finally, it builds Cupertino Settings with `cargo`
-and installs it to `~/.local/bin/cupertino-settings`, with a launcher entry in
-`~/.local/share/applications`.
+theme switch unless you turn that off. Finally, it builds Cupertino Settings
+with `cargo` and installs it to `~/.local/bin/cupertino-settings`, with a
+launcher entry in `~/.local/share/applications`.
 It also installs the `cupertino-auto` systemd user timer, which runs
 `cupertino-settings --auto` every minute for Auto appearance. Auto reads your
 location from `~/.local/state/omarchy/settings/weather.json`, else from

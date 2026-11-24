@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import QtQuick.Dialogs
 import QtQuick.Shapes
 import QtQuick.Window
 import Cupertino as App
@@ -31,6 +32,20 @@ Window {
 
   readonly property string themeTitle: store.themeTitle(store.themeName)
 
+  function fileUrl(path) {
+    return path === "" ? "" : "file://" + path.split("/").map(encodeURIComponent).join("/")
+  }
+
+  function localPath(url) {
+    return decodeURIComponent(url.toString().replace(/^file:\/\//, ""))
+  }
+
+  function pictureName(path) {
+    var base = path.split("/").pop().replace(/\.[^.]*$/, "")
+    return base.split(/[-_ ]+/).filter(function(word) { return word !== "" })
+      .map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1) }).join(" ")
+  }
+
   readonly property var sections: [
     { id: "appearance", name: qsTr("Appearance"), block: 1, groups: [
       { title: qsTr("Appearance"), rows: [
@@ -40,6 +55,13 @@ Window {
       ], note: qsTr("Each list shows only themes of its mode. \"osx light\" and \"osx dark\" are the defaults.") },
       { kind: "colors", rows: [{ type: "colors", label: qsTr("Colors"), hint: qsTr("Colors of the current theme") }] },
       { title: qsTr("Windows"), rows: [{ type: "toggle", key: "shadow_enabled", label: qsTr("Show window shadows"), hint: qsTr("Floating workspaces always show shadows") }] }
+    ] },
+    { id: "wallpaper", name: qsTr("Wallpaper"), block: 1, groups: [
+      { rows: [
+        { type: "wallpaper", label: qsTr("Current wallpaper") },
+        { type: "toggle", key: "wallpaper_keep", label: qsTr("Keep this wallpaper when the theme changes"), hint: qsTr("Off: each theme shows its own wallpaper, as Omarchy does by default") }
+      ] },
+      { kind: "sources", rows: [{ label: qsTr("Add Photo"), hint: qsTr("Add Folder") }] }
     ] },
     { id: "desktop", name: qsTr("Desktop & Dock"), block: 1, groups: [
       { title: qsTr("Windows"), rows: [
@@ -475,6 +497,7 @@ Window {
             spacing: 8
 
             readonly property bool colors: group.modelData.kind === "colors"
+            readonly property bool sources: group.modelData.kind === "sources"
 
             Row {
               id: groupTitle
@@ -502,8 +525,15 @@ Window {
               }
             }
 
+            Loader {
+              active: group.sources
+              visible: active
+              width: parent.width
+              sourceComponent: sourcesView
+            }
 
             Rectangle {
+              visible: !group.sources
               width: parent.width
               height: rows.implicitHeight
               radius: 12
@@ -523,7 +553,9 @@ Window {
                     readonly property bool targeted: window.target !== "" && window.target === modelData.label
                     width: rows.width
                     onTargetedChanged: if (targeted) Qt.callLater(window.reveal, rowLoader)
-                    sourceComponent: modelData.type === "colors" ? colorsRow : settingRow
+                    sourceComponent: group.sources ? null
+                      : modelData.type === "colors" ? colorsRow
+                      : modelData.type === "wallpaper" ? wallpaperRow : settingRow
 
                     Component {
                       id: settingRow
@@ -554,6 +586,19 @@ Window {
         }
       }
     }
+  }
+
+  FileDialog {
+    id: photoDialog
+    title: qsTr("Add Photo")
+    nameFilters: [qsTr("Pictures (*.jpg *.jpeg *.png *.gif *.bmp *.webp)")]
+    onAccepted: store.addPhoto(window.localPath(selectedFile))
+  }
+
+  FolderDialog {
+    id: folderDialog
+    title: qsTr("Add Folder")
+    onAccepted: store.addFolder(window.localPath(selectedFolder))
   }
 
   Component {
@@ -655,6 +700,263 @@ Window {
               color: look.textSecondary
               font.family: look.fontFamily
               font.pixelSize: 10
+            }
+          }
+        }
+      }
+    }
+  }
+
+  Component {
+    id: wallpaperRow
+
+    Item {
+      implicitHeight: 158
+
+      Rectangle {
+        id: picture
+        x: 14
+        y: 14
+        width: 208
+        height: 130
+        radius: 8
+        color: look.controlSoft
+        clip: true
+
+        Image {
+          anchors.fill: parent
+          source: window.fileUrl(store.currentWallpaper)
+          sourceSize.width: 416
+          fillMode: Image.PreserveAspectCrop
+          asynchronous: true
+        }
+      }
+
+      Column {
+        anchors.left: picture.right
+        anchors.leftMargin: 16
+        anchors.right: parent.right
+        anchors.rightMargin: 14
+        anchors.verticalCenter: picture.verticalCenter
+        spacing: 4
+
+        Text {
+          width: parent.width
+          elide: Text.ElideRight
+          text: store.currentWallpaper === "" ? qsTr("No wallpaper") : window.pictureName(store.currentWallpaper)
+          color: look.text
+          font.family: look.fontFamily
+          font.pixelSize: 15
+          font.weight: Font.DemiBold
+        }
+
+        Text {
+          width: parent.width
+          elide: Text.ElideMiddle
+          text: store.shortPath(store.currentWallpaper)
+          color: look.textSecondary
+          font.family: look.fontFamily
+          font.pixelSize: 12
+        }
+
+        Text {
+          topPadding: 6
+          text: store.revision >= 0 && store.flag("wallpaper_keep") ? qsTr("Stays when you change the theme.") : qsTr("Changes with the theme.")
+          color: look.textSecondary
+          font.family: look.fontFamily
+          font.pixelSize: 12
+        }
+      }
+    }
+  }
+
+  Component {
+    id: sourcesView
+
+    Column {
+      id: sources
+      spacing: 20
+      readonly property int perRow: Math.max(1, Math.floor((width - 20 + 10) / 138))
+
+      Repeater {
+        model: store.revision >= 0 && store.themeName !== "-" ? store.wallpaperSources() : []
+
+        Column {
+          id: source
+          required property string modelData
+          readonly property var parts: modelData.split("\t")
+          readonly property var images: store.wallpaperImages(parts[2])
+          property bool expanded: false
+          width: sources.width
+          spacing: 8
+
+          Item {
+            width: parent.width
+            height: 18
+
+            Row {
+              x: 10
+              spacing: 8
+              anchors.verticalCenter: parent.verticalCenter
+
+              Text {
+                text: source.parts[0]
+                color: look.text
+                font.family: look.fontFamily
+                font.pixelSize: 13
+                font.weight: Font.Bold
+              }
+
+              Text {
+                text: source.parts[1] !== "" ? source.parts[1] : store.shortPath(source.parts[2]) + "/"
+                color: look.textSecondary
+                font.family: look.fontFamily
+                font.pixelSize: 12
+              }
+            }
+
+            Text {
+              visible: source.images.length > sources.perRow
+              anchors.right: parent.right
+              anchors.rightMargin: 10
+              anchors.verticalCenter: parent.verticalCenter
+              text: source.expanded ? qsTr("Show Less") : qsTr("Show All (%1)").arg(source.images.length)
+              color: look.accent
+              font.family: look.fontFamily
+              font.pixelSize: 12
+
+              MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: source.expanded = !source.expanded
+              }
+            }
+          }
+
+          Rectangle {
+            width: parent.width
+            height: source.images.length > 0 ? thumbs.implicitHeight + 20 : empty.implicitHeight + 32
+            radius: 12
+            color: look.box
+
+            Text {
+              id: empty
+              visible: source.images.length === 0
+              x: 14
+              width: parent.width - 28
+              anchors.verticalCenter: parent.verticalCenter
+              wrapMode: Text.Wrap
+              textFormat: Text.StyledText
+              text: qsTr("Nothing here yet. Add Photo copies a picture into <tt>%1/</tt>.").arg(store.shortPath(source.parts[2]))
+              color: look.textSecondary
+              font.family: look.fontFamily
+              font.pixelSize: 12
+            }
+
+            Flow {
+              id: thumbs
+              x: 10
+              y: 10
+              width: parent.width - 20
+              spacing: 10
+
+              Repeater {
+                model: source.expanded ? source.images : source.images.slice(0, sources.perRow)
+
+                Item {
+                  id: thumb
+                  required property string modelData
+                  readonly property bool current: modelData === store.currentWallpaper
+                  width: 128
+                  height: 100
+
+                  Rectangle {
+                    x: -3
+                    y: -3
+                    width: 134
+                    height: 86
+                    radius: 10
+                    color: "transparent"
+                    border.width: 3
+                    border.color: thumb.current ? look.accent : "transparent"
+                  }
+
+                  Rectangle {
+                    width: 128
+                    height: 80
+                    radius: 7
+                    color: look.controlSoft
+                    border.width: 1
+                    border.color: look.separator
+                    clip: true
+
+                    Image {
+                      anchors.fill: parent
+                      anchors.margins: 1
+                      source: window.fileUrl(thumb.modelData)
+                      sourceSize.width: 256
+                      fillMode: Image.PreserveAspectCrop
+                      asynchronous: true
+                    }
+                  }
+
+                  Text {
+                    y: 84
+                    width: parent.width
+                    horizontalAlignment: thumb.current ? Text.AlignHCenter : Text.AlignLeft
+                    elide: Text.ElideRight
+                    text: window.pictureName(thumb.modelData)
+                    color: thumb.current ? look.text : look.textSecondary
+                    font.family: look.fontFamily
+                    font.pixelSize: 11
+                    font.weight: thumb.current ? Font.Bold : Font.Normal
+                  }
+
+                  MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: store.setWallpaper(thumb.modelData)
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      Row {
+        anchors.right: parent.right
+        spacing: 8
+
+        Repeater {
+          model: [
+            { label: qsTr("Add Folder…"), dialog: folderDialog },
+            { label: qsTr("Add Photo…"), dialog: photoDialog }
+          ]
+
+          Rectangle {
+            id: button
+            required property var modelData
+            width: buttonLabel.implicitWidth + 24
+            height: 26
+            radius: 7
+            color: buttonArea.pressed ? look.control : look.controlSoft
+            border.width: 1
+            border.color: look.controlBorder
+
+            Text {
+              id: buttonLabel
+              anchors.centerIn: parent
+              text: button.modelData.label
+              color: look.text
+              font.family: look.fontFamily
+              font.pixelSize: 13
+            }
+
+            MouseArea {
+              id: buttonArea
+              anchors.fill: parent
+              onClicked: button.modelData.dialog.open()
             }
           }
         }

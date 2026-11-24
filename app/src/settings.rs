@@ -9,6 +9,7 @@ pub enum Value {
     Number(f64),
     Flag(bool),
     Text(String),
+    List(Vec<String>),
 }
 
 pub struct Entry {
@@ -18,7 +19,7 @@ pub struct Entry {
 }
 
 fn defaults() -> Vec<Entry> {
-    use Value::{Flag, Number, Text};
+    use Value::{Flag, List, Number, Text};
     let hyprland = [
         ("window_rounding", Number(16.0)),
         ("window_rounding_power", Number(3.4)),
@@ -59,6 +60,8 @@ fn defaults() -> Vec<Entry> {
         ("light_theme", Text("osx-light".into())),
         ("dark_theme", Text("osx-dark".into())),
         ("appearance_auto", Flag(false)),
+        ("wallpaper_keep", Flag(true)),
+        ("wallpaper_folders", List(Vec::new())),
     ];
     hyprland
         .into_iter()
@@ -148,6 +151,10 @@ impl Settings {
                 Value::Number(number) => format!("{number}"),
                 Value::Flag(flag) => flag.to_string(),
                 Value::Text(text) => quote(text),
+                Value::List(items) => {
+                    let items: Vec<String> = items.iter().map(|item| quote(item)).collect();
+                    format!("[{}]", items.join(", "))
+                }
             };
             text.push_str(&format!("{} = {}\n", entry.key, value));
         }
@@ -172,5 +179,18 @@ fn parse(default: &Value, raw: &str) -> Option<Value> {
             .strip_prefix('"')
             .and_then(|rest| rest.strip_suffix('"'))
             .map(|text| Value::Text(text.into())),
+        Value::List(_) => raw
+            .strip_prefix('[')
+            .and_then(|rest| rest.strip_suffix(']'))
+            .map(|inner| {
+                Value::List(
+                    inner
+                        .split('"')
+                        .skip(1)
+                        .step_by(2)
+                        .map(String::from)
+                        .collect(),
+                )
+            }),
     }
 }

@@ -18,6 +18,7 @@ pub mod qobject {
         #[qproperty(i32, revision)]
         #[qproperty(QString, recording)]
         #[qproperty(QString, error)]
+        #[qproperty(QString, current_wallpaper, cxx_name = "currentWallpaper")]
         #[qproperty(f64, auto_next, cxx_name = "autoNext")]
         #[qproperty(bool, auto_next_dark, cxx_name = "autoNextDark")]
         #[qproperty(QString, auto_error, cxx_name = "autoError")]
@@ -107,6 +108,26 @@ pub mod qobject {
         fn pick_theme(self: Pin<&mut Self>, dark: bool, name: &QString);
 
         #[qinvokable]
+        #[cxx_name = "wallpaperSources"]
+        fn wallpaper_sources(&self) -> QStringList;
+
+        #[qinvokable]
+        #[cxx_name = "wallpaperImages"]
+        fn wallpaper_images(&self, path: &QString) -> QStringList;
+
+        #[qinvokable]
+        #[cxx_name = "setWallpaper"]
+        fn set_wallpaper(self: Pin<&mut Self>, path: &QString);
+
+        #[qinvokable]
+        #[cxx_name = "addPhoto"]
+        fn add_photo(self: Pin<&mut Self>, path: &QString);
+
+        #[qinvokable]
+        #[cxx_name = "addFolder"]
+        fn add_folder(self: Pin<&mut Self>, path: &QString);
+
+        #[qinvokable]
         #[cxx_name = "shortPath"]
         fn short_path(&self, path: &QString) -> QString;
     }
@@ -118,6 +139,7 @@ use crate::auto;
 use crate::keys;
 use crate::settings::{Settings, Value};
 use crate::theme;
+use crate::wallpaper;
 use core::pin::Pin;
 use cxx_qt::CxxQtType;
 use cxx_qt_lib::{QString, QStringList};
@@ -138,6 +160,7 @@ pub struct BackendRust {
     revision: i32,
     recording: QString,
     error: QString,
+    current_wallpaper: QString,
     auto_next: f64,
     auto_next_dark: bool,
     auto_error: QString,
@@ -160,6 +183,7 @@ impl Default for BackendRust {
             revision: 0,
             recording: QString::default(),
             error: QString::default(),
+            current_wallpaper: QString::default(),
             auto_next: 0.0,
             auto_next_dark: false,
             auto_error: QString::default(),
@@ -205,6 +229,7 @@ impl cxx_qt::Initialize for qobject::Backend {
         self.as_mut().rust_mut().modes = modes;
         self.as_mut().set_themes(themes);
         self.as_mut().refresh_theme();
+        self.as_mut().refresh_wallpaper();
         self.as_mut().refresh_auto();
     }
 }
@@ -232,6 +257,15 @@ impl qobject::Backend {
             self.as_mut()
                 .set_foreground(QString::from(&colors.foreground));
             self.as_mut().set_accent(QString::from(&colors.accent));
+        }
+    }
+
+    fn refresh_wallpaper(mut self: Pin<&mut Self>) {
+        let path = wallpaper::current()
+            .map(|path| QString::from(&path.display().to_string()))
+            .unwrap_or_default();
+        if *self.current_wallpaper() != path {
+            self.as_mut().set_current_wallpaper(path);
         }
     }
 
@@ -263,7 +297,8 @@ impl qobject::Backend {
     }
 
     fn apply_theme(mut self: Pin<&mut Self>, slug: &str) {
-        let command = theme::set_command(slug);
+        let keep = matches!(self.settings.get("wallpaper_keep"), Some(Value::Flag(true)));
+        let command = theme::set_command(slug, keep);
         let result = run_detached(command, "omarchy-theme-set");
         self.as_mut().report(result);
     }
@@ -311,6 +346,7 @@ impl qobject::Backend {
 
     pub fn tick(mut self: Pin<&mut Self>) {
         self.as_mut().refresh_theme();
+        self.as_mut().refresh_wallpaper();
         self.as_mut().refresh_auto();
 
         let stamp = modified(&Settings::path());
@@ -509,6 +545,58 @@ impl qobject::Backend {
         if self.theme_dark(&current) == dark && current.to_string() != slug {
             self.apply_theme(&slug);
         }
+    }
+
+    pub fn wallpaper_sources(&self) -> QStringList {
+        let folders = match self.settings.get("wallpaper_folders") {
+            Some(Value::List(folders)) => folders.clone(),
+            _ => Vec::new(),
+        };
+        let title = self.theme_title(&QString::from(&theme::current_name()));
+        wallpaper::sources(&title.to_string(), &folders)
+            .iter()
+            .map(|source| {
+                QString::from(&format!(
+                    "{}\t{}\t{}",
+                    source.title,
+                    source.detail,
+                    source.path.display()
+                ))
+            })
+            .collect()
+    }
+
+    pub fn wallpaper_images(&self, path: &QString) -> QStringList {
+        wallpaper::images(Path::new(&path.to_string()))
+            .iter()
+            .map(|image| QString::from(&image.display().to_string()))
+            .collect()
+    }
+
+    pub fn set_wallpaper(mut self: Pin<&mut Self>, path: &QString) {
+        let result = spawn("omarchy-theme-bg-set", &[&path.to_string()]);
+        self.as_mut().report(result);
+    }
+
+    pub fn add_photo(mut self: Pin<&mut Self>, path: &QString) {
+        let result = wallpaper::add_photo(Path::new(&path.to_string()))
+            .map(|_| ())
+            .map_err(|error| format!("Could not add the photo: {error}"));
+        self.as_mut().report(result);
+        self.bump();
+    }
+
+    pub fn add_folder(self: Pin<&mut Self>, path: &QString) {
+        let path = path.to_string();
+        let mut folders = match self.settings.get("wallpaper_folders") {
+            Some(Value::List(folders)) => folders.clone(),
+            _ => Vec::new(),
+        };
+        if path.is_empty() || folders.contains(&path) {
+            return;
+        }
+        folders.push(path);
+        self.store(&QString::from("wallpaper_folders"), Value::List(folders));
     }
 
     pub fn short_path(&self, path: &QString) -> QString {

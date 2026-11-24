@@ -155,7 +155,8 @@ pub fn run() -> Result<(), String> {
     if theme::current_name() == *slug {
         return Ok(());
     }
-    theme::set_command(slug)
+    let keep = matches!(settings.get("wallpaper_keep"), Some(Value::Flag(true)));
+    theme::set_command(slug, keep)
         .stdin(Stdio::null())
         .status()
         .map_err(|error| format!("omarchy-theme-set: {error}"))?;
