@@ -6,8 +6,9 @@ It has:
 
 - A Mac-style top bar that replaces the Omarchy bar: the Omarchy menu button
   and the focused app's name on the left, your status widgets (third-party
-  ones too) and the date and time on the right, a translucent background in
-  your theme colors, and Inter when it is installed.
+  ones too) and the date and time on the right, sized and spaced like the
+  macOS menu bar. It has white text on a translucent, unblurred background
+  in your theme colors, and uses SF Pro when it is installed, or Inter.
 - Windows on floating workspaces get a title bar with traffic lights: close,
   minimize and maximize on the left, grey when the window is unfocused, icons
   on hover, and the title centered.
