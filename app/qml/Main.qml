@@ -1751,8 +1751,8 @@ Window {
 
     Item {
       id: ccPreview
-      readonly property bool live: store.revision >= 0
-      readonly property bool on: live && store.flag("control_center_enabled")
+      readonly property int tick: store.revision
+      readonly property bool on: tick >= 0 && store.flag("control_center_enabled")
       readonly property color ink: look.text
       readonly property var barIcons: {
         var all = [
@@ -1764,10 +1764,10 @@ Window {
         ]
         return all.filter(function(item) {
           if (item.key === "cc_bar_power" && !window.battery) return false
-          return ccPreview.live && (!ccPreview.on || store.flag(item.key))
+          return ccPreview.tick >= 0 && (!ccPreview.on || store.flag(item.key))
         })
       }
-      function has(key) { return live && store.flag(key) }
+      function has(key) { return tick >= 0 && store.flag(key) }
       implicitHeight: 254
 
       Timer {
@@ -1805,7 +1805,7 @@ Window {
           y: 1
           width: parent.width - 2
           height: 28
-          color: Qt.alpha(look.background, (ccPreview.live ? store.number("bar_opacity") : 80) / 100)
+          color: Qt.alpha(look.background, (ccPreview.tick >= 0 ? store.number("bar_opacity") : 80) / 100)
 
           Text {
             x: 12
@@ -1867,7 +1867,7 @@ Window {
 
             Text {
               anchors.verticalCenter: parent.verticalCenter
-              text: Qt.formatDateTime(ccMinute.now, ccPreview.live ? store.text("clock_format") : "")
+              text: Qt.formatDateTime(ccMinute.now, ccPreview.tick >= 0 ? store.text("clock_format") : "")
               color: ccPreview.ink
               font.family: look.fontFamily
               font.pixelSize: 12
