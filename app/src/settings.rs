@@ -70,6 +70,7 @@ fn defaults() -> Vec<Entry> {
         ("bar_desktops_occupied_only", Flag(false)),
         ("spotlight_size", Number(100.0)),
         ("spotlight_selection", Text("gray".into())),
+        ("spotlight_shortcuts", Flag(false)),
         ("light_theme", Text("osx-light".into())),
         ("dark_theme", Text("osx-dark".into())),
         ("appearance_auto", Flag(false)),

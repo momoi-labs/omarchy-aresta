@@ -187,7 +187,8 @@ Window {
       { rows: [
         { type: "plugin", plugin: "dev.momoi-labs.omarchy-cupertino.menu", label: qsTr("Use Cupertino Spotlight"), hint: qsTr("Off brings back the Omarchy menu") },
         { type: "slider", key: "spotlight_size", label: qsTr("Size"), min: 80, max: 150, step: 10, unit: "%" },
-        { type: "segment", key: "spotlight_selection", label: qsTr("Selection color"), options: selectionColors }
+        { type: "segment", key: "spotlight_selection", label: qsTr("Selection color"), options: selectionColors },
+        { type: "toggle", key: "spotlight_shortcuts", label: qsTr("Show shortcuts"), hint: qsTr("Keyboard hints at the bottom of the card") }
       ] }
     ] },
     { id: "cupertino", name: qsTr("Cupertino"), block: 3, lead: qsTr("Options that macOS System Settings does not have."), groups: [

@@ -127,12 +127,14 @@ Item {
   property color selectedBackground: Commons.Color.menu.selectedText
   property color selectedText: selectedBackground.hslLightness > 0.6 ? "#000000" : "#ffffff"
   readonly property var spotlightSettings: {
-    var values = { spotlight_size: 100, spotlight_selection: "gray" }
+    var values = { spotlight_size: 100, spotlight_selection: "gray", spotlight_shortcuts: false }
     var lines = settingsFile.text().split("\n")
     for (var i = 0; i < lines.length; i++) {
       var match = lines[i].match(/^\s*(\w+)\s*=\s*(.*?)\s*$/)
       if (!match || !(match[1] in values)) continue
-      if (typeof values[match[1]] === "string") {
+      if (typeof values[match[1]] === "boolean") {
+        if (match[2] === "true" || match[2] === "false") values[match[1]] = match[2] === "true"
+      } else if (typeof values[match[1]] === "string") {
         var text = match[2].match(/^"(.*)"$/)
         if (text) values[match[1]] = text[1]
       } else if (match[2] !== "" && !isNaN(Number(match[2]))) {
@@ -142,6 +144,7 @@ Item {
     return values
   }
   readonly property real sizeScale: Math.max(80, Math.min(150, root.spotlightSettings.spotlight_size)) / 100
+  readonly property bool showFooter: root.dmenuActive || root.spotlightSettings.spotlight_shortcuts
   readonly property bool grayRows: !root.dmenuActive && root.spotlightSettings.spotlight_selection !== "accent"
   readonly property color rowFill: root.grayRows ? Util.alpha(root.lightCard ? "#000000" : "#ffffff", root.lightCard ? 0.12 : 0.15) : root.selectedBackground
   readonly property color rowInk: root.grayRows ? root.foreground : root.selectedText
@@ -151,8 +154,8 @@ Item {
   property int contentMargin: root.dmenuActive ? Style.space(8) : root.px(8)
   property int headerHeight: root.dmenuActive ? Style.space(52) : root.px(56)
   readonly property int filterBarHeight: root.dmenuActive ? 0 : root.px(46)
-  readonly property int footerHeight: root.dmenuActive ? Style.space(30) : root.px(32)
-  readonly property int chromeHeight: headerHeight + calcAreaHeight + filterBarHeight + footerHeight + 2 + (mode === "input" ? 0 : contentMargin * 2)
+  readonly property int footerHeight: root.dmenuActive ? Style.space(30) : (root.showFooter ? root.px(32) : 0)
+  readonly property int chromeHeight: headerHeight + calcAreaHeight + filterBarHeight + footerHeight + (root.showFooter ? 2 : 1) + (mode === "input" ? 0 : contentMargin * 2)
   property int baseRowHeight: root.dmenuActive ? Math.max(Style.space(32), Style.font.heading + Style.spacing.rowPaddingX) : root.px(56)
   property int detailRowHeight: Math.max(Style.space(46), Style.font.body + Style.font.caption + Style.spacing.rowPaddingX * 2)
   property string calcResult: ""
@@ -202,7 +205,6 @@ Item {
     }
     return out
   }
-  property int hoveredFilter: -1
   readonly property var currentRow: {
     var revision = root.layoutSerial
     return !root.calcFocused && root.cursorActive && root.selectedIndex >= 0 && root.selectedIndex < displayModel.count ? displayModel.get(root.selectedIndex) : null
@@ -1776,6 +1778,7 @@ Item {
           width: parent.width
           height: root.filterBarHeight
           visible: !root.dmenuActive
+          z: 2
 
           Row {
             id: filterRow
@@ -1812,8 +1815,30 @@ Item {
                   anchors.fill: parent
                   hoverEnabled: true
                   cursorShape: Qt.PointingHandCursor
-                  onContainsMouseChanged: root.hoveredFilter = containsMouse ? filterButton.index : (root.hoveredFilter === filterButton.index ? -1 : root.hoveredFilter)
                   onClicked: root.applyFilter(filterButton.index)
+                }
+
+                Rectangle {
+                  visible: filterMouse.containsMouse
+                  anchors.top: parent.bottom
+                  anchors.topMargin: root.px(6)
+                  anchors.horizontalCenter: parent.horizontalCenter
+                  width: tipText.implicitWidth + root.px(16)
+                  height: tipText.implicitHeight + root.px(8)
+                  radius: root.px(6)
+                  color: root.background
+                  border.width: 1
+                  border.color: root.border
+
+                  Text {
+                    id: tipText
+                    anchors.centerIn: parent
+                    textFormat: Text.PlainText
+                    text: filterButton.modelData.label + " ⌃" + (filterButton.index + 1)
+                    color: root.foreground
+                    font.family: root.fontFamily
+                    font.pixelSize: root.px(13)
+                  }
                 }
               }
             }
@@ -1821,7 +1846,6 @@ Item {
 
           Text {
             readonly property int shown: {
-              if (root.hoveredFilter >= 0) return root.hoveredFilter
               for (var i = 0; i < root.filters.length; i++)
                 if (root.filters[i].id === root.activeFilter) return i
               return -1
@@ -2209,12 +2233,14 @@ Item {
         Rectangle {
           width: parent.width
           height: 1
+          visible: root.showFooter
           color: root.border
         }
 
         Item {
           width: parent.width
           height: root.footerHeight
+          visible: root.showFooter
 
           Row {
             id: footerRow

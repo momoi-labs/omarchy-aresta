@@ -20,9 +20,10 @@ It has:
   then menu rows with their path. A math expression such as `2^10` or
   `sqrt(2)*pi` shows its result in the field and on a card above the
   filters, and Enter or the copy button copies it. A submenu shows as a chip
-  in the field, and Backspace on an empty field goes back. A row of filter buttons above
-  the results opens Apps, as an icon grid, or a menu section. Ctrl+1 to
-  Ctrl+9 pick a filter, because Super+1 to Super+9 switch workspaces. Scripts
+  in the field, and Backspace on an empty field goes back. A row of filter
+  buttons above the results opens Apps, as an icon grid, or a menu section.
+  Each button shows its name and shortcut on hover. Ctrl+1 to Ctrl+9 pick a
+  filter, because Super+1 to Super+9 switch workspaces. Scripts
   that use the menu as a picker, such as `omarchy-menu-keybindings`, keep
   working.
 - Two Omarchy themes in macOS system colors: OSX Light and OSX Dark. Pick
@@ -69,7 +70,8 @@ Open it from the app launcher. It has these sections:
   console keys on or off, and record new shortcuts for them. Omarchy's own
   bindings show as read-only.
 - Spotlight: turn Cupertino Spotlight off to get the Omarchy menu back, set
-  its size from 80% to 150%, and pick a gray or theme accent selected row.
+  its size from 80% to 150%, pick a gray or theme accent selected row, and
+  show the keyboard hints at the bottom of the card.
 - Cupertino: options that macOS does not have, such as rounded corners and
   their radius and shape, the thin border, the shadow, the traffic light size
   and the bar size.
