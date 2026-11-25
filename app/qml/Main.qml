@@ -126,11 +126,11 @@ Window {
   readonly property var sections: [
     { id: "appearance", name: qsTr("Appearance"), block: 1, groups: [
       { title: qsTr("Appearance"), rows: [
+        { type: "appearance_preview", label: qsTr("Appearance preview") },
         { type: "appearance", label: qsTr("Appearance"), hint: qsTr("Auto follows sunrise and sunset") },
         { type: "theme", key: "light_theme", dark: false, label: qsTr("Light theme") },
         { type: "theme", key: "dark_theme", dark: true, label: qsTr("Dark theme") }
       ], note: qsTr("Each list shows only themes of its mode. \"osx light\" and \"osx dark\" are the defaults.") },
-      { kind: "colors", rows: [{ type: "colors", label: qsTr("Colors"), hint: qsTr("Colors of the current theme") }] },
       { title: qsTr("Windows"), rows: [{ type: "toggle", key: "shadow_enabled", label: qsTr("Show window shadows"), hint: qsTr("Floating workspaces always show shadows") }] }
     ] },
     { id: "wallpaper", name: qsTr("Wallpaper"), block: 1, groups: [
@@ -607,33 +607,16 @@ Window {
             width: page.width
             spacing: 8
 
-            readonly property bool colors: group.modelData.kind === "colors"
             readonly property bool sources: group.modelData.kind === "sources"
 
-            Row {
-              id: groupTitle
-              visible: !!group.modelData.title || group.colors
+            Text {
+              visible: !!group.modelData.title
               leftPadding: 10
-              spacing: 8
-
-              Text {
-                id: groupName
-                text: group.colors ? qsTr("Colors of %1").arg(window.themeTitle) : group.modelData.title || ""
-                color: look.text
-                font.family: look.fontFamily
-                font.pixelSize: 13
-                font.weight: Font.Bold
-              }
-
-              Text {
-                visible: group.colors
-                width: Math.max(0, group.width - groupTitle.leftPadding - groupName.width - groupTitle.spacing - 10)
-                elide: Text.ElideMiddle
-                text: group.colors ? store.themeFile(store.themeName) : ""
-                color: look.textSecondary
-                font.family: look.fontFamily
-                font.pixelSize: 12
-              }
+              text: group.modelData.title || ""
+              color: look.text
+              font.family: look.fontFamily
+              font.pixelSize: 13
+              font.weight: Font.Bold
             }
 
             Loader {
@@ -665,7 +648,7 @@ Window {
                     width: rows.width
                     onTargetedChanged: if (targeted) Qt.callLater(window.reveal, rowLoader)
                     sourceComponent: group.sources ? null
-                      : modelData.type === "colors" ? colorsRow
+                      : modelData.type === "appearance_preview" ? appearancePreviewRow
                       : modelData.type === "wallpaper" ? wallpaperRow
                       : modelData.type === "bar" ? barRow
                       : modelData.type === "titlebars" ? titleBarsRow : settingRow
@@ -715,108 +698,13 @@ Window {
   }
 
   Component {
-    id: colorsRow
+    id: appearancePreviewRow
 
-    Item {
-      id: colors
-      readonly property var palette: store.themePalette(store.themeName)
-      readonly property int columns: Math.max(3, Math.min(7, Math.floor((width - 16) / 84)))
-      readonly property real swatchWidth: (width - 24 - (columns - 1) * 8) / columns
-      implicitHeight: header.height + swatches.implicitHeight + 28
-
-      function label(key) {
-        return key.split("_").map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1) }).join(" ")
-      }
-
-      Item {
-        id: header
-        width: parent.width
-        height: 104
-
-        ThemeTile {
-          x: 12
-          y: 12
-          ui: look
-          tileWidth: 112
-          tileHeight: 70
-          colors: store.themeColors(store.themeName)
-        }
-
-        Column {
-          x: 144
-          width: parent.width - x - 12
-          anchors.verticalCenter: parent.verticalCenter
-          spacing: 2
-
-          Text {
-            text: window.themeTitle
-            color: look.text
-            font.family: look.fontFamily
-            font.pixelSize: 14
-          }
-
-          Text {
-            width: parent.width
-            wrapMode: Text.WordWrap
-            text: (store.themeDark(store.themeName) ? qsTr("Dark theme, background luminance %1") : qsTr("Light theme, background luminance %1"))
-              .arg(Math.round(store.themeLuminance(store.themeName) * 100) / 100)
-            color: look.textSecondary
-            font.family: look.fontFamily
-            font.pixelSize: 12
-          }
-        }
-
-        Rectangle {
-          anchors.bottom: parent.bottom
-          width: parent.width
-          height: 1
-          color: look.separator
-        }
-      }
-
-      Flow {
-        id: swatches
-        x: 12
-        y: header.height + 14
-        width: parent.width - 24
-        spacing: 8
-
-        Repeater {
-          model: colors.palette
-
-          Column {
-            id: swatch
-            required property string modelData
-            width: colors.swatchWidth
-            spacing: 2
-
-            Rectangle {
-              width: parent.width
-              height: 26
-              radius: 6
-              color: swatch.modelData.split("|")[1]
-              border.width: 1
-              border.color: look.controlBorder
-            }
-
-            Text {
-              width: parent.width
-              elide: Text.ElideRight
-              text: colors.label(swatch.modelData.split("|")[0])
-              color: look.text
-              font.family: look.fontFamily
-              font.pixelSize: 11
-            }
-
-            Text {
-              text: swatch.modelData.split("|")[1]
-              color: look.textSecondary
-              font.family: look.fontFamily
-              font.pixelSize: 10
-            }
-          }
-        }
-      }
+    AppearancePreview {
+      ui: look
+      backend: store
+      themeTitle: window.themeTitle
+      wallpaperUrl: window.fileUrl(store.currentWallpaper)
     }
   }
 
