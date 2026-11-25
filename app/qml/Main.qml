@@ -50,6 +50,21 @@ Window {
     { value: "accent", label: qsTr("Theme accent") }
   ]
 
+  readonly property string spotlightPlugin: "dev.momoi-labs.omarchy-cupertino.menu"
+
+  readonly property var previewMenu: [
+    { icon: "\u{f003b}", label: qsTr("Apps"), menu: false, provider: true },
+    { icon: "\u{f09d1}", label: qsTr("Learn"), menu: true },
+    { icon: "\u{f03d8}", label: qsTr("Appearance"), menu: true },
+    { icon: "\u{f14de}", label: qsTr("Trigger"), menu: true },
+    { icon: "\ue615", label: qsTr("Setup"), menu: true },
+    { icon: "\u{f0249}", label: qsTr("Install"), menu: true },
+    { icon: "\u{f0b4c}", label: qsTr("Remove"), menu: true },
+    { icon: "\uf021", label: qsTr("Update"), menu: true },
+    { icon: "\uea74", label: qsTr("About"), menu: false },
+    { icon: "\uf011", label: qsTr("System"), menu: true }
+  ]
+
   readonly property var previewDesktops: [
     { id: 1, occupied: true, current: false },
     { id: 2, occupied: true, current: true },
@@ -196,14 +211,15 @@ Window {
     ] },
     { id: "spotlight", name: qsTr("Spotlight"), block: 2, groups: [
       { rows: [
-        { type: "plugin", plugin: "dev.momoi-labs.omarchy-cupertino.menu", label: qsTr("Use Cupertino Spotlight"), hint: qsTr("Off brings back the Omarchy menu") },
-        { type: "slider", key: "spotlight_size", label: qsTr("Size"), min: 80, max: 150, step: 10, unit: "%" },
-        { type: "segment", key: "spotlight_selection", label: qsTr("Selection color"), options: selectionColors },
-        { type: "toggle", key: "spotlight_filters", label: qsTr("Show filters"), hint: qsTr("Buttons under the search field. Ctrl+1 to Ctrl+9 work either way.") },
-        { type: "toggle", key: "spotlight_menu_on_open", label: qsTr("Show menu on open"), hint: qsTr("Off opens only the search field until you type") },
-        { type: "toggle", key: "spotlight_shortcuts", label: qsTr("Show shortcuts"), hint: qsTr("Keyboard hints at the bottom of the card") },
-        { type: "toggle", key: "spotlight_movable", label: qsTr("Movable"), hint: qsTr("Drag the card to move it, or its top or bottom edge to change its height. It opens that way next time.") },
-        { type: "clear", keys: ["spotlight_position", "spotlight_height"], label: qsTr("Position"), hint: qsTr("Saved for each display"), button: qsTr("Reset position") }
+        { type: "plugin", plugin: spotlightPlugin, label: qsTr("Use Cupertino Spotlight") },
+        { type: "spotlight", label: qsTr("Spotlight preview") },
+        { type: "slider", requires: { plugin: spotlightPlugin }, key: "spotlight_size", label: qsTr("Size"), min: 80, max: 150, step: 10, unit: "%" },
+        { type: "segment", requires: { plugin: spotlightPlugin }, key: "spotlight_selection", label: qsTr("Selection color"), options: selectionColors },
+        { type: "toggle", requires: { plugin: spotlightPlugin }, key: "spotlight_filters", label: qsTr("Show filters"), hint: qsTr("Buttons under the search field. Ctrl+1 to Ctrl+9 work either way.") },
+        { type: "toggle", requires: { plugin: spotlightPlugin }, key: "spotlight_menu_on_open", label: qsTr("Show menu on open"), hint: qsTr("Off opens only the search field until you type") },
+        { type: "toggle", requires: { plugin: spotlightPlugin }, key: "spotlight_shortcuts", label: qsTr("Show shortcuts"), hint: qsTr("Keyboard hints at the bottom of the card") },
+        { type: "toggle", requires: { plugin: spotlightPlugin }, key: "spotlight_movable", label: qsTr("Movable"), hint: qsTr("Drag the card to move it, or its top or bottom edge to change its height. It opens that way next time.") },
+        { type: "clear", requires: { plugin: spotlightPlugin }, keys: ["spotlight_position", "spotlight_height"], label: qsTr("Position"), hint: qsTr("Saved for each display"), button: qsTr("Reset position") }
       ] }
     ] },
     { id: "cupertino", name: qsTr("Cupertino"), block: 3, lead: qsTr("Options that macOS System Settings does not have."), groups: [
@@ -651,7 +667,8 @@ Window {
                       : modelData.type === "appearance_preview" ? appearancePreviewRow
                       : modelData.type === "wallpaper" ? wallpaperRow
                       : modelData.type === "bar" ? barRow
-                      : modelData.type === "titlebars" ? titleBarsRow : settingRow
+                      : modelData.type === "titlebars" ? titleBarsRow
+                      : modelData.type === "spotlight" ? spotlightRow : settingRow
 
                     Component {
                       id: settingRow
@@ -1279,6 +1296,423 @@ Window {
                     color: bars.foreground
                     font.family: "sans"
                     font.pixelSize: 12
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  Component {
+    id: spotlightRow
+
+    Item {
+      id: spot
+      readonly property bool cupertino: store.revision >= 0 && store.pluginEnabled(window.spotlightPlugin)
+      readonly property real size: store.revision >= 0 ? Math.max(80, Math.min(150, store.number("spotlight_size"))) / 100 : 1
+      readonly property bool accentRows: store.revision >= 0 && store.text("spotlight_selection") === "accent"
+      readonly property bool filters: store.revision >= 0 && store.flag("spotlight_filters")
+      readonly property bool list: store.revision >= 0 && store.flag("spotlight_menu_on_open")
+      readonly property bool footer: store.revision >= 0 && store.flag("spotlight_shortcuts")
+      readonly property real rounding: store.revision >= 0 && store.flag("corners_enabled") ? store.number("window_rounding") : 0
+      readonly property real zoom: 0.5
+      readonly property real gaps: 5
+      readonly property real screenHeight: desk.height / zoom
+      readonly property var items: window.previewMenu
+      readonly property color activeBorder: {
+        var list = store.themePalette(store.themeName)
+        for (var i = 0; i < list.length; i++) {
+          var parts = list[i].split("|")
+          if (parts[0] === "hyprland_active_border") return parts[1]
+        }
+        return look.foreground
+      }
+      implicitHeight: 304
+
+      function fold(count, row, gap, peek, available) {
+        function total(rows) { return rows * row + (rows - 1) * gap }
+        if (total(count) <= available) return total(count)
+        var full = 0
+        while (full < count && total(full + 1) <= available) full++
+        while (full > 1 && total(full) + gap + peek > available) full--
+        return full < 1 ? Math.max(available, row) : total(full) + gap + peek
+      }
+
+      Rectangle {
+        id: desk
+        x: 12
+        y: 12
+        width: parent.width - 24
+        height: 280
+        radius: 10
+        color: look.controlSoft
+        border.width: 1
+        border.color: look.separator
+        clip: true
+
+        RoundedImage {
+          radius: 9
+          anchors.fill: parent
+          anchors.margins: 1
+          source: window.fileUrl(store.currentWallpaper)
+          sourceSize.width: 1400
+          fillMode: Image.PreserveAspectCrop
+          asynchronous: true
+        }
+
+        Item {
+          id: card
+          visible: spot.cupertino
+          readonly property real unit: spot.size * spot.zoom
+          readonly property bool light: look.background.hslLightness > 0.5
+          readonly property color ink: look.foreground
+          readonly property color line: Qt.alpha(ink, light ? 0.1 : 0.12)
+          readonly property color accentInk: look.accent.hslLightness > 0.6 ? "#000000" : "#ffffff"
+          readonly property color rowFill: spot.accentRows ? look.accent : Qt.alpha(light ? "#000000" : "#ffffff", light ? 0.12 : 0.15)
+          readonly property color rowInk: spot.accentRows ? accentInk : ink
+          readonly property bool divider: spot.filters || spot.list
+          readonly property real header: 56 * spot.size
+          readonly property real filterBar: spot.filters ? 46 * spot.size : 0
+          readonly property real footerBar: spot.footer ? 32 * spot.size : 0
+          readonly property real margin: 8 * spot.size
+          readonly property real row: 56 * spot.size
+          readonly property real peek: Math.round(row * 0.55)
+          readonly property real chrome: header + filterBar + footerBar + (spot.footer ? 1 : 0) + (divider ? 1 : 0) + (spot.list ? margin * 2 : 0)
+          readonly property real offset: Math.max(spot.gaps, Math.round(spot.screenHeight * 0.2))
+          readonly property real rowsHeight: spot.fold(spot.items.length, row, 0, peek,
+            Math.min(spot.screenHeight - spot.gaps - offset - chrome, row * 7 + peek, Math.round(spot.screenHeight * 0.7)))
+          x: (desk.width - width) / 2
+          y: offset * spot.zoom
+          width: Math.min(640 * unit, desk.width - 2 * spot.gaps * spot.zoom)
+          height: Math.min(chrome + (spot.list ? rowsHeight : 0), spot.screenHeight - 2 * spot.gaps) * spot.zoom
+
+          function px(points) { return points * unit }
+
+          Rectangle {
+            anchors.fill: parent
+            radius: card.px(25)
+            color: look.background
+            border.width: 1
+            border.color: card.line
+          }
+
+          Column {
+            anchors.fill: parent
+
+            Item {
+              width: parent.width
+              height: card.header * spot.zoom
+
+              Text {
+                id: glyph
+                x: card.px(16)
+                anchors.verticalCenter: parent.verticalCenter
+                text: ""
+                color: card.ink
+                opacity: 0.55
+                font.family: look.fontFamily
+                font.pixelSize: card.px(22)
+              }
+
+              Text {
+                anchors.left: glyph.right
+                anchors.leftMargin: 10 * spot.zoom
+                anchors.verticalCenter: parent.verticalCenter
+                text: qsTr("Search...")
+                color: card.ink
+                opacity: 0.4
+                font.family: look.fontFamily
+                font.pixelSize: card.px(26)
+              }
+            }
+
+            Rectangle {
+              visible: card.divider
+              x: card.px(16)
+              width: parent.width - 2 * x
+              height: 1
+              color: card.line
+            }
+
+            Item {
+              visible: spot.filters
+              width: parent.width
+              height: card.filterBar * spot.zoom
+
+              Row {
+                x: card.px(14)
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: card.px(8)
+
+                Repeater {
+                  model: spot.items.filter(function(item) { return item.menu || item.provider })
+
+                  Rectangle {
+                    id: filter
+                    required property var modelData
+                    width: card.px(32)
+                    height: width
+                    radius: width / 2
+                    color: Qt.alpha(card.ink, 0.08)
+
+                    Text {
+                      anchors.centerIn: parent
+                      text: filter.modelData.icon
+                      color: card.ink
+                      font.family: look.fontFamily
+                      font.pixelSize: card.px(16)
+                    }
+                  }
+                }
+              }
+            }
+
+            Item {
+              visible: spot.list
+              width: parent.width
+              height: (card.rowsHeight + card.margin * 2) * spot.zoom
+
+              Item {
+                id: cardRows
+                anchors.fill: parent
+                anchors.margins: card.margin * spot.zoom
+                clip: true
+
+                Column {
+                  width: parent.width
+
+                  Repeater {
+                    model: spot.items
+
+                    Rectangle {
+                      id: cardEntry
+                      required property var modelData
+                      required property int index
+                      readonly property bool current: index === 0
+                      readonly property color ink: current ? card.rowInk : card.ink
+                      width: cardRows.width
+                      height: card.row * spot.zoom
+                      radius: card.px(14)
+                      color: current ? card.rowFill : "transparent"
+
+                      Text {
+                        id: entryIcon
+                        x: card.px(10)
+                        width: card.px(32)
+                        anchors.verticalCenter: parent.verticalCenter
+                        horizontalAlignment: Text.AlignHCenter
+                        text: cardEntry.modelData.icon
+                        color: cardEntry.ink
+                        font.family: look.fontFamily
+                        font.pixelSize: card.px(20)
+                      }
+
+                      Text {
+                        anchors.left: entryIcon.right
+                        anchors.leftMargin: card.px(10)
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: cardEntry.modelData.label
+                        color: cardEntry.ink
+                        font.family: look.fontFamily
+                        font.pixelSize: card.px(18)
+                      }
+
+                      Row {
+                        visible: cardEntry.current
+                        anchors.right: parent.right
+                        anchors.rightMargin: card.px(12)
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: card.px(6)
+
+                        Text {
+                          anchors.verticalCenter: parent.verticalCenter
+                          text: cardEntry.modelData.menu || cardEntry.modelData.provider ? qsTr("Open") : qsTr("Run")
+                          color: cardEntry.ink
+                          opacity: 0.7
+                          font.family: look.fontFamily
+                          font.pixelSize: card.px(13)
+                        }
+
+                        Rectangle {
+                          anchors.verticalCenter: parent.verticalCenter
+                          width: card.px(20)
+                          height: width
+                          radius: card.px(5)
+                          color: spot.accentRows ? Qt.alpha(cardEntry.ink, 0.14) : card.light ? "#ffffff" : Qt.alpha("#ffffff", 0.12)
+
+                          Text {
+                            anchors.centerIn: parent
+                            text: "↵"
+                            color: cardEntry.ink
+                            opacity: !spot.accentRows && card.light ? 0.6 : 1
+                            font.family: look.fontFamily
+                            font.pixelSize: card.px(13)
+                          }
+                        }
+                      }
+
+                      Text {
+                        visible: !cardEntry.current && cardEntry.modelData.menu
+                        anchors.right: parent.right
+                        anchors.rightMargin: card.px(10)
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: "›"
+                        color: cardEntry.ink
+                        opacity: 0.45
+                        font.family: look.fontFamily
+                        font.pixelSize: card.px(18)
+                      }
+                    }
+                  }
+                }
+              }
+
+              Rectangle {
+                visible: spot.items.length * card.row > card.rowsHeight + 1
+                x: cardRows.x + cardRows.width + (cardRows.x - width) / 2
+                y: cardRows.y
+                width: card.px(3)
+                height: cardRows.height * card.rowsHeight / (spot.items.length * card.row)
+                radius: width / 2
+                color: Qt.alpha(card.ink, 0.3)
+              }
+            }
+
+            Rectangle {
+              visible: spot.footer
+              width: parent.width
+              height: 1
+              color: card.line
+            }
+
+            Item {
+              visible: spot.footer
+              width: parent.width
+              height: card.footerBar * spot.zoom
+
+              Row {
+                anchors.right: parent.right
+                anchors.rightMargin: card.px(16)
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: card.px(16)
+
+                Repeater {
+                  model: spot.list ? ["⌃1–9 filter", "esc close", "↵ open"] : ["⌃1–9 filter", "esc close"]
+
+                  Text {
+                    required property string modelData
+                    text: modelData
+                    color: card.ink
+                    opacity: 0.5
+                    font.family: look.fontFamily
+                    font.pixelSize: card.px(13)
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        Rectangle {
+          visible: !spot.cupertino
+          anchors.fill: parent
+          anchors.margins: 1
+          radius: 9
+          color: Qt.alpha(look.background, 0.5)
+        }
+
+        Rectangle {
+          id: stock
+          visible: !spot.cupertino
+          readonly property real padding: 18
+          readonly property real header: 34
+          readonly property real row: 50
+          readonly property real gap: 3
+          readonly property real rowsHeight: spot.fold(spot.items.length, row, gap, Math.round(row * 0.55),
+            Math.min(spot.screenHeight - 2 * spot.gaps - 2 * padding - header - 6, Math.round(spot.screenHeight * 0.7)))
+          anchors.centerIn: parent
+          width: 300 * spot.zoom
+          height: Math.min(2 * padding + header + 6 + rowsHeight, spot.screenHeight - 2 * spot.gaps) * spot.zoom
+          radius: spot.rounding * spot.zoom
+          color: look.background
+          border.width: 1
+          border.color: spot.activeBorder
+
+          Column {
+            x: stock.padding * spot.zoom
+            y: x
+            width: parent.width - 2 * x
+            spacing: 6 * spot.zoom
+
+            Text {
+              height: stock.header * spot.zoom
+              verticalAlignment: Text.AlignVCenter
+              text: qsTr("Go…")
+              color: look.foreground
+              opacity: 0.58
+              font.family: "monospace"
+              font.pixelSize: 16 * spot.zoom
+            }
+
+            Item {
+              width: parent.width
+              height: stock.rowsHeight * spot.zoom
+              clip: true
+
+              Column {
+                width: parent.width
+                spacing: stock.gap * spot.zoom
+
+                Repeater {
+                  model: spot.items
+
+                  Rectangle {
+                    id: line
+                    required property var modelData
+                    required property int index
+                    readonly property color ink: index === 0 ? look.accent : look.foreground
+                    width: parent.width
+                    height: stock.row * spot.zoom
+                    radius: spot.rounding * spot.zoom
+                    color: index === 0 ? Qt.alpha(look.foreground, 0.08) : "transparent"
+
+                    Text {
+                      id: lineIcon
+                      x: 8 * spot.zoom
+                      width: 36 * spot.zoom
+                      anchors.verticalCenter: parent.verticalCenter
+                      horizontalAlignment: Text.AlignHCenter
+                      text: line.modelData.icon
+                      color: line.ink
+                      font.family: "monospace"
+                      font.pixelSize: 18 * spot.zoom
+                    }
+
+                    Text {
+                      anchors.left: lineIcon.right
+                      anchors.leftMargin: 6 * spot.zoom
+                      anchors.verticalCenter: parent.verticalCenter
+                      text: line.modelData.label
+                      color: line.ink
+                      font.family: "monospace"
+                      font.pixelSize: 16 * spot.zoom
+                      font.weight: Font.Medium
+                    }
+
+                    Text {
+                      visible: line.modelData.menu
+                      anchors.right: parent.right
+                      anchors.rightMargin: 8 * spot.zoom
+                      anchors.verticalCenter: parent.verticalCenter
+                      text: "›"
+                      color: line.ink
+                      opacity: 0.36
+                      font.family: "monospace"
+                      font.pixelSize: 16 * spot.zoom
+                    }
                   }
                 }
               }
