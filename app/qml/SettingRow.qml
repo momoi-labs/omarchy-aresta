@@ -33,6 +33,10 @@ Item {
     return setting.hint || ""
   }
 
+  readonly property bool available: !setting.requires || (revision >= 0 && backend.flag(setting.requires))
+
+  enabled: available
+  opacity: available ? 1 : 0.4
   implicitHeight: Math.max(42, labels.implicitHeight + 14, control.implicitHeight + 14)
 
   Rectangle {

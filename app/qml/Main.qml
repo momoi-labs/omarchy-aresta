@@ -135,14 +135,6 @@ Window {
       ] },
       { kind: "sources", rows: [{ label: qsTr("Add Photo"), hint: qsTr("Add Folder") }] }
     ] },
-    { id: "desktop", name: qsTr("Desktop & Dock"), block: 1, groups: [
-      { title: qsTr("Windows"), rows: [
-        { type: "toggle", key: "traffic_lights_enabled", label: qsTr("Traffic lights on title bars"), hint: qsTr("Off brings back Omarchy's title bar buttons") },
-        { type: "toggle", key: "traffic_lights_grey_inactive", label: qsTr("Grey traffic lights on unfocused windows") },
-        { type: "toggle", key: "traffic_light_icons_on_hover", label: qsTr("Show icons in traffic lights on hover") },
-        { type: "select", key: "title_align", label: qsTr("Window title alignment"), options: titleAlignOptions }
-      ], note: qsTr("Title bars show on floating workspaces.") }
-    ] },
     { id: "menubar", name: qsTr("Menu Bar"), block: 1, groups: [
       { rows: [
         { type: "plugin", plugin: "dev.momoi-labs.omarchy-cupertino", fallback: "omarchy.bar", label: qsTr("Use the Cupertino menu bar"), hint: qsTr("Off brings back the Omarchy bar") }
@@ -160,6 +152,18 @@ Window {
       { title: qsTr("Clock"), rows: [
         { type: "text", key: "clock_format", label: qsTr("Clock format"), hint: qsTr("Qt date format, like ddd d MMM  HH:mm") }
       ] }
+    ] },
+    { id: "titlebars", name: qsTr("Title Bars"), block: 1, groups: [
+      { rows: [
+        { type: "toggle", key: "traffic_lights_enabled", label: qsTr("Use the Cupertino title bars") },
+        { type: "titlebars", label: qsTr("Title bar preview") }
+      ] },
+      { title: qsTr("Windows"), rows: [
+        { type: "toggle", key: "traffic_lights_grey_inactive", requires: "traffic_lights_enabled", label: qsTr("Grey traffic lights on unfocused windows") },
+        { type: "toggle", key: "traffic_light_icons_on_hover", requires: "traffic_lights_enabled", label: qsTr("Show icons in traffic lights on hover") },
+        { type: "select", key: "title_align", requires: "traffic_lights_enabled", label: qsTr("Window title alignment"), options: titleAlignOptions },
+        { type: "stepper", key: "traffic_light_size", requires: "traffic_lights_enabled", label: qsTr("Traffic light size"), min: 8, max: 24, unit: "px" }
+      ], note: qsTr("Title bars show on floating workspaces.") }
     ] },
     { id: "keyboard", name: qsTr("Keyboard"), block: 2, groups: [
       { title: qsTr("Keyboard Shortcuts"), rows: [
@@ -212,9 +216,6 @@ Window {
         { type: "stepper", key: "shadow_offset", label: qsTr("Shadow vertical offset"), min: 0, max: 40, unit: "px" },
         { type: "slider", key: "shadow_active_opacity", label: qsTr("Shadow strength, focused window"), min: 0, max: 100, step: 1, unit: "%" },
         { type: "slider", key: "shadow_inactive_opacity", label: qsTr("Shadow strength, unfocused window"), min: 0, max: 100, step: 1, unit: "%" }
-      ] },
-      { title: qsTr("Title Bar"), rows: [
-        { type: "stepper", key: "traffic_light_size", label: qsTr("Traffic light size"), min: 8, max: 24, unit: "px" }
       ] },
       { title: qsTr("Menu Bar"), rows: [
         { type: "stepper", key: "bar_height", label: qsTr("Menu bar height"), min: 20, max: 48, unit: "px" },
@@ -659,7 +660,8 @@ Window {
                     sourceComponent: group.sources ? null
                       : modelData.type === "colors" ? colorsRow
                       : modelData.type === "wallpaper" ? wallpaperRow
-                      : modelData.type === "bar" ? barRow : settingRow
+                      : modelData.type === "bar" ? barRow
+                      : modelData.type === "titlebars" ? titleBarsRow : settingRow
 
                     Component {
                       id: settingRow
@@ -1215,6 +1217,168 @@ Window {
               color: preview.ink
               font.family: look.fontFamily
               font.pixelSize: 12
+            }
+          }
+        }
+      }
+    }
+  }
+
+  Component {
+    id: titleBarsRow
+
+    Item {
+      id: bars
+      readonly property bool cupertino: store.revision >= 0 && store.flag("traffic_lights_enabled")
+      readonly property bool grey: store.revision >= 0 && store.flag("traffic_lights_grey_inactive")
+      readonly property bool hoverIcons: store.revision >= 0 && store.flag("traffic_light_icons_on_hover")
+      readonly property string align: store.revision >= 0 ? store.text("title_align") : "center"
+      readonly property real lightSize: store.revision >= 0 ? Math.floor(store.number("traffic_light_size")) : 14
+      readonly property var palette: {
+        var map = {}
+        var list = store.themePalette(store.themeName)
+        for (var i = 0; i < list.length; i++) {
+          var parts = list[i].split("|")
+          map[parts[0]] = parts[1]
+        }
+        return map
+      }
+      readonly property color background: palette.background || look.background
+      readonly property color foreground: palette.foreground || look.foreground
+      readonly property color barColor: palette.lighter_background && palette.lighter_background !== palette.background
+        ? palette.lighter_background : palette.selection || background
+      readonly property var lights: [
+        { icon: "×", color: "#ff5f57" },
+        { icon: "−", color: "#febc2e" },
+        { icon: "□", color: "#28c840" }
+      ]
+      implicitHeight: 254
+
+      Rectangle {
+        id: desk
+        x: 12
+        y: 12
+        width: parent.width - 24
+        height: 230
+        radius: 10
+        color: look.controlSoft
+        border.width: 1
+        border.color: look.separator
+        clip: true
+
+        Image {
+          anchors.fill: parent
+          anchors.margins: 1
+          source: window.fileUrl(store.currentWallpaper)
+          sourceSize.width: 1400
+          fillMode: Image.PreserveAspectCrop
+          asynchronous: true
+        }
+
+        Repeater {
+          model: [
+            { focused: false, title: qsTr("Files"), x: 0.06, y: 22, width: 0.5, height: 140 },
+            { focused: true, title: qsTr("Terminal"), x: 0.4, y: 66, width: 0.54, height: 144 }
+          ]
+
+          Rectangle {
+            id: frame
+            required property var modelData
+            readonly property bool focused: modelData.focused
+            readonly property real lightsWidth: 3 * bars.lightSize + 2 * 8
+            readonly property real omarchyWidth: 3 * 20 + 2 * 8
+            x: desk.width * modelData.x
+            y: modelData.y
+            width: desk.width * modelData.width
+            height: modelData.height
+            radius: 10
+            color: bars.barColor
+            border.width: 1
+            border.color: Qt.rgba(0, 0, 0, 0.18)
+
+            Rectangle {
+              x: 1
+              y: 30
+              width: parent.width - 2
+              height: parent.height - 31
+              bottomLeftRadius: 9
+              bottomRightRadius: 9
+              color: bars.background
+            }
+
+            Text {
+              x: !bars.cupertino ? 10 : bars.align === "left" ? 18 + frame.lightsWidth : bars.align === "center" ? 0 : 10
+              width: !bars.cupertino ? parent.width - 28 - frame.omarchyWidth
+                : bars.align === "center" ? parent.width : parent.width - 28 - frame.lightsWidth
+              height: 30
+              verticalAlignment: Text.AlignVCenter
+              horizontalAlignment: !bars.cupertino || bars.align === "left" ? Text.AlignLeft
+                : bars.align === "center" ? Text.AlignHCenter : Text.AlignRight
+              elide: Text.ElideRight
+              text: frame.modelData.title
+              color: bars.foreground
+              font.family: "monospace"
+              font.pixelSize: 12
+            }
+
+            Row {
+              id: lights
+              visible: bars.cupertino
+              x: 10
+              y: (30 - bars.lightSize) / 2
+              spacing: 8
+
+              HoverHandler { id: lightsHover }
+
+              Repeater {
+                model: bars.lights
+
+                Rectangle {
+                  id: light
+                  required property var modelData
+                  width: bars.lightSize
+                  height: bars.lightSize
+                  radius: Math.floor(bars.lightSize / 2)
+                  color: frame.focused || !bars.grey ? modelData.color : "#998e8e93"
+
+                  Text {
+                    anchors.centerIn: parent
+                    visible: !bars.hoverIcons || lightsHover.hovered
+                    text: light.modelData.icon
+                    color: "#99000000"
+                    font.family: "monospace"
+                    font.pixelSize: Math.round(bars.lightSize * 0.85)
+                  }
+                }
+              }
+            }
+
+            Row {
+              visible: !bars.cupertino
+              anchors.right: parent.right
+              anchors.rightMargin: 10
+              y: 5
+              spacing: 8
+
+              Repeater {
+                model: ["−", "□", "×"]
+
+                Rectangle {
+                  id: button
+                  required property string modelData
+                  width: 20
+                  height: 20
+                  color: bars.barColor
+
+                  Text {
+                    anchors.centerIn: parent
+                    text: button.modelData
+                    color: bars.foreground
+                    font.family: "monospace"
+                    font.pixelSize: 16
+                  }
+                }
+              }
             }
           }
         }

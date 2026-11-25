@@ -63,12 +63,13 @@ Open it from the app launcher. It has these sections:
   changes, and the pictures of the theme, of
   `~/.config/omarchy/backgrounds/<theme>` and of folders you add. Add Photo
   copies a picture into `~/.config/omarchy/backgrounds/<theme>`.
-- Desktop & Dock: traffic lights on title bars, grey traffic lights on
-  unfocused windows, icons in the traffic lights on hover, and the window
-  title alignment.
 - Menu Bar: the Cupertino menu bar itself, desktops in the bar (after the
   menus, in the center or before the status icons, as numbers or dots), the
   bar background opacity and the clock format.
+- Title Bars: the Cupertino title bars themselves, with a preview of two
+  windows on your wallpaper, grey traffic lights on unfocused windows, icons
+  in the traffic lights on hover, the window title alignment and the traffic
+  light size. Off gives back Omarchy's own title bars.
 - Keyboard: turn Quit app, Cycle windows, the app switcher and the Quake
   console keys on or off, and record new shortcuts for them. Omarchy's own
   bindings show as read-only.
@@ -78,11 +79,10 @@ Open it from the app launcher. It has these sections:
   the keyboard hints at the bottom of the card, stop the card from moving
   or resizing, and put it back at its default place and height.
 - Cupertino: options that macOS does not have, such as rounded corners and
-  their radius and shape, the thin border, the shadow, the traffic light size
-  and the bar size.
+  their radius and shape, the thin border, the shadow and the bar size.
 
 Each part of the plugin has a switch. Turning one off gives back Omarchy's own
-behavior: the Omarchy bar, title bar buttons, square corners, colored border,
+behavior: the Omarchy bar, title bars, square corners, colored border,
 menu, or its Super+Q, Super+`, Super+Shift+`, Super+Tab and Super+Shift+Tab
 bindings.
 
