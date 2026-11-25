@@ -1307,13 +1307,13 @@ Window {
             }
 
             Text {
-              x: !bars.cupertino ? 10 : bars.align === "left" ? 18 + frame.lightsWidth : bars.align === "center" ? 0 : 10
-              width: !bars.cupertino ? parent.width - 28 - frame.omarchyWidth
-                : bars.align === "center" ? parent.width : parent.width - 28 - frame.lightsWidth
+              readonly property bool left: !bars.cupertino || bars.align === "left"
+              x: !bars.cupertino ? 10 : left ? 26 + frame.lightsWidth : (parent.width - width) / 2
+              width: !bars.cupertino ? parent.width - 36 - frame.omarchyWidth
+                : left ? parent.width - 36 - frame.lightsWidth : parent.width - 52 - 2 * frame.lightsWidth
               height: 30
               verticalAlignment: Text.AlignVCenter
-              horizontalAlignment: !bars.cupertino || bars.align === "left" ? Text.AlignLeft
-                : bars.align === "center" ? Text.AlignHCenter : Text.AlignRight
+              horizontalAlignment: left ? Text.AlignLeft : Text.AlignHCenter
               elide: Text.ElideRight
               text: frame.modelData.title
               color: bars.foreground
@@ -1346,8 +1346,8 @@ Window {
                     visible: !bars.hoverIcons || lightsHover.hovered
                     text: light.modelData.icon
                     color: "#99000000"
-                    font.family: "monospace"
-                    font.pixelSize: Math.round(bars.lightSize * 0.85)
+                    font.family: "sans"
+                    font.pixelSize: Math.round(bars.lightSize * 0.62)
                   }
                 }
               }
@@ -1374,8 +1374,8 @@ Window {
                     anchors.centerIn: parent
                     text: button.modelData
                     color: bars.foreground
-                    font.family: "monospace"
-                    font.pixelSize: 16
+                    font.family: "sans"
+                    font.pixelSize: 12
                   }
                 }
               }
