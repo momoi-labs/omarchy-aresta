@@ -744,7 +744,7 @@ Window {
         RoundedImage {
           radius: 8
           anchors.fill: parent
-          source: window.fileUrl(store.currentWallpaper)
+          source: store.thumbnails >= 0 ? store.thumbnail(store.currentWallpaper, 512) : ""
           sourceSize.width: 416
           fillMode: Image.PreserveAspectCrop
           asynchronous: true
@@ -913,7 +913,7 @@ Window {
                       radius: 6
                       anchors.fill: parent
                       anchors.margins: 1
-                      source: window.fileUrl(thumb.modelData)
+                      source: store.thumbnails >= 0 ? store.thumbnail(thumb.modelData, 256) : ""
                       sourceSize.width: 256
                       fillMode: Image.PreserveAspectCrop
                       asynchronous: true
@@ -1020,8 +1020,7 @@ Window {
           radius: 9
           anchors.fill: parent
           anchors.margins: 1
-          source: window.fileUrl(store.currentWallpaper)
-          sourceSize.width: 1400
+          source: store.thumbnails >= 0 ? store.thumbnail(store.currentWallpaper, 512) : ""
           fillMode: Image.PreserveAspectCrop
           asynchronous: true
         }
