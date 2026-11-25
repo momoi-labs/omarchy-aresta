@@ -41,7 +41,8 @@ Item {
       border.width: 1
       border.color: tile.ui.separator
 
-      Image {
+      RoundedImage {
+        radius: 7
         anchors.fill: parent
         anchors.margins: 1
         visible: tile.preview !== ""
@@ -59,6 +60,8 @@ Item {
         Rectangle {
           width: parent.width
           height: 8
+          topLeftRadius: 8
+          topRightRadius: 8
           color: Qt.alpha(tile.miniBackground, 0.6)
         }
 
