@@ -9,6 +9,11 @@ It has:
   ones too) and the date and time on the right, sized and spaced like the
   macOS menu bar. It has white text on a translucent, unblurred background
   in your theme colors, and uses SF Pro when it is installed, or Inter.
+- A Control Center next to the clock: one panel that turns Wi-Fi, Bluetooth
+  and Focus on or off, picks the sound output, sets the display brightness
+  and the volume, and controls the media that plays. While it is on, the
+  bar hides Omarchy's network, Bluetooth, sound, system monitor and battery
+  icons, unless you keep one in the bar.
 - Windows on floating workspaces get a title bar with traffic lights: close,
   minimize and maximize on the left, grey when the window is unfocused, icons
   on hover, and the title centered.
@@ -71,6 +76,9 @@ Open it from the app launcher. It has these sections:
   position (left or right), grey traffic lights on unfocused windows, icons
   in the traffic lights on hover, the window title alignment and the traffic
   light size. Off gives back Omarchy's own title bars.
+- Control Center: turn it off to get Omarchy's bar icons back, choose the
+  controls the panel shows, and choose the Omarchy icons that also stay in
+  the menu bar.
 - Keyboard: turn Quit app, Cycle windows, the app switcher and the Quake
   console keys on or off, and record new shortcuts for them. Omarchy's own
   bindings show as read-only.
@@ -83,7 +91,7 @@ Open it from the app launcher. It has these sections:
   their radius and shape, the thin border, the shadow and the bar size.
 
 Each part of the plugin has a switch. Turning one off gives back Omarchy's own
-behavior: the Omarchy bar, title bars, square corners, colored border,
+behavior: the Omarchy bar, its status icons, title bars, square corners, colored border,
 menu, or its Super+Q, Super+`, Super+Shift+`, Super+Tab and Super+Shift+Tab
 bindings.
 
@@ -113,7 +121,8 @@ It links `hypr/omarchy-cupertino.lua` into `~/.config/hypr`, adds
 `~/.config/omarchy/shell.json` to `$CUPERTINO_BACKUP_DIR/shell.json.orig`.
 It links `switcher/` into `~/.config/omarchy/plugins` and enables it. It
 links `menu/` into `~/.config/omarchy/plugins` and enables it, which turns off
-the Omarchy menu.
+the Omarchy menu. It links `control-center/` into
+`~/.config/omarchy/plugins` and enables it.
 It links `themes/osx-light` and `themes/osx-dark` into
 `~/.config/omarchy/themes`, and links a `theme-set` hook into
 `~/.config/omarchy/hooks/theme-set.d` that keeps the current wallpaper on a
@@ -137,7 +146,7 @@ title bars.
 
 It restores `shell.json` from the backup (or selects the default bar when
 the file changed since), disables the Spotlight menu so the Omarchy menu
-comes back, removes the plugin links, the theme links, the hook
+comes back, disables the Control Center, removes the plugin links, the theme links, the hook
 link, the `require` line, the Hyprland link, the Cupertino Settings binary
 and launcher entry and the `cupertino-auto` timer, then reloads Hyprland. It
 keeps your settings file.

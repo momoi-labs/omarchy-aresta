@@ -16,6 +16,8 @@ MENU_ID="$(jq -r .id "$REPO/menu/manifest.json")"
 MENU_LINK="$HOME/.config/omarchy/plugins/$MENU_ID"
 SWITCHER_ID="$(jq -r .id "$REPO/switcher/manifest.json")"
 SWITCHER_LINK="$HOME/.config/omarchy/plugins/$SWITCHER_ID"
+CONTROL_CENTER_ID="$(jq -r .id "$REPO/control-center/manifest.json")"
+CONTROL_CENTER_LINK="$HOME/.config/omarchy/plugins/$CONTROL_CENTER_ID"
 SHELL_CONFIG="$HOME/.config/omarchy/shell.json"
 THEMES_DIR="$HOME/.config/omarchy/themes"
 HOOK_SOURCE="$REPO/hooks/cupertino-wallpaper"
@@ -98,6 +100,21 @@ fi
 if ! omarchy-plugin-list | grep -qE "^$SWITCHER_ID +enabled "; then
   say "Enabling the app switcher"
   omarchy-plugin-enable "$SWITCHER_ID" >/dev/null
+fi
+
+if [[ -L $CONTROL_CENTER_LINK && $(readlink -f "$CONTROL_CENTER_LINK") == "$REPO/control-center" ]]; then
+  :
+elif [[ -e $CONTROL_CENTER_LINK || -L $CONTROL_CENTER_LINK ]]; then
+  fail "$CONTROL_CENTER_LINK already exists and is not a link to $REPO/control-center"
+else
+  say "Linking $CONTROL_CENTER_LINK"
+  ln -s "$REPO/control-center" "$CONTROL_CENTER_LINK"
+  omarchy-shell shell rescanPlugins >/dev/null
+fi
+
+if ! omarchy-plugin-list | grep -qE "^$CONTROL_CENTER_ID +enabled "; then
+  say "Enabling the Control Center"
+  omarchy-plugin-enable "$CONTROL_CENTER_ID" >/dev/null
 fi
 
 if [[ $(jq -r '.bar.id // ""' "$SHELL_CONFIG" 2>/dev/null) != "$PLUGIN_ID" ]]; then
