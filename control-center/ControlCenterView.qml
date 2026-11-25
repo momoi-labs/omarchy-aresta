@@ -179,11 +179,16 @@ Column {
               size: 32
               MouseArea { anchors.fill: parent; onClicked: view.act([link.modelData.id, link.modelData.on ? "off" : "on"]) }
             }
-            Column {
+            Item {
               width: parent.width - 41
+              height: texts.height
               anchors.verticalCenter: parent.verticalCenter
-              Label { width: parent.width; text: link.modelData.name; font.weight: Font.DemiBold }
-              Label { width: parent.width; text: link.modelData.status; color: view.dim; font.pixelSize: 11 }
+              Column {
+                id: texts
+                width: parent.width
+                Label { width: parent.width; text: link.modelData.name; font.weight: Font.DemiBold }
+                Label { width: parent.width; text: link.modelData.status; color: view.dim; font.pixelSize: 11 }
+              }
               MouseArea { anchors.fill: parent; onClicked: view.act(["picker", link.modelData.picker]) }
             }
           }
