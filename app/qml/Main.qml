@@ -1234,7 +1234,7 @@ Window {
       readonly property bool hoverIcons: store.revision >= 0 && store.flag("traffic_light_icons_on_hover")
       readonly property string align: store.revision >= 0 ? store.text("title_align") : "center"
       readonly property real lightSize: store.revision >= 0 ? Math.floor(store.number("traffic_light_size")) : 14
-      readonly property var palette: {
+      readonly property var themeColors: {
         var map = {}
         var list = store.themePalette(store.themeName)
         for (var i = 0; i < list.length; i++) {
@@ -1243,10 +1243,10 @@ Window {
         }
         return map
       }
-      readonly property color background: palette.background || look.background
-      readonly property color foreground: palette.foreground || look.foreground
-      readonly property color barColor: palette.lighter_background && palette.lighter_background !== palette.background
-        ? palette.lighter_background : palette.selection || background
+      readonly property color background: themeColors.background || look.background
+      readonly property color foreground: themeColors.foreground || look.foreground
+      readonly property color barColor: themeColors.lighter_background && themeColors.lighter_background !== themeColors.background
+        ? themeColors.lighter_background : themeColors.selection || background
       readonly property var lights: [
         { icon: "×", color: "#ff5f57" },
         { icon: "−", color: "#febc2e" },
@@ -1307,13 +1307,13 @@ Window {
             }
 
             Text {
-              readonly property bool left: !bars.cupertino || bars.align === "left"
-              x: !bars.cupertino ? 10 : left ? 26 + frame.lightsWidth : (parent.width - width) / 2
+              readonly property bool leftAligned: !bars.cupertino || bars.align === "left"
+              x: !bars.cupertino ? 10 : leftAligned ? 26 + frame.lightsWidth : (parent.width - width) / 2
               width: !bars.cupertino ? parent.width - 36 - frame.omarchyWidth
-                : left ? parent.width - 36 - frame.lightsWidth : parent.width - 52 - 2 * frame.lightsWidth
+                : leftAligned ? parent.width - 36 - frame.lightsWidth : parent.width - 52 - 2 * frame.lightsWidth
               height: 30
               verticalAlignment: Text.AlignVCenter
-              horizontalAlignment: left ? Text.AlignLeft : Text.AlignHCenter
+              horizontalAlignment: leftAligned ? Text.AlignLeft : Text.AlignHCenter
               elide: Text.ElideRight
               text: frame.modelData.title
               color: bars.foreground
