@@ -133,10 +133,13 @@ Item {
   property int headerHeight: root.dmenuActive ? Style.space(52) : root.px(56)
   readonly property int filterBarHeight: root.dmenuActive ? 0 : root.px(46)
   readonly property int footerHeight: root.dmenuActive ? Style.space(30) : root.px(32)
-  readonly property int chromeHeight: headerHeight + filterBarHeight + footerHeight + 2 + (mode === "input" ? 0 : contentMargin * 2)
+  readonly property int chromeHeight: headerHeight + calcAreaHeight + filterBarHeight + footerHeight + 2 + (mode === "input" ? 0 : contentMargin * 2)
   property int baseRowHeight: root.dmenuActive ? Math.max(Style.space(32), Style.font.heading + Style.spacing.rowPaddingX) : root.px(56)
   property int detailRowHeight: Math.max(Style.space(46), Style.font.body + Style.font.caption + Style.spacing.rowPaddingX * 2)
-  readonly property int calcRowHeight: root.px(64)
+  property string calcResult: ""
+  property bool calcFocused: false
+  readonly property int calcCardHeight: root.px(60)
+  readonly property int calcAreaHeight: root.calcResult ? root.calcCardHeight + root.contentMargin : 0
   // How much of the first hidden row stays visible at the fold — enough to
   // read as a cut-off row rather than a bottom border.
   property int rowPeek: Math.round(baseRowHeight * 0.55)
@@ -168,7 +171,7 @@ Item {
   property int hoveredFilter: -1
   readonly property var currentRow: {
     var revision = root.layoutSerial
-    return root.cursorActive && root.selectedIndex >= 0 && root.selectedIndex < displayModel.count ? displayModel.get(root.selectedIndex) : null
+    return !root.calcFocused && root.cursorActive && root.selectedIndex >= 0 && root.selectedIndex < displayModel.count ? displayModel.get(root.selectedIndex) : null
   }
 
   function verbFor(row) {
@@ -262,7 +265,7 @@ Item {
   }
 
   function rowListHeight(_serial, _count, _filter, _divider) {
-    if (displayModel.count === 0) return root.baseRowHeight
+    if (displayModel.count === 0) return root.calcResult ? 0 : root.baseRowHeight
 
     var totals = []
     var total = 0
@@ -272,7 +275,7 @@ Item {
       var row = displayModel.get(i)
       if (i > 0) total += root.rowSpacing
       if (row.section === "drilldown" && previousSection !== "drilldown") total += root.dividerHeight
-      total += row.kind === "calc" ? root.calcRowHeight : root.rowHeightForDetail(row.detail)
+      total += root.rowHeightForDetail(row.detail)
       previousSection = row.section
       totals.push(total)
     }
@@ -771,6 +774,7 @@ Item {
     var rows = []
     var query = root.filterText.trim()
     root.searchDivider = false
+    var calc = ""
 
     if (query) {
       var currentRows = []
@@ -804,14 +808,7 @@ Item {
       for (var a = 0; a < appRows.length; a++) appRows[a].section = ""
       rows = appRows.concat(rows.filter(function(r) { return r.kind !== "app" }))
       root.searchDivider = rows.some(function(r) { return r.section === "drilldown" })
-      var result = active === "root" ? Calculator.evaluate(query) : ""
-      if (result) {
-        rows.unshift({
-          itemId: "calculator", disabled: false, kind: "calc", icon: "󰃬", iconFont: "",
-          appIcon: "", appId: "", label: query, target: "", detail: "= " + result, path: "",
-          childCount: 0, action: result, provider: "", score: -1, section: ""
-        })
-      }
+      calc = active === "root" ? Calculator.evaluate(query) : ""
     } else {
       for (var j = 0; j < root.itemOrder.length; j++) {
         var child = root.item(root.itemOrder[j])
@@ -837,6 +834,8 @@ Item {
       }
     }
 
+    root.calcResult = calc
+    if (!calc) root.calcFocused = false
     for (var k = 0; k < rows.length; k++) displayModel.append(rows[k])
     layoutSerial += 1
 
@@ -874,9 +873,19 @@ Item {
   }
 
   function select(delta) {
+    if (root.calcFocused && delta < 0) return
+    if (!root.calcFocused && root.calcResult && root.cursorActive && root.selectedIndex + delta < 0) {
+      root.calcFocused = true
+      return
+    }
     if (displayModel.count === 0) return
 
     root.disarmPointer()
+    if (root.calcFocused) {
+      root.calcFocused = false
+      delta = 1
+      root.cursorActive = false
+    }
     var from = cursorActive ? selectedIndex + delta : (delta < 0 ? displayModel.count - 1 : 0)
     var target = root.nextSelectable(from, delta)
     if (target < 0) return
@@ -903,6 +912,7 @@ Item {
     root.disarmPointer()
     if (!root.dmenuActive && root.filterText.trim()) root.loadProvidersForSearch()
     root.rebuildDisplay()
+    root.calcFocused = root.calcResult !== ""
   }
 
   function setActiveMenu(id, pushHistory, fromPointer) {
@@ -966,12 +976,7 @@ Item {
     if (!root.rowSelectable(index)) return
 
     var row = displayModel.get(index)
-    if (row.kind === "calc") {
-      root.applySerial = root.requestSerial
-      root.opened = false
-      root.filterText = ""
-      Util.execArgv(["wl-copy", "--", row.action])
-    } else if (row.kind === "menu" || row.kind === "link") {
+    if (row.kind === "menu" || row.kind === "link") {
       root.setActiveMenu(row.target || row.itemId, true, fromPointer)
     } else if (row.kind === "app") {
       var appId = row.appId
@@ -983,6 +988,14 @@ Item {
     } else {
       root.applySelected(row.itemId, row.action)
     }
+  }
+
+  function copyCalc() {
+    var result = root.calcResult
+    root.applySerial = root.requestSerial
+    root.opened = false
+    root.filterText = ""
+    Util.execArgv(["wl-copy", "--", result])
   }
 
   function requestDeleteSelected() {
@@ -1124,6 +1137,7 @@ Item {
   function selectFromPointer(index, item, mouse) {
     if (!pointerGate.moved(item, mouse)) return
     if (!root.rowSelectable(index)) return
+    root.calcFocused = false
     root.cursorActive = true
     root.selectedIndex = index
   }
@@ -1457,7 +1471,8 @@ Item {
             if (root.dmenuActive) {
               if (root.mode === "input") root.applyDmenuSelection(root.filterText)
               else if (displayModel.count > 0) root.activateIndex(root.cursorActive ? root.selectedIndex : 0)
-            } else if (root.cursorActive) root.activateIndex(root.selectedIndex)
+            } else if (root.calcFocused) root.copyCalc()
+            else if (root.cursorActive) root.activateIndex(root.selectedIndex)
             else root.settleCursor()
             event.accepted = true
           }
@@ -1561,7 +1576,7 @@ Item {
 
           Rectangle {
             readonly property real room: fieldIcon.x - x - root.px(8)
-            visible: !root.dmenuActive && !!root.currentRow && root.filterText.length > 0 && width <= room
+            visible: !root.dmenuActive && !root.calcResult && !!root.currentRow && root.filterText.length > 0 && width <= room
             x: filterInput.x + filterInput.contentWidth + root.px(8)
             anchors.verticalCenter: parent.verticalCenter
             width: openHint.implicitWidth + root.px(16)
@@ -1581,9 +1596,23 @@ Item {
             }
           }
 
+          Text {
+            visible: !root.dmenuActive && !!root.calcResult
+            x: filterInput.x + filterInput.contentWidth + root.px(14)
+            width: Math.max(0, fieldIcon.x - x - root.px(8))
+            anchors.verticalCenter: filterInput.verticalCenter
+            textFormat: Text.PlainText
+            text: "= " + root.calcResult
+            color: root.foreground
+            opacity: 0.45
+            font.family: root.fontFamily
+            font.pixelSize: filterInput.font.pixelSize
+            elide: Text.ElideRight
+          }
+
           Item {
             id: fieldIcon
-            visible: !root.dmenuActive && !!root.currentRow && root.filterText.length > 0
+            visible: !root.dmenuActive && root.filterText.length > 0 && (!!root.calcResult || !!root.currentRow)
             width: root.px(26)
             height: width
             anchors.right: parent.right
@@ -1592,7 +1621,7 @@ Item {
 
             Image {
               anchors.fill: parent
-              visible: !!root.currentRow && root.currentRow.kind === "app"
+              visible: !root.calcResult && !!root.currentRow && root.currentRow.kind === "app"
               fillMode: Image.PreserveAspectFit
               sourceSize.width: width * Screen.devicePixelRatio
               sourceSize.height: height * Screen.devicePixelRatio
@@ -1602,12 +1631,12 @@ Item {
 
             Text {
               anchors.centerIn: parent
-              visible: !!root.currentRow && root.currentRow.kind !== "app"
+              visible: !!root.calcResult || (!!root.currentRow && root.currentRow.kind !== "app")
               textFormat: Text.PlainText
-              text: root.currentRow ? root.currentRow.icon : ""
+              text: root.calcResult ? "󰃬" : (root.currentRow ? root.currentRow.icon : "")
               color: root.foreground
               opacity: 0.55
-              font.family: root.currentRow && root.currentRow.iconFont ? root.currentRow.iconFont : root.fontFamily
+              font.family: !root.calcResult && root.currentRow && root.currentRow.iconFont ? root.currentRow.iconFont : root.fontFamily
               font.pixelSize: root.px(22)
             }
           }
@@ -1631,6 +1660,82 @@ Item {
           width: parent.width - x * 2
           height: 1
           color: root.border
+        }
+
+        Item {
+          width: parent.width
+          height: root.calcAreaHeight
+          visible: height > 0
+
+          Rectangle {
+            x: root.contentMargin
+            y: root.contentMargin
+            width: parent.width - root.contentMargin * 2
+            height: root.calcCardHeight
+            radius: root.px(15)
+            color: Util.alpha(root.foreground, root.lightCard ? 0.04 : 0.06)
+            border.width: 1
+            border.color: Util.alpha(root.foreground, root.lightCard ? 0.1 : 0.12)
+
+            Column {
+              anchors.left: parent.left
+              anchors.leftMargin: root.px(14)
+              anchors.right: copyButton.left
+              anchors.rightMargin: root.px(10)
+              anchors.verticalCenter: parent.verticalCenter
+              spacing: root.px(1)
+
+              Text {
+                width: parent.width
+                textFormat: Text.PlainText
+                text: root.filterText.trim() + " ="
+                color: root.foreground
+                opacity: 0.55
+                font.family: root.fontFamily
+                font.pixelSize: root.px(13)
+                elide: Text.ElideRight
+              }
+
+              Text {
+                width: parent.width
+                textFormat: Text.PlainText
+                text: root.calcResult
+                color: root.foreground
+                font.family: root.fontFamily
+                font.pixelSize: root.px(18)
+                font.weight: Font.Medium
+                elide: Text.ElideRight
+              }
+            }
+
+            Rectangle {
+              id: copyButton
+              width: root.px(32)
+              height: width
+              radius: width / 2
+              anchors.right: parent.right
+              anchors.rightMargin: root.px(14)
+              anchors.verticalCenter: parent.verticalCenter
+              color: Util.alpha(root.foreground, copyMouse.containsMouse ? 0.14 : 0.08)
+
+              Text {
+                anchors.centerIn: parent
+                textFormat: Text.PlainText
+                text: "󰆏"
+                color: root.foreground
+                font.family: root.fontFamily
+                font.pixelSize: root.px(16)
+              }
+
+              MouseArea {
+                id: copyMouse
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.copyCalc()
+              }
+            }
+          }
         }
 
         Item {
@@ -1765,16 +1870,15 @@ Item {
                 required property int childCount
                 required property bool disabled
 
-                readonly property bool hasCursor: root.cursorActive && row.index === root.selectedIndex
+                readonly property bool hasCursor: !root.calcFocused && root.cursorActive && row.index === root.selectedIndex
                 readonly property bool isApp: row.kind === "app"
-                readonly property bool isCalc: row.kind === "calc"
                 readonly property bool hasIcon: row.icon.length > 0 || row.isApp
                 readonly property bool spot: !root.dmenuActive
-                readonly property bool subtitle: row.spot && !row.isCalc && root.filterText.length > 0 && row.detail.length > 0
+                readonly property bool subtitle: row.spot && root.filterText.length > 0 && row.detail.length > 0
                 readonly property color ink: row.hasCursor ? root.selectedText : root.foreground
 
                 width: ListView.view.width
-                height: row.isCalc ? root.calcRowHeight : root.rowHeightForDetail(row.detail)
+                height: root.rowHeightForDetail(row.detail)
                 // Faded: the row is here to say the software is already
                 // installed, not to be picked.
                 opacity: row.disabled ? 0.4 : 1
@@ -1788,7 +1892,7 @@ Item {
                   text: row.icon
                   color: row.ink
                   font.family: row.iconFont.length > 0 ? row.iconFont : root.fontFamily
-                  font.pixelSize: row.isCalc ? root.px(28) : (row.spot ? root.px(20) : Style.font.heading)
+                  font.pixelSize: row.spot ? root.px(20) : Style.font.heading
                   width: row.spot ? root.px(32) : Style.space(28)
                   horizontalAlignment: Text.AlignHCenter
                   verticalAlignment: Text.AlignVCenter
@@ -1829,20 +1933,8 @@ Item {
                     width: parent.width
                     text: row.label
                     color: row.ink
-                    opacity: row.isCalc ? 0.6 : 1
                     font.family: root.fontFamily
-                    font.pixelSize: row.isCalc ? root.px(14) : (row.spot ? root.px(18) : Style.font.title)
-                    elide: Text.ElideRight
-                  }
-
-                  Text {
-                    textFormat: Text.PlainText
-                    width: parent.width
-                    text: row.detail
-                    visible: row.isCalc
-                    color: row.ink
-                    font.family: root.fontFamily
-                    font.pixelSize: root.px(24)
+                    font.pixelSize: row.spot ? root.px(18) : Style.font.title
                     elide: Text.ElideRight
                   }
 
@@ -1882,7 +1974,7 @@ Item {
 
                   Text {
                     textFormat: Text.PlainText
-                    text: row.isCalc ? "Copy" : root.verbFor(row)
+                    text: root.verbFor(row)
                     color: row.ink
                     opacity: 0.7
                     font.family: root.fontFamily
@@ -2053,7 +2145,7 @@ Item {
             Column {
               anchors.centerIn: parent
               spacing: root.px(8)
-              visible: displayModel.count === 0 && root.mode !== "input"
+              visible: displayModel.count === 0 && root.mode !== "input" && !root.calcResult
 
               Text {
                 text: "󰈉"
@@ -2102,7 +2194,7 @@ Item {
                 { show: !root.dmenuActive, text: "⌃1–9 filter" },
                 { show: !root.dmenuActive && root.activeMenu !== "root" && !root.filterText, text: "⌫ back" },
                 { show: true, text: "esc " + (root.filterText ? "clear" : "close") },
-                { show: root.dmenuActive || !!footerRow.current, text: "↵ " + (root.dmenuActive ? "select" : (footerRow.current && footerRow.current.kind === "action" ? "run" : (footerRow.current && footerRow.current.kind === "calc" ? "copy" : "open"))) }
+                { show: root.dmenuActive || root.calcFocused || !!footerRow.current, text: "↵ " + (root.dmenuActive ? "select" : (root.calcFocused ? "copy" : (footerRow.current && footerRow.current.kind === "action" ? "run" : "open"))) }
               ]
 
               delegate: Text {
