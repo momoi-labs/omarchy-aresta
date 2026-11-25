@@ -88,6 +88,7 @@ Item {
       case "segment": return segmentControl
       case "appearance": return appearanceControl
       case "theme": return themeControl
+      case "clear": return clearControl
       }
       return null
     }
@@ -218,6 +219,33 @@ Item {
       ]
       value: row.auto ? "auto" : row.backend.themeDark(row.backend.themeName) ? "dark" : "light"
       onPicked: value => row.backend.setAppearance(value)
+    }
+  }
+
+  Component {
+    id: clearControl
+    Rectangle {
+      implicitWidth: clearLabel.implicitWidth + 24
+      implicitHeight: 26
+      radius: 7
+      color: clearArea.pressed ? row.ui.control : row.ui.controlSoft
+      border.width: 1
+      border.color: row.ui.controlBorder
+
+      Text {
+        id: clearLabel
+        anchors.centerIn: parent
+        text: row.setting.button
+        color: row.ui.text
+        font.family: row.ui.fontFamily
+        font.pixelSize: 13
+      }
+
+      MouseArea {
+        id: clearArea
+        anchors.fill: parent
+        onClicked: row.backend.clearList(row.setting.key)
+      }
     }
   }
 

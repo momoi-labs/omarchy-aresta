@@ -45,6 +45,10 @@ pub mod qobject {
         fn set_flag(self: Pin<&mut Self>, key: &QString, value: bool);
 
         #[qinvokable]
+        #[cxx_name = "clearList"]
+        fn clear_list(self: Pin<&mut Self>, key: &QString);
+
+        #[qinvokable]
         #[cxx_name = "setText"]
         fn set_text(self: Pin<&mut Self>, key: &QString, value: &QString);
 
@@ -435,6 +439,10 @@ impl qobject::Backend {
 
     pub fn set_text(self: Pin<&mut Self>, key: &QString, value: &QString) {
         self.store(key, Value::Text(value.to_string()));
+    }
+
+    pub fn clear_list(self: Pin<&mut Self>, key: &QString) {
+        self.store(key, Value::List(Vec::new()));
     }
 
     pub fn shortcut_labels(&self, key: &QString) -> QStringList {

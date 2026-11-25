@@ -71,8 +71,9 @@ Open it from the app launcher. It has these sections:
   console keys on or off, and record new shortcuts for them. Omarchy's own
   bindings show as read-only.
 - Spotlight: turn Cupertino Spotlight off to get the Omarchy menu back, set
-  its size from 80% to 150%, pick a gray or theme accent selected row, and
-  show the keyboard hints at the bottom of the card.
+  its size from 80% to 150%, pick a gray or theme accent selected row, show
+  the keyboard hints at the bottom of the card, stop the card from moving,
+  and put it back at its default place.
 - Cupertino: options that macOS does not have, such as rounded corners and
   their radius and shape, the thin border, the shadow, the traffic light size
   and the bar size.

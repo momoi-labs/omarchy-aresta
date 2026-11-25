@@ -71,6 +71,8 @@ fn defaults() -> Vec<Entry> {
         ("spotlight_size", Number(100.0)),
         ("spotlight_selection", Text("gray".into())),
         ("spotlight_shortcuts", Flag(false)),
+        ("spotlight_movable", Flag(true)),
+        ("spotlight_position", List(Vec::new())),
         ("light_theme", Text("osx-light".into())),
         ("dark_theme", Text("osx-dark".into())),
         ("appearance_auto", Flag(false)),
