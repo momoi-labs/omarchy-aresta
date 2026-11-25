@@ -15,7 +15,7 @@ Item {
   readonly property bool dark: backend.themeDark(backend.themeName)
   readonly property bool shadows: backend.revision >= 0 && backend.flag("shadow_enabled")
 
-  readonly property var palette: {
+  readonly property var tokens: {
     var map = {}
     if (backend.themeName === "-" || backend.background === "") return map
     var list = backend.themePalette(backend.themeName)
@@ -27,7 +27,7 @@ Item {
   }
 
   function token(key, fallback) {
-    return palette[key] || fallback
+    return tokens[key] || fallback
   }
 
   readonly property color bg: token("background", ui.background)
@@ -236,7 +236,7 @@ Item {
         textFormat: Text.StyledText
         color: root.fg
         font.family: "monospace"
-        font.pixelSize: 9.5
+        font.pixelSize: 10
         lineHeight: 1.52
         text:
           "<font color=\"" + root.termBlue + "\"><b>~/cupertino</b></font> " +
@@ -417,7 +417,7 @@ Item {
               text: qsTr("Theme Preview")
               color: root.brightInk
               font.family: root.ui.fontFamily
-              font.pixelSize: 10.5
+              font.pixelSize: 11
               font.weight: Font.Bold
             }
 
@@ -436,7 +436,7 @@ Item {
                 text: root.dark ? qsTr("dark") : qsTr("light")
                 color: root.mutedInk
                 font.family: root.ui.fontFamily
-                font.pixelSize: 8.5
+                font.pixelSize: 9
                 font.weight: Font.DemiBold
               }
             }
@@ -522,7 +522,7 @@ Item {
             text: root.themeTitle
             color: root.mutedInk
             font.family: root.ui.fontFamily
-            font.pixelSize: 8.5
+            font.pixelSize: 9
           }
 
           Rectangle {
@@ -540,7 +540,7 @@ Item {
               text: qsTr("Apply")
               color: root.accentText
               font.family: root.ui.fontFamily
-              font.pixelSize: 8.5
+              font.pixelSize: 9
               font.weight: Font.DemiBold
             }
           }
@@ -579,7 +579,7 @@ Item {
           text: root.themeTitle + " · " + (root.dark ? qsTr("Dark") : qsTr("Light"))
           color: root.dark ? "#eceef2" : "#1c1e22"
           font.family: root.ui.fontFamily
-          font.pixelSize: 10.5
+          font.pixelSize: 11
           font.weight: Font.Medium
         }
       }
@@ -608,7 +608,7 @@ Item {
           text: qsTr("UI")
           color: root.ui.textSecondary
           font.family: root.ui.fontFamily
-          font.pixelSize: 10.5
+          font.pixelSize: 11
           font.weight: Font.DemiBold
         }
 
@@ -638,7 +638,7 @@ Item {
           text: qsTr("ANSI")
           color: root.ui.textSecondary
           font.family: root.ui.fontFamily
-          font.pixelSize: 10.5
+          font.pixelSize: 11
           font.weight: Font.DemiBold
         }
 
