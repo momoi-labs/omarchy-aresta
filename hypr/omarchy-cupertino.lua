@@ -31,9 +31,11 @@ local settings = {
   shadow_active_opacity = 35,
   shadow_inactive_opacity = 19,
   traffic_light_size = 14,
+  traffic_lights_position = "left",
   traffic_lights_grey_inactive = true,
   traffic_light_icons_on_hover = true,
   title_align = "center",
+  title_bars_always = false,
   shortcut_quit = "SUPER + Q",
   shortcut_cycle = "SUPER + code:49",
   shortcut_switcher_next = "SUPER + code:23",
@@ -283,16 +285,21 @@ if not settings.traffic_lights_enabled or package.loaded["hypr.titlebars"] then
   return
 end
 
+local BUTTON_POSITION = settings.traffic_lights_position == "right" and "right" or "left"
+
 local config = hl.config
 hl.config = function(values)
   local bars = values and values.plugin and values.plugin.hyprbars
   if bars then
-    bars.bar_buttons_alignment = "left"
+    bars.bar_buttons_alignment = BUTTON_POSITION
     bars.bar_text_align = settings.title_align
     bars.button_rounding = BUTTON_SIZE // 2
     bars.icon_on_hover = settings.traffic_light_icons_on_hover
     bars.inactive_button_color = settings.traffic_lights_grey_inactive and "rgba(8e8e9399)" or "rgba(00000000)"
     bars.bar_button_padding = 8
+    if settings.title_bars_always then
+      bars.workspace_tag = ""
+    end
   end
   return config(values)
 end
@@ -303,11 +310,15 @@ local function wrap_add_button(hyprbars)
   end
   local add_button = hyprbars.add_button
   local pending = {}
+  local lights_added = false
 
   hyprbars.add_button = function(button)
     local light = button and LIGHTS[button.icon]
     if not light then
       return add_button(button)
+    end
+    if lights_added then
+      return
     end
 
     button.bg_color = light.bg
@@ -320,6 +331,7 @@ local function wrap_add_button(hyprbars)
       count = count + 1
     end
     if count == LIGHT_COUNT then
+      lights_added = true
       for i = 1, LIGHT_COUNT do
         add_button(pending[i])
       end
@@ -336,4 +348,83 @@ hl.plugin.load = function(path, ...)
     wrap_add_button(hl.plugin.hyprbars)
   end
   return result
+end
+
+local function titlebars_installed()
+  local file = io.open(TITLEBARS, "r")
+  if not file then
+    return false
+  end
+  file:close()
+  return true
+end
+
+local function theme_colors()
+  local colors = {}
+  local file = io.open(os.getenv("HOME") .. "/.local/state/omarchy/current/theme/colors.toml", "r")
+  if file then
+    for line in file:lines() do
+      local key, value = line:match('^%s*([%w_]+)%s*=%s*"#(%x%x%x%x%x%x)"')
+      if key then
+        colors[key] = "rgb(" .. value .. ")"
+      end
+    end
+    file:close()
+  end
+
+  local background = colors.background or "rgb(1a1b26)"
+  local titlebar = colors.lighter_background
+  if not titlebar or titlebar == background then
+    titlebar = colors.selection or background
+  end
+
+  return {
+    foreground = colors.foreground or "rgb(c0caf5)",
+    titlebar = titlebar,
+  }
+end
+
+if settings.title_bars_always and titlebars_installed() then
+  hl.plugin.load(TITLEBARS)
+  if hl.plugin.hyprbars then
+    local colors = theme_colors()
+    local window = [[window = "address:%WINDOW%"]]
+    hl.config({
+      plugin = {
+        hyprbars = {
+          enabled = true,
+          workspace_tag = "",
+          bar_height = 30,
+          bar_color = colors.titlebar,
+          col = { text = colors.foreground },
+          bar_text_font = "monospace",
+          bar_text_size = 12,
+          bar_text_weight = "normal",
+          bar_text_align = "left",
+          bar_buttons_alignment = "right",
+          bar_part_of_window = true,
+          bar_precedence_over_border = true,
+          bar_padding = 10,
+          bar_button_padding = 8,
+          button_rounding = 0,
+          icon_on_hover = false,
+          inactive_button_color = colors.titlebar,
+          on_double_click = "hyprctl dispatch 'hl.dsp.window.fullscreen({ mode = \"maximized\", action = \"toggle\", " .. window .. " })'",
+        },
+      },
+    })
+    for _, button in ipairs({
+      { icon = "×", action = "hyprctl dispatch 'hl.dsp.window.close({ " .. window .. " })'" },
+      { icon = "□", action = "hyprctl dispatch 'hl.dsp.window.fullscreen({ mode = \"maximized\", action = \"toggle\", " .. window .. " })'" },
+      { icon = "−", action = "omarchy-hyprland-window-minimize %WINDOW%" },
+    }) do
+      hl.plugin.hyprbars.add_button({
+        bg_color = colors.titlebar,
+        fg_color = colors.foreground,
+        size = 20,
+        icon = button.icon,
+        action = button.action,
+      })
+    end
+  end
 end

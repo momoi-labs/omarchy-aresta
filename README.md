@@ -67,7 +67,8 @@ Open it from the app launcher. It has these sections:
   menus, in the center or before the status icons, as numbers or dots), the
   bar background opacity and the clock format.
 - Title Bars: the Cupertino title bars themselves, with a preview of two
-  windows on your wallpaper, grey traffic lights on unfocused windows, icons
+  windows on your wallpaper, showing title bars on tiled windows too, button
+  position (left or right), grey traffic lights on unfocused windows, icons
   in the traffic lights on hover, the window title alignment and the traffic
   light size. Off gives back Omarchy's own title bars.
 - Keyboard: turn Quit app, Cycle windows, the app switcher and the Quake

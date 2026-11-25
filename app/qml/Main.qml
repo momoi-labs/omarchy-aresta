@@ -29,6 +29,11 @@ Window {
     { value: "right", label: qsTr("Right") }
   ]
 
+  readonly property var buttonPositionOptions: [
+    { value: "left", label: qsTr("Left") },
+    { value: "right", label: qsTr("Right") }
+  ]
+
   readonly property var desktopPositions: [
     { value: "menus", label: qsTr("After the menus") },
     { value: "center", label: qsTr("Center") },
@@ -159,11 +164,13 @@ Window {
         { type: "titlebars", label: qsTr("Title bar preview") }
       ] },
       { title: qsTr("Windows"), rows: [
+        { type: "toggle", key: "title_bars_always", requires: "traffic_lights_enabled", label: qsTr("Always show title bars"), hint: qsTr("Show on tiled windows too, not only on floating workspaces") },
+        { type: "segment", key: "traffic_lights_position", requires: "traffic_lights_enabled", label: qsTr("Button position"), options: buttonPositionOptions },
         { type: "toggle", key: "traffic_lights_grey_inactive", requires: "traffic_lights_enabled", label: qsTr("Grey traffic lights on unfocused windows") },
         { type: "toggle", key: "traffic_light_icons_on_hover", requires: "traffic_lights_enabled", label: qsTr("Show icons in traffic lights on hover") },
         { type: "select", key: "title_align", requires: "traffic_lights_enabled", label: qsTr("Window title alignment"), options: titleAlignOptions },
         { type: "stepper", key: "traffic_light_size", requires: "traffic_lights_enabled", label: qsTr("Traffic light size"), min: 8, max: 24, unit: "px" }
-      ], note: qsTr("Title bars show on floating workspaces.") }
+      ] }
     ] },
     { id: "keyboard", name: qsTr("Keyboard"), block: 2, groups: [
       { title: qsTr("Keyboard Shortcuts"), rows: [
@@ -1238,6 +1245,7 @@ Window {
       readonly property bool grey: store.revision >= 0 && store.flag("traffic_lights_grey_inactive")
       readonly property bool hoverIcons: store.revision >= 0 && store.flag("traffic_light_icons_on_hover")
       readonly property string align: store.revision >= 0 ? store.text("title_align") : "center"
+      readonly property bool buttonsRight: store.revision >= 0 && store.text("traffic_lights_position") === "right"
       readonly property real lightSize: store.revision >= 0 ? Math.floor(store.number("traffic_light_size")) : 14
       readonly property var themeColors: {
         var map = {}
@@ -1271,7 +1279,8 @@ Window {
         border.color: look.separator
         clip: true
 
-        Image {
+        RoundedImage {
+          radius: 9
           anchors.fill: parent
           anchors.margins: 1
           source: window.fileUrl(store.currentWallpaper)
@@ -1312,13 +1321,14 @@ Window {
             }
 
             Text {
-              readonly property bool leftAligned: !bars.cupertino || bars.align === "left"
-              x: !bars.cupertino ? 10 : leftAligned ? 26 + frame.lightsWidth : (parent.width - width) / 2
+              readonly property bool centered: bars.cupertino && bars.align === "center"
+              readonly property bool rightAligned: bars.cupertino && bars.align === "right"
+              x: !bars.cupertino ? 10 : centered ? (parent.width - width) / 2 : bars.buttonsRight ? 10 : 26 + frame.lightsWidth
               width: !bars.cupertino ? parent.width - 36 - frame.omarchyWidth
-                : leftAligned ? parent.width - 36 - frame.lightsWidth : parent.width - 52 - 2 * frame.lightsWidth
+                : centered ? parent.width - 52 - 2 * frame.lightsWidth : parent.width - 36 - frame.lightsWidth
               height: 30
               verticalAlignment: Text.AlignVCenter
-              horizontalAlignment: leftAligned ? Text.AlignLeft : Text.AlignHCenter
+              horizontalAlignment: centered ? Text.AlignHCenter : rightAligned ? Text.AlignRight : Text.AlignLeft
               elide: Text.ElideRight
               text: frame.modelData.title
               color: bars.foreground
@@ -1329,14 +1339,14 @@ Window {
             Row {
               id: lights
               visible: bars.cupertino
-              x: 10
+              x: bars.buttonsRight ? parent.width - width - 10 : 10
               y: (30 - bars.lightSize) / 2
               spacing: 8
 
               HoverHandler { id: lightsHover }
 
               Repeater {
-                model: bars.lights
+                model: bars.buttonsRight ? bars.lights.slice().reverse() : bars.lights
 
                 Rectangle {
                   id: light
