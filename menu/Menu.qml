@@ -1723,6 +1723,27 @@ Item {
             font.family: root.fontFamily
             font.pixelSize: root.dmenuActive ? Math.round(Style.font.heading * 1.375) : root.px(26)
             onTextChanged: if (text !== root.filterText) root.setFilter(text)
+            cursorDelegate: Rectangle {
+              id: caret
+              width: Math.max(1, root.px(2))
+              color: root.foreground
+              opacity: filterInput.activeFocus && caretBlink.lit ? 1 : 0
+
+              Timer {
+                id: caretBlink
+                property bool lit: true
+                interval: Qt.styleHints.cursorFlashTime / 2
+                running: filterInput.activeFocus && panel.shown
+                repeat: true
+                onRunningChanged: lit = true
+                onTriggered: lit = !lit
+              }
+
+              Connections {
+                target: filterInput
+                function onTextChanged() { caretBlink.lit = true; caretBlink.restart() }
+              }
+            }
           }
 
           Rectangle {

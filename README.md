@@ -16,8 +16,8 @@ It has:
 - Every window gets rounded corners, a soft shadow and a thin neutral outline
   instead of a colored border.
 - The Omarchy menu drawn as macOS Spotlight. Super+Space, the bar's menu
-  button and `omarchy-menu` open one search field that ranks apps first,
-  then menu rows with their path. A math expression
+  button and `omarchy-menu` open one search field with a blinking cursor
+  that ranks apps first, then menu rows with their path. A math expression
   such as `2^10` or `sqrt(2)*pi` shows its result in the field and on a card
   above the results, and Enter or the copy button copies it. A submenu shows
   as a chip in the field, and Backspace on an empty field goes back. Ctrl+1
