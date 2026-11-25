@@ -127,12 +127,15 @@ Item {
   property color selectedBackground: Commons.Color.menu.selectedText
   property color selectedText: selectedBackground.hslLightness > 0.6 ? "#000000" : "#ffffff"
   readonly property var spotlightSettings: {
-    var values = { spotlight_size: 100, spotlight_selection: "gray", spotlight_shortcuts: false }
+    var values = { spotlight_size: 100, spotlight_selection: "gray", spotlight_shortcuts: false, spotlight_movable: true, spotlight_position: [] }
     var lines = settingsFile.text().split("\n")
     for (var i = 0; i < lines.length; i++) {
       var match = lines[i].match(/^\s*(\w+)\s*=\s*(.*?)\s*$/)
       if (!match || !(match[1] in values)) continue
-      if (typeof values[match[1]] === "boolean") {
+      if (Array.isArray(values[match[1]])) {
+        var list = match[2].match(/^\[(.*)\]$/)
+        if (list) values[match[1]] = list[1].split('"').filter(function(_, index) { return index % 2 === 1 })
+      } else if (typeof values[match[1]] === "boolean") {
         if (match[2] === "true" || match[2] === "false") values[match[1]] = match[2] === "true"
       } else if (typeof values[match[1]] === "string") {
         var text = match[2].match(/^"(.*)"$/)
@@ -143,6 +146,7 @@ Item {
     }
     return values
   }
+  readonly property bool movable: root.spotlightSettings.spotlight_movable
   readonly property real sizeScale: Math.max(80, Math.min(150, root.spotlightSettings.spotlight_size)) / 100
   readonly property bool showFooter: root.dmenuActive || root.spotlightSettings.spotlight_shortcuts
   readonly property bool grayRows: !root.dmenuActive && root.spotlightSettings.spotlight_selection !== "accent"
@@ -189,6 +193,26 @@ Item {
     id: settingsRetry
     interval: 2000
     onTriggered: settingsFile.reload()
+  }
+
+  function savedPosition(name) {
+    var saved = root.spotlightSettings.spotlight_position
+    for (var i = 0; i < saved.length; i++) {
+      var match = saved[i].match(/^(.+):(-?\d+),(-?\d+)$/)
+      if (match && match[1] === name) return { x: Number(match[2]), y: Number(match[3]) }
+    }
+    return null
+  }
+
+  function savePosition(name, x, y) {
+    var saved = root.spotlightSettings.spotlight_position.filter(function(entry) { return entry.indexOf(name + ":") !== 0 })
+    saved.push(name + ":" + x + "," + y)
+    var line = "spotlight_position = [" + saved.map(function(entry) { return '"' + entry + '"' }).join(", ") + "]"
+    var text = settingsFile.text()
+    var pattern = /^\s*spotlight_position\s*=.*$/m
+    if (pattern.test(text)) text = text.replace(pattern, line)
+    else text += (text && !text.endsWith("\n") ? "\n" : "") + line + "\n"
+    settingsFile.setText(text)
   }
 
   function px(macPoints) {
@@ -273,7 +297,7 @@ Item {
   // Uses panel.cardTop rather than effectiveCardTop: the centered top is
   // derived from the card height, which this value feeds.
   function availableRowsHeight() {
-    var top = panel.cardTop >= 0 ? panel.cardTop : (root.dmenuActive ? Style.gapsOut : panel.centeredTop)
+    var top = panel.moved ? panel.movedTop : (panel.cardTop >= 0 ? panel.cardTop : (root.dmenuActive ? Style.gapsOut : panel.centeredTop))
     var available = panel.height - top - Style.gapsOut - root.chromeHeight
     // The starting menu sets the ceiling along with the offset: drilling into
     // a longer submenu scrolls behind the fold instead of growing the card.
@@ -1419,15 +1443,46 @@ Item {
     property int cardTop: -1
     property int maxRowsHeight: -1
     readonly property int centeredTop: root.dmenuActive ? Math.max(Style.gapsOut, Math.round((height - root.cardHeight) / 2)) : Math.max(Style.gapsOut, Math.round(height * 0.2))
-    readonly property int effectiveCardTop: cardTop >= 0 ? cardTop : centeredTop
+    property int movedLeft: -1
+    property int movedTop: -1
+    readonly property bool moved: movedLeft >= 0 && root.movable && !root.dmenuActive
+    readonly property int effectiveCardLeft: moved ? Math.max(Style.gapsOut, Math.min(movedLeft, width - Style.gapsOut - root.cardWidth)) : Math.round((width - root.cardWidth) / 2)
+    readonly property int effectiveCardTop: moved ? Math.max(Style.gapsOut, Math.min(movedTop, height - Style.gapsOut - root.chromeHeight - root.baseRowHeight)) : (cardTop >= 0 ? cardTop : centeredTop)
     function freezeCardTop() {
       if (shown && cardTop < 0) {
         cardTop = effectiveCardTop
         maxRowsHeight = root.visibleRowsHeight
       }
     }
-    onShownChanged: if (!shown) { cardTop = -1; maxRowsHeight = -1 }
-    onTargetScreenChanged: { cardTop = -1; maxRowsHeight = -1 }
+    property point dragPress
+    property point dragCard
+    property bool dragging: false
+    function pressDrag(point) {
+      dragPress = point
+      dragCard = Qt.point(card.x, card.y)
+      dragging = false
+    }
+    function moveDrag(point) {
+      if (!root.movable || root.dmenuActive) return
+      var dx = point.x - dragPress.x
+      var dy = point.y - dragPress.y
+      if (!dragging && Math.abs(dx) < Qt.styleHints.startDragDistance && Math.abs(dy) < Qt.styleHints.startDragDistance) return
+      dragging = true
+      movedLeft = Math.round(Math.max(Style.gapsOut, Math.min(dragCard.x + dx, width - Style.gapsOut - card.width)))
+      movedTop = Math.round(Math.max(Style.gapsOut, Math.min(dragCard.y + dy, height - Style.gapsOut - card.height)))
+    }
+    function releaseDrag() {
+      if (dragging && targetScreen) root.savePosition(targetScreen.name, movedLeft, movedTop)
+      dragging = false
+    }
+    onShownChanged: if (!shown) { cardTop = -1; maxRowsHeight = -1; movedLeft = -1; movedTop = -1 }
+    onTargetScreenChanged: {
+      cardTop = -1
+      maxRowsHeight = -1
+      var saved = targetScreen ? root.savedPosition(targetScreen.name) : null
+      movedLeft = saved ? Math.max(0, saved.x) : -1
+      movedTop = saved ? Math.max(0, saved.y) : -1
+    }
 
 
     Rectangle {
@@ -1444,7 +1499,7 @@ Item {
       id: card
       width: root.cardWidth
       height: Math.min(root.cardHeight, panel.height - Style.gapsOut - panel.effectiveCardTop)
-      anchors.horizontalCenter: parent.horizontalCenter
+      x: panel.effectiveCardLeft
       y: panel.effectiveCardTop
 
       Squircle {
@@ -1455,7 +1510,12 @@ Item {
         borderColor: root.border
       }
 
-      MouseArea { anchors.fill: parent; onClicked: {} }
+      MouseArea {
+        anchors.fill: parent
+        onPressed: function(mouse) { panel.pressDrag(mapToItem(null, mouse.x, mouse.y)) }
+        onPositionChanged: function(mouse) { panel.moveDrag(mapToItem(null, mouse.x, mouse.y)) }
+        onReleased: panel.releaseDrag()
+      }
 
       Item {
         id: keyCatcher
@@ -1690,6 +1750,15 @@ Item {
             font.family: root.fontFamily
             font.pixelSize: filterInput.font.pixelSize
             elide: Text.ElideRight
+          }
+
+          MouseArea {
+            x: filterInput.x + filterInput.contentWidth
+            width: parent.width - x
+            height: parent.height
+            onPressed: function(mouse) { panel.pressDrag(mapToItem(null, mouse.x, mouse.y)) }
+            onPositionChanged: function(mouse) { panel.moveDrag(mapToItem(null, mouse.x, mouse.y)) }
+            onReleased: panel.releaseDrag()
           }
         }
 

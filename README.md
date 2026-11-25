@@ -23,9 +23,10 @@ It has:
   in the field, and Backspace on an empty field goes back. A row of filter
   buttons above the results opens Apps, as an icon grid, or a menu section.
   Each button shows its name and shortcut on hover. Ctrl+1 to Ctrl+9 pick a
-  filter, because Super+1 to Super+9 switch workspaces. Scripts
-  that use the menu as a picker, such as `omarchy-menu-keybindings`, keep
-  working.
+  filter, because Super+1 to Super+9 switch workspaces. Drag the card by
+  its field or its edge to move it, and it opens there next time on that
+  display. Scripts that use the menu as a picker, such as
+  `omarchy-menu-keybindings`, keep working.
 - Two Omarchy themes in macOS system colors: OSX Light and OSX Dark. Pick
   them in the Omarchy theme menu or with `omarchy-theme-set "osx light"`.
   Each has the Yaru blue icons and an original gradient background.
