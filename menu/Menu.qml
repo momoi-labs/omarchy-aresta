@@ -1127,6 +1127,8 @@ Item {
     activeMenu = "root"
     navStack = []
     filterText = ""
+    calcResult = ""
+    calcFocused = false
     selectedIndex = 0
     cursorActive = mode !== "input"
     root.disarmPointer()
