@@ -10,7 +10,7 @@ case "$1" in
   brightness)
     [[ $2 =~ ^[0-9]+$ ]] || exit 1
     omarchy-brightness-display --no-osd "$2%"
-    rm -f "$STATE/brightness"
+    rm -f "$STATE"/brightness-*
     ;;
   volume)
     [[ $2 =~ ^[0-9]+$ ]] || exit 1

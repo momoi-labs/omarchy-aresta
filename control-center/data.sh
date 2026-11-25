@@ -16,7 +16,7 @@ bt_devices=$(timeout 3 bluetoothctl devices Connected 2>/dev/null | sed -n 's/^D
 focus=$(timeout 2 omarchy-shell notifications isDnd 2>/dev/null)
 [[ $focus == on ]] || focus=off
 
-cache=$STATE/brightness
+cache=$STATE/brightness-$(timeout 2 omarchy-hyprland-monitor-focused 2>/dev/null)
 if [[ ! -s $cache || $(( $(date +%s) - $(stat -c %Y "$cache") )) -ge 15 ]]; then
   value=$(timeout 6 omarchy-brightness-display 2>/dev/null)
   [[ $value =~ ^[0-9]+$ ]] || value=-1

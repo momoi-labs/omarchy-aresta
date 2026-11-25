@@ -52,8 +52,8 @@ Column {
   }
   readonly property var sliders: {
     var out = []
-    if (show.display) out.push({ id: "brightness", name: qsTr("Display"), percent: display.percent === undefined ? -1 : display.percent, code: 0xF0379, floor: 1 })
-    if (show.sound) out.push({ id: "volume", name: qsTr("Sound"), percent: sound.percent === undefined ? -1 : sound.percent, code: soundCode, floor: 0 })
+    if (show.display) out.push("brightness")
+    if (show.sound) out.push("volume")
     return out
   }
   readonly property bool side: show.focus || show.sound
@@ -276,16 +276,18 @@ Column {
     model: view.sliders
     Card {
       id: slide
-      required property var modelData
+      required property string modelData
+      readonly property bool screen: modelData === "brightness"
+      readonly property var percent: screen ? view.display.percent : view.sound.percent
       width: view.w
       height: 66
 
-      Label { x: 14; y: 10; text: slide.modelData.name; font.weight: Font.DemiBold }
+      Label { x: 14; y: 10; text: slide.screen ? qsTr("Display") : qsTr("Sound"); font.weight: Font.DemiBold }
       Label {
         anchors.right: parent.right
         anchors.rightMargin: 14
         y: 11
-        text: slide.modelData.percent < 0 ? qsTr("No data") : Math.round(level.shown) + "%"
+        text: level.percent < 0 ? qsTr("No data") : Math.round(level.shown) + "%"
         color: view.dim
         font.pixelSize: 11
       }
@@ -294,10 +296,10 @@ Column {
         x: 12
         y: 32
         width: parent.width - 24
-        percent: slide.modelData.percent
-        code: slide.modelData.code
-        floor: slide.modelData.floor
-        onMoved: function(value) { view.act([slide.modelData.id, String(value)]) }
+        percent: slide.percent === undefined ? -1 : slide.percent
+        code: slide.screen ? 0xF0379 : view.soundCode
+        floor: slide.screen ? 1 : 0
+        onMoved: function(value) { view.act([slide.modelData, String(value)]) }
       }
     }
   }
