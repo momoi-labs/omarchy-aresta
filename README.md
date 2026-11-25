@@ -23,8 +23,10 @@ It has:
   in the field, and Backspace on an empty field goes back. A row of filter
   buttons above the results opens Apps, as an icon grid, or a menu section.
   Each button shows its name and shortcut on hover. Ctrl+1 to Ctrl+9 pick a
-  filter, because Super+1 to Super+9 switch workspaces. Drag the card by
-  its field or its edge to move it, and it opens there next time on that
+  filter, because Super+1 to Super+9 switch workspaces. An empty field
+  shows a small card that grows with the results up to the screen edge, then
+  scrolls. Drag the card by its field or its sides to move it, or by its top or
+  bottom edge to change its height, and it opens that way next time on that
   display. Scripts that use the menu as a picker, such as
   `omarchy-menu-keybindings`, keep working.
 - Two Omarchy themes in macOS system colors: OSX Light and OSX Dark. Pick
@@ -72,8 +74,8 @@ Open it from the app launcher. It has these sections:
   bindings show as read-only.
 - Spotlight: turn Cupertino Spotlight off to get the Omarchy menu back, set
   its size from 80% to 150%, pick a gray or theme accent selected row, show
-  the keyboard hints at the bottom of the card, stop the card from moving,
-  and put it back at its default place.
+  the keyboard hints at the bottom of the card, stop the card from moving
+  or resizing, and put it back at its default place and height.
 - Cupertino: options that macOS does not have, such as rounded corners and
   their radius and shape, the thin border, the shadow, the traffic light size
   and the bar size.

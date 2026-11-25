@@ -127,7 +127,7 @@ Item {
   property color selectedBackground: Commons.Color.menu.selectedText
   property color selectedText: selectedBackground.hslLightness > 0.6 ? "#000000" : "#ffffff"
   readonly property var spotlightSettings: {
-    var values = { spotlight_size: 100, spotlight_selection: "gray", spotlight_shortcuts: false, spotlight_movable: true, spotlight_position: [] }
+    var values = { spotlight_size: 100, spotlight_selection: "gray", spotlight_shortcuts: false, spotlight_movable: true, spotlight_position: [], spotlight_height: [] }
     var lines = settingsFile.text().split("\n")
     for (var i = 0; i < lines.length; i++) {
       var match = lines[i].match(/^\s*(\w+)\s*=\s*(.*?)\s*$/)
@@ -147,6 +147,8 @@ Item {
     return values
   }
   readonly property bool movable: root.spotlightSettings.spotlight_movable
+  readonly property bool emptyRoot: !root.dmenuActive && root.activeMenu === "root" && root.filterText.trim() === ""
+  readonly property bool listShown: root.mode !== "input" && !root.emptyRoot
   readonly property real sizeScale: Math.max(80, Math.min(150, root.spotlightSettings.spotlight_size)) / 100
   readonly property bool showFooter: root.dmenuActive || root.spotlightSettings.spotlight_shortcuts
   readonly property bool grayRows: !root.dmenuActive && root.spotlightSettings.spotlight_selection !== "accent"
@@ -159,7 +161,7 @@ Item {
   property int headerHeight: root.dmenuActive ? Style.space(52) : root.px(56)
   readonly property int filterBarHeight: root.dmenuActive ? 0 : root.px(46)
   readonly property int footerHeight: root.dmenuActive ? Style.space(30) : (root.showFooter ? root.px(32) : 0)
-  readonly property int chromeHeight: headerHeight + calcAreaHeight + filterBarHeight + footerHeight + (root.showFooter ? 2 : 1) + (mode === "input" ? 0 : contentMargin * 2)
+  readonly property int chromeHeight: headerHeight + calcAreaHeight + filterBarHeight + footerHeight + (root.showFooter ? 2 : 1) + (root.listShown ? contentMargin * 2 : 0)
   property int baseRowHeight: root.dmenuActive ? Math.max(Style.space(32), Style.font.heading + Style.spacing.rowPaddingX) : root.px(56)
   property int detailRowHeight: Math.max(Style.space(46), Style.font.body + Style.font.caption + Style.spacing.rowPaddingX * 2)
   property string calcResult: ""
@@ -178,7 +180,7 @@ Item {
   readonly property int gridCellHeight: root.px(96)
   property int cardWidth: Math.min(root.dmenuActive ? Style.space(root.dmenuWidth) : root.px(640), panel.width - Style.gapsOut * 2)
   property int visibleRowsHeight: root.dmenuActive ? dmenuRowListHeight(layoutSerial, displayModel.count, filterText) : (root.gridActive ? gridHeight(layoutSerial, displayModel.count) : rowListHeight(layoutSerial, displayModel.count, filterText, searchDivider))
-  property int cardHeight: Math.min(chromeHeight + (mode === "input" ? 0 : visibleRowsHeight), panel.height - Style.gapsOut * 2)
+  property int cardHeight: Math.min(chromeHeight + (root.listShown ? visibleRowsHeight : 0), panel.height - Style.gapsOut * 2)
 
   FileView {
     id: settingsFile
@@ -195,23 +197,28 @@ Item {
     onTriggered: settingsFile.reload()
   }
 
-  function savedPosition(name) {
-    var saved = root.spotlightSettings.spotlight_position
+  function savedEntry(key, name) {
+    var saved = root.spotlightSettings[key]
     for (var i = 0; i < saved.length; i++) {
-      var match = saved[i].match(/^(.+):(-?\d+),(-?\d+)$/)
-      if (match && match[1] === name) return { x: Number(match[2]), y: Number(match[3]) }
+      var at = saved[i].lastIndexOf(":")
+      if (at > 0 && saved[i].substring(0, at) === name) {
+        var numbers = saved[i].substring(at + 1).split(",").map(Number)
+        if (numbers.every(function(number) { return isFinite(number) })) return numbers
+      }
     }
     return null
   }
 
-  function savePosition(name, x, y) {
-    var saved = root.spotlightSettings.spotlight_position.filter(function(entry) { return entry.indexOf(name + ":") !== 0 })
-    saved.push(name + ":" + x + "," + y)
-    var line = "spotlight_position = [" + saved.map(function(entry) { return '"' + entry + '"' }).join(", ") + "]"
+  function saveEntries(name, entries) {
     var text = settingsFile.text()
-    var pattern = /^\s*spotlight_position\s*=.*$/m
-    if (pattern.test(text)) text = text.replace(pattern, line)
-    else text += (text && !text.endsWith("\n") ? "\n" : "") + line + "\n"
+    for (var key in entries) {
+      var saved = root.spotlightSettings[key].filter(function(entry) { return entry.indexOf(name + ":") !== 0 })
+      saved.push(name + ":" + entries[key].join(","))
+      var line = key + " = [" + saved.map(function(entry) { return '"' + entry + '"' }).join(", ") + "]"
+      var pattern = new RegExp("^\\s*" + key + "\\s*=.*$", "m")
+      if (pattern.test(text)) text = text.replace(pattern, line)
+      else text += (text && !text.endsWith("\n") ? "\n" : "") + line + "\n"
+    }
     settingsFile.setText(text)
   }
 
@@ -297,12 +304,13 @@ Item {
   // Uses panel.cardTop rather than effectiveCardTop: the centered top is
   // derived from the card height, which this value feeds.
   function availableRowsHeight() {
-    var top = panel.moved ? panel.movedTop : (panel.cardTop >= 0 ? panel.cardTop : (root.dmenuActive ? Style.gapsOut : panel.centeredTop))
-    var available = panel.height - top - Style.gapsOut - root.chromeHeight
+    var top = panel.moved ? panel.effectiveCardTop : (panel.cardTop >= 0 ? panel.cardTop : (root.dmenuActive ? Style.gapsOut : panel.centeredTop))
+    var available = panel.bottomLimit - top - root.chromeHeight
     // The starting menu sets the ceiling along with the offset: drilling into
     // a longer submenu scrolls behind the fold instead of growing the card.
     if (root.dmenuActive && panel.maxRowsHeight >= 0) available = Math.min(available, panel.maxRowsHeight)
-    if (!root.dmenuActive && !root.gridActive) available = Math.min(available, root.baseRowHeight * 7 + root.rowPeek)
+    if (!root.dmenuActive && panel.userHeight > 0) return Math.min(available, panel.userHeight - root.chromeHeight)
+    if (!root.dmenuActive) available = Math.min(available, root.baseRowHeight * 7 + root.rowPeek)
     // A card that swallows the whole screen reads as a page, not a menu.
     return Math.min(available, Math.round(panel.height * 0.7))
   }
@@ -314,6 +322,7 @@ Item {
     var count = totals.length
     if (count === 0) return root.baseRowHeight
     if (totals[count - 1] <= available) return totals[count - 1]
+    if (!root.dmenuActive && panel.userHeight > 0) return available
 
     var peek = root.rowPeek
     var full = 0
@@ -869,7 +878,7 @@ Item {
       rows = appRows.concat(rows.filter(function(r) { return r.kind !== "app" }))
       root.searchDivider = rows.some(function(r) { return r.section === "drilldown" })
       calc = active === "root" ? Calculator.evaluate(query) : ""
-    } else {
+    } else if (!root.emptyRoot) {
       for (var j = 0; j < root.itemOrder.length; j++) {
         var child = root.item(root.itemOrder[j])
         if (!child || child.parent !== active) continue
@@ -1445,9 +1454,16 @@ Item {
     readonly property int centeredTop: root.dmenuActive ? Math.max(Style.gapsOut, Math.round((height - root.cardHeight) / 2)) : Math.max(Style.gapsOut, Math.round(height * 0.2))
     property int movedLeft: -1
     property int movedTop: -1
+    property int movedHeight: -1
     readonly property bool moved: movedLeft >= 0 && root.movable && !root.dmenuActive
+    readonly property int defaultHeight: root.headerHeight + root.filterBarHeight + root.footerHeight + (root.showFooter ? 2 : 1) + root.contentMargin * 2 + root.baseRowHeight * 7 + root.rowPeek
+    readonly property int userHeight: movedHeight > 0 && root.movable && !root.dmenuActive ? Math.max(movedHeight, defaultHeight) : -1
+    readonly property var reserved: targetMonitor && targetMonitor.lastIpcObject && targetMonitor.lastIpcObject.reserved ? targetMonitor.lastIpcObject.reserved : [0, 0, 0, 0]
+    readonly property int topLimit: Style.gapsOut + reserved[1]
+    readonly property int bottomLimit: height - Style.gapsOut - reserved[3]
+    readonly property int lowestTop: bottomLimit - root.chromeHeight - (root.listShown ? 0 : root.contentMargin * 2) - root.baseRowHeight
     readonly property int effectiveCardLeft: moved ? Math.max(Style.gapsOut, Math.min(movedLeft, width - Style.gapsOut - root.cardWidth)) : Math.round((width - root.cardWidth) / 2)
-    readonly property int effectiveCardTop: moved ? Math.max(Style.gapsOut, Math.min(movedTop, height - Style.gapsOut - root.chromeHeight - root.baseRowHeight)) : (cardTop >= 0 ? cardTop : centeredTop)
+    readonly property int effectiveCardTop: moved ? Math.max(topLimit, Math.min(movedTop, lowestTop)) : (cardTop >= 0 ? cardTop : centeredTop)
     function freezeCardTop() {
       if (shown && cardTop < 0) {
         cardTop = effectiveCardTop
@@ -1469,19 +1485,54 @@ Item {
       if (!dragging && Math.abs(dx) < Qt.styleHints.startDragDistance && Math.abs(dy) < Qt.styleHints.startDragDistance) return
       dragging = true
       movedLeft = Math.round(Math.max(Style.gapsOut, Math.min(dragCard.x + dx, width - Style.gapsOut - card.width)))
-      movedTop = Math.round(Math.max(Style.gapsOut, Math.min(dragCard.y + dy, height - Style.gapsOut - card.height)))
+      movedTop = Math.round(Math.max(topLimit, Math.min(dragCard.y + dy, bottomLimit - card.height, lowestTop)))
     }
     function releaseDrag() {
-      if (dragging && targetScreen) root.savePosition(targetScreen.name, movedLeft, movedTop)
+      if (dragging && targetScreen) root.saveEntries(targetScreen.name, { spotlight_position: [movedLeft, movedTop] })
       dragging = false
     }
-    onShownChanged: if (!shown) { cardTop = -1; maxRowsHeight = -1; movedLeft = -1; movedTop = -1 }
+    property real resizePress
+    property int resizeTop
+    property int resizeHeight
+    property bool resizing: false
+    function pressResize(point) {
+      resizePress = point.y
+      resizeTop = card.y
+      resizeHeight = card.height
+      resizing = false
+    }
+    function moveResize(point, fromTop) {
+      if (!root.movable || root.dmenuActive) return
+      var dy = point.y - resizePress
+      if (!resizing && Math.abs(dy) < Qt.styleHints.startDragDistance) return
+      resizing = true
+      if (fromTop) {
+        var bottom = resizeTop + resizeHeight
+        var top = Math.round(Math.max(topLimit, Math.min(resizeTop + dy, bottom - defaultHeight)))
+        movedLeft = card.x
+        movedTop = top
+        movedHeight = bottom - top
+      } else {
+        movedHeight = Math.round(Math.max(defaultHeight, Math.min(resizeHeight + dy, bottomLimit - card.y)))
+      }
+    }
+    function releaseResize(fromTop) {
+      if (resizing && targetScreen) {
+        var entries = { spotlight_height: [movedHeight] }
+        if (fromTop) entries.spotlight_position = [movedLeft, movedTop]
+        root.saveEntries(targetScreen.name, entries)
+      }
+      resizing = false
+    }
+    onShownChanged: if (!shown) { cardTop = -1; maxRowsHeight = -1; movedLeft = -1; movedTop = -1; movedHeight = -1 }
     onTargetScreenChanged: {
       cardTop = -1
       maxRowsHeight = -1
-      var saved = targetScreen ? root.savedPosition(targetScreen.name) : null
-      movedLeft = saved ? Math.max(0, saved.x) : -1
-      movedTop = saved ? Math.max(0, saved.y) : -1
+      var saved = targetScreen ? root.savedEntry("spotlight_position", targetScreen.name) : null
+      var size = targetScreen ? root.savedEntry("spotlight_height", targetScreen.name) : null
+      movedLeft = saved && saved.length === 2 ? Math.max(0, saved[0]) : -1
+      movedTop = saved && saved.length === 2 ? Math.max(0, saved[1]) : -1
+      movedHeight = size && size.length === 1 ? Math.max(1, size[0]) : -1
     }
 
 
@@ -1936,8 +1987,8 @@ Item {
 
         Item {
           width: parent.width
-          height: root.mode === "input" ? 0 : root.visibleRowsHeight + root.contentMargin * 2
-          visible: root.mode !== "input"
+          height: root.listShown ? root.visibleRowsHeight + root.contentMargin * 2 : 0
+          visible: root.listShown
 
           Item {
             anchors.fill: parent
@@ -2342,6 +2393,32 @@ Item {
             }
           }
         }
+      }
+
+      MouseArea {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        height: root.px(6)
+        hoverEnabled: true
+        cursorShape: Qt.SizeVerCursor
+        enabled: root.movable && !root.dmenuActive && root.listShown
+        onPressed: function(mouse) { panel.pressResize(mapToItem(null, mouse.x, mouse.y)) }
+        onPositionChanged: function(mouse) { if (pressed) panel.moveResize(mapToItem(null, mouse.x, mouse.y), true) }
+        onReleased: panel.releaseResize(true)
+      }
+
+      MouseArea {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        height: root.px(6)
+        hoverEnabled: true
+        cursorShape: Qt.SizeVerCursor
+        enabled: root.movable && !root.dmenuActive && root.listShown
+        onPressed: function(mouse) { panel.pressResize(mapToItem(null, mouse.x, mouse.y)) }
+        onPositionChanged: function(mouse) { if (pressed) panel.moveResize(mapToItem(null, mouse.x, mouse.y), false) }
+        onReleased: panel.releaseResize(false)
       }
     }
   }

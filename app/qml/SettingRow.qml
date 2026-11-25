@@ -244,7 +244,7 @@ Item {
       MouseArea {
         id: clearArea
         anchors.fill: parent
-        onClicked: row.backend.clearList(row.setting.key)
+        onClicked: row.setting.keys.forEach(key => row.backend.clearList(key))
       }
     }
   }
