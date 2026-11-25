@@ -291,7 +291,7 @@ Item {
       anchors.rightMargin: 20
       y: 34
       z: 4
-      width: Math.min(312, Math.max(210, stage.width * 0.45))
+      width: Math.min(312, Math.max(252, stage.width * 0.45))
       height: 162
       radius: 9
       color: root.bg
@@ -410,7 +410,10 @@ Item {
 
             Text {
               anchors.left: parent.left
+              anchors.right: modeBadgeBox.left
+              anchors.rightMargin: 6
               anchors.verticalCenter: parent.verticalCenter
+              elide: Text.ElideRight
               text: qsTr("Theme Preview")
               color: root.brightInk
               font.family: root.ui.fontFamily
@@ -419,6 +422,7 @@ Item {
             }
 
             Rectangle {
+              id: modeBadgeBox
               anchors.right: parent.right
               anchors.verticalCenter: parent.verticalCenter
               width: modeBadge.implicitWidth + 12
@@ -467,8 +471,12 @@ Item {
             border.color: Qt.alpha(root.fg, 0.08)
 
             Text {
-              x: 8
+              anchors.left: parent.left
+              anchors.leftMargin: 8
+              anchors.right: miniToggle.left
+              anchors.rightMargin: 6
               anchors.verticalCenter: parent.verticalCenter
+              elide: Text.ElideRight
               text: qsTr("Adaptive tint")
               color: root.fg
               font.family: root.ui.fontFamily
@@ -476,6 +484,7 @@ Item {
             }
 
             Rectangle {
+              id: miniToggle
               anchors.right: parent.right
               anchors.rightMargin: 8
               anchors.verticalCenter: parent.verticalCenter
