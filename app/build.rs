@@ -15,6 +15,7 @@ fn main() {
         "qml/MacSegmented.qml",
         "qml/ThemePicker.qml",
         "qml/RoundedImage.qml",
+        "qml/AppearancePreview.qml",
     ]))
     .qt_module("Quick")
     .files(["src/backend.rs"])
