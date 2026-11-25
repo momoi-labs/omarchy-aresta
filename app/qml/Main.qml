@@ -138,6 +138,8 @@ Window {
       .map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1) }).join(" ")
   }
 
+  readonly property bool battery: store.hasBattery()
+
   readonly property var sections: [
     { id: "appearance", name: qsTr("Appearance"), block: 1, groups: [
       { title: qsTr("Appearance"), rows: [
@@ -185,6 +187,27 @@ Window {
         { type: "toggle", key: "traffic_light_icons_on_hover", requires: "traffic_lights_enabled", label: qsTr("Show icons in traffic lights on hover") },
         { type: "select", key: "title_align", requires: "traffic_lights_enabled", label: qsTr("Window title alignment"), options: titleAlignOptions },
         { type: "stepper", key: "traffic_light_size", requires: "traffic_lights_enabled", label: qsTr("Traffic light size"), min: 8, max: 24, unit: "px" }
+      ] }
+    ] },
+    { id: "controlcenter", name: qsTr("Control Center"), block: 1, groups: [
+      { rows: [
+        { type: "toggle", key: "control_center_enabled", label: qsTr("Use Control Center") }
+      ] },
+      { title: qsTr("Panel"), rows: [
+        { type: "cc", label: qsTr("Control Center preview") },
+        { type: "toggle", key: "cc_wifi", requires: "control_center_enabled", label: qsTr("Wi-Fi") },
+        { type: "toggle", key: "cc_bluetooth", requires: "control_center_enabled", label: qsTr("Bluetooth") },
+        { type: "toggle", key: "cc_focus", requires: "control_center_enabled", label: qsTr("Focus") },
+        { type: "toggle", key: "cc_display", requires: "control_center_enabled", label: qsTr("Display") },
+        { type: "toggle", key: "cc_sound", requires: "control_center_enabled", label: qsTr("Sound") },
+        { type: "toggle", key: "cc_media", requires: "control_center_enabled", label: qsTr("Now Playing") }
+      ] },
+      { title: qsTr("Also show in the menu bar"), rows: [
+        { type: "toggle", key: "cc_bar_network", requires: "control_center_enabled", label: qsTr("Wi-Fi in the menu bar") },
+        { type: "toggle", key: "cc_bar_bluetooth", requires: "control_center_enabled", label: qsTr("Bluetooth in the menu bar") },
+        { type: "toggle", key: "cc_bar_audio", requires: "control_center_enabled", label: qsTr("Sound in the menu bar") },
+        { type: "toggle", key: "cc_bar_monitor", requires: "control_center_enabled", label: qsTr("System monitor in the menu bar") },
+        { type: "toggle", key: "cc_bar_power", requires: "control_center_enabled", locked: !battery, label: qsTr("Battery in the menu bar"), hint: battery ? "" : qsTr("This computer has no battery") }
       ] }
     ] },
     { id: "keyboard", name: qsTr("Keyboard"), block: 2, groups: [
@@ -668,7 +691,8 @@ Window {
                       : modelData.type === "wallpaper" ? wallpaperRow
                       : modelData.type === "bar" ? barRow
                       : modelData.type === "titlebars" ? titleBarsRow
-                      : modelData.type === "spotlight" ? spotlightRow : settingRow
+                      : modelData.type === "spotlight" ? spotlightRow
+                      : modelData.type === "cc" ? ccRow : settingRow
 
                     Component {
                       id: settingRow
@@ -1714,6 +1738,245 @@ Window {
                     }
                   }
                 }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  Component {
+    id: ccRow
+
+    Item {
+      id: ccPreview
+      readonly property bool live: store.revision >= 0
+      readonly property bool on: live && store.flag("control_center_enabled")
+      readonly property color ink: look.text
+      readonly property var barIcons: {
+        var all = [
+          { key: "cc_bar_network", path: "M1 4.5 Q8 -1.5 15 4.5 M3.5 7 Q8 3.5 12.5 7 M6 9.5 Q8 8 10 9.5" },
+          { key: "cc_bar_bluetooth", path: "M5 3 L11 9 L8 11.5 V0.5 L11 3 L5 9" },
+          { key: "cc_bar_audio", path: "M2 4.5 H4.5 L8 1.5 V10.5 L4.5 7.5 H2 Z M10.5 4 Q12 6 10.5 8 M12.5 2.5 Q15 6 12.5 9.5" },
+          { key: "cc_bar_monitor", path: "M1 6.5 H4.5 L6.5 2 L9.5 10.5 L11.5 6.5 H15" },
+          { key: "cc_bar_power", path: "M2.5 2.5 H11.5 Q13 2.5 13 4 V8 Q13 9.5 11.5 9.5 H2.5 Q1 9.5 1 8 V4 Q1 2.5 2.5 2.5 Z M15 5 V7 M3.5 5 H9 V7 H3.5 Z" }
+        ]
+        return all.filter(function(item) {
+          if (item.key === "cc_bar_power" && !window.battery) return false
+          return ccPreview.live && (!ccPreview.on || store.flag(item.key))
+        })
+      }
+      function has(key) { return live && store.flag(key) }
+      implicitHeight: 254
+
+      Timer {
+        id: ccMinute
+        property date now: new Date()
+        interval: 1000
+        running: true
+        repeat: true
+        onTriggered: now = new Date()
+      }
+
+      Rectangle {
+        x: 12
+        y: 12
+        width: parent.width - 24
+        height: 230
+        radius: 10
+        color: look.controlSoft
+        border.width: 1
+        border.color: look.separator
+        clip: true
+
+        RoundedImage {
+          radius: 9
+          anchors.fill: parent
+          anchors.margins: 1
+          source: window.fileUrl(store.currentWallpaper)
+          sourceSize.width: 1400
+          fillMode: Image.PreserveAspectCrop
+          asynchronous: true
+        }
+
+        Rectangle {
+          x: 1
+          y: 1
+          width: parent.width - 2
+          height: 28
+          color: Qt.alpha(look.background, (ccPreview.live ? store.number("bar_opacity") : 80) / 100)
+
+          Text {
+            x: 12
+            anchors.verticalCenter: parent.verticalCenter
+            text: qsTr("Ghostty")
+            color: ccPreview.ink
+            font.family: look.fontFamily
+            font.pixelSize: 12
+            font.weight: Font.Bold
+          }
+
+          Row {
+            anchors.right: parent.right
+            anchors.rightMargin: 12
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 14
+
+            Repeater {
+              model: ccPreview.barIcons
+              Shape {
+                id: ccIcon
+                required property var modelData
+                anchors.verticalCenter: parent.verticalCenter
+                width: 16
+                height: 12
+                preferredRendererType: Shape.CurveRenderer
+                ShapePath {
+                  strokeColor: ccPreview.ink
+                  strokeWidth: 1.4
+                  fillColor: "transparent"
+                  capStyle: ShapePath.RoundCap
+                  joinStyle: ShapePath.RoundJoin
+                  PathSvg { path: ccIcon.modelData.path }
+                }
+              }
+            }
+
+            Item {
+              visible: ccPreview.on
+              anchors.verticalCenter: parent.verticalCenter
+              width: 16
+              height: 13
+
+              Repeater {
+                model: 2
+                Rectangle {
+                  required property int index
+                  y: index * 7
+                  width: 16
+                  height: 6
+                  radius: 3
+                  color: "transparent"
+                  border.width: 1.2
+                  border.color: ccPreview.ink
+                  Rectangle { x: parent.index === 0 ? 10.5 : 2.5; y: 1.5; width: 3; height: 3; radius: 1.5; color: ccPreview.ink }
+                }
+              }
+            }
+
+            Text {
+              anchors.verticalCenter: parent.verticalCenter
+              text: Qt.formatDateTime(ccMinute.now, ccPreview.live ? store.text("clock_format") : "")
+              color: ccPreview.ink
+              font.family: look.fontFamily
+              font.pixelSize: 12
+            }
+          }
+        }
+
+        Rectangle {
+          visible: ccPreview.on
+          anchors.right: parent.right
+          anchors.rightMargin: 10
+          y: 35
+          width: 190
+          height: Math.min(parent.height - 43, ccBody.implicitHeight + 14)
+          radius: 12
+          color: look.background
+          border.width: 1
+          border.color: look.separator
+          clip: true
+
+          Column {
+            id: ccBody
+            x: 7
+            y: 7
+            width: parent.width - 14
+            spacing: 5
+
+            Flow {
+              width: parent.width
+              spacing: 5
+
+              Repeater {
+                model: [
+                  { key: "cc_wifi", name: qsTr("Wi-Fi"), on: true },
+                  { key: "cc_bluetooth", name: qsTr("Bluetooth"), on: true },
+                  { key: "cc_focus", name: qsTr("Focus"), on: false },
+                  { key: "cc_sound", name: qsTr("Output"), on: false }
+                ].filter(function(item) { return ccPreview.has(item.key) })
+                Rectangle {
+                  id: ccTile
+                  required property var modelData
+                  width: (ccBody.width - 5) / 2
+                  height: 26
+                  radius: 8
+                  color: look.controlSoft
+
+                  Rectangle { id: ccDot; x: 5; y: 5; width: 16; height: 16; radius: 8; color: ccTile.modelData.on ? look.accent : look.control }
+                  Text {
+                    anchors.left: ccDot.right
+                    anchors.leftMargin: 5
+                    anchors.right: parent.right
+                    anchors.rightMargin: 4
+                    anchors.verticalCenter: parent.verticalCenter
+                    elide: Text.ElideRight
+                    text: ccTile.modelData.name
+                    color: look.text
+                    font.family: look.fontFamily
+                    font.pixelSize: 9
+                    font.weight: Font.DemiBold
+                  }
+                }
+              }
+            }
+
+            Repeater {
+              model: [
+                { key: "cc_display", name: qsTr("Display"), level: 0.8 },
+                { key: "cc_sound", name: qsTr("Sound"), level: 0.3 }
+              ].filter(function(item) { return ccPreview.has(item.key) })
+              Column {
+                id: ccSlide
+                required property var modelData
+                width: ccBody.width
+                spacing: 2
+
+                Text {
+                  text: ccSlide.modelData.name
+                  color: look.text
+                  font.family: look.fontFamily
+                  font.pixelSize: 9
+                  font.weight: Font.DemiBold
+                }
+
+                Rectangle {
+                  width: parent.width
+                  height: 12
+                  radius: 6
+                  color: look.control
+                  Rectangle { width: parent.width * ccSlide.modelData.level; height: 12; radius: 6; color: look.text; opacity: 0.75 }
+                }
+              }
+            }
+
+            Rectangle {
+              visible: ccPreview.has("cc_media")
+              width: ccBody.width
+              height: 28
+              radius: 8
+              color: look.controlSoft
+
+              Rectangle { x: 5; y: 5; width: 18; height: 18; radius: 4; color: look.control }
+
+              Text {
+                x: 29
+                anchors.verticalCenter: parent.verticalCenter
+                text: qsTr("Now Playing")
+                color: look.text
+                font.family: look.fontFamily
+                font.pixelSize: 9
               }
             }
           }

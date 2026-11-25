@@ -83,6 +83,18 @@ fn defaults() -> Vec<Entry> {
         ("appearance_auto", Flag(false)),
         ("wallpaper_keep", Flag(true)),
         ("wallpaper_folders", List(Vec::new())),
+        ("control_center_enabled", Flag(true)),
+        ("cc_wifi", Flag(true)),
+        ("cc_bluetooth", Flag(true)),
+        ("cc_focus", Flag(true)),
+        ("cc_display", Flag(true)),
+        ("cc_sound", Flag(true)),
+        ("cc_media", Flag(true)),
+        ("cc_bar_network", Flag(false)),
+        ("cc_bar_bluetooth", Flag(false)),
+        ("cc_bar_audio", Flag(false)),
+        ("cc_bar_monitor", Flag(false)),
+        ("cc_bar_power", Flag(true)),
     ];
     hyprland
         .into_iter()
