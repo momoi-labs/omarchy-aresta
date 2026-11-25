@@ -40,6 +40,11 @@ Window {
     { value: "dots", label: qsTr("Dots") }
   ]
 
+  readonly property var selectionColors: [
+    { value: "gray", label: qsTr("Gray") },
+    { value: "accent", label: qsTr("Theme accent") }
+  ]
+
   readonly property var previewDesktops: [
     { id: 1, occupied: true, current: false },
     { id: 2, occupied: true, current: true },
@@ -180,7 +185,9 @@ Window {
     ] },
     { id: "spotlight", name: qsTr("Spotlight"), block: 2, groups: [
       { rows: [
-        { type: "plugin", plugin: "dev.momoi-labs.omarchy-cupertino.menu", label: qsTr("Use Cupertino Spotlight"), hint: qsTr("Off brings back the Omarchy menu") }
+        { type: "plugin", plugin: "dev.momoi-labs.omarchy-cupertino.menu", label: qsTr("Use Cupertino Spotlight"), hint: qsTr("Off brings back the Omarchy menu") },
+        { type: "slider", key: "spotlight_size", label: qsTr("Size"), min: 80, max: 150, step: 10, unit: "%" },
+        { type: "segment", key: "spotlight_selection", label: qsTr("Selection color"), options: selectionColors }
       ] }
     ] },
     { id: "cupertino", name: qsTr("Cupertino"), block: 3, lead: qsTr("Options that macOS System Settings does not have."), groups: [

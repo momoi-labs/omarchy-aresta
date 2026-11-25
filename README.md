@@ -68,7 +68,8 @@ Open it from the app launcher. It has these sections:
 - Keyboard: turn Quit app, Cycle windows, the app switcher and the Quake
   console keys on or off, and record new shortcuts for them. Omarchy's own
   bindings show as read-only.
-- Spotlight: turn Cupertino Spotlight off to get the Omarchy menu back.
+- Spotlight: turn Cupertino Spotlight off to get the Omarchy menu back, set
+  its size from 80% to 150%, and pick a gray or theme accent selected row.
 - Cupertino: options that macOS does not have, such as rounded corners and
   their radius and shape, the thin border, the shadow, the traffic light size
   and the bar size.

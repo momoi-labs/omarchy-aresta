@@ -126,6 +126,25 @@ Item {
   property color scrim: "transparent"
   property color selectedBackground: Commons.Color.menu.selectedText
   property color selectedText: selectedBackground.hslLightness > 0.6 ? "#000000" : "#ffffff"
+  readonly property var spotlightSettings: {
+    var values = { spotlight_size: 100, spotlight_selection: "gray" }
+    var lines = settingsFile.text().split("\n")
+    for (var i = 0; i < lines.length; i++) {
+      var match = lines[i].match(/^\s*(\w+)\s*=\s*(.*?)\s*$/)
+      if (!match || !(match[1] in values)) continue
+      if (typeof values[match[1]] === "string") {
+        var text = match[2].match(/^"(.*)"$/)
+        if (text) values[match[1]] = text[1]
+      } else if (match[2] !== "" && !isNaN(Number(match[2]))) {
+        values[match[1]] = Number(match[2])
+      }
+    }
+    return values
+  }
+  readonly property real sizeScale: Math.max(80, Math.min(150, root.spotlightSettings.spotlight_size)) / 100
+  readonly property bool grayRows: !root.dmenuActive && root.spotlightSettings.spotlight_selection !== "accent"
+  readonly property color rowFill: root.grayRows ? Util.alpha(root.lightCard ? "#000000" : "#ffffff", root.lightCard ? 0.12 : 0.15) : root.selectedBackground
+  readonly property color rowInk: root.grayRows ? root.foreground : root.selectedText
   readonly property int cornerRadius: root.dmenuActive ? 16 : root.px(25)
   readonly property real cornerPower: 3.4
   readonly property int rowRadius: root.dmenuActive ? 8 : root.px(14)
@@ -154,8 +173,23 @@ Item {
   property int visibleRowsHeight: root.dmenuActive ? dmenuRowListHeight(layoutSerial, displayModel.count, filterText) : (root.gridActive ? gridHeight(layoutSerial, displayModel.count) : rowListHeight(layoutSerial, displayModel.count, filterText, searchDivider))
   property int cardHeight: Math.min(chromeHeight + (mode === "input" ? 0 : visibleRowsHeight), panel.height - Style.gapsOut * 2)
 
+  FileView {
+    id: settingsFile
+    path: Quickshell.env("HOME") + "/.config/omarchy-cupertino/settings.toml"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoadFailed: settingsRetry.restart()
+  }
+
+  Timer {
+    id: settingsRetry
+    interval: 2000
+    onTriggered: settingsFile.reload()
+  }
+
   function px(macPoints) {
-    return Math.max(1, Math.round(Style.spaceReal(macPoints)))
+    return Math.max(1, Math.round(Style.spaceReal(macPoints) * root.sizeScale))
   }
 
   readonly property var filters: {
@@ -1875,7 +1909,7 @@ Item {
                 readonly property bool hasIcon: row.icon.length > 0 || row.isApp
                 readonly property bool spot: !root.dmenuActive
                 readonly property bool subtitle: row.spot && root.filterText.length > 0 && row.detail.length > 0
-                readonly property color ink: row.hasCursor ? root.selectedText : root.foreground
+                readonly property color ink: row.hasCursor ? root.rowInk : root.foreground
 
                 width: ListView.view.width
                 height: root.rowHeightForDetail(row.detail)
@@ -1883,7 +1917,7 @@ Item {
                 // installed, not to be picked.
                 opacity: row.disabled ? 0.4 : 1
                 radius: root.rowRadius
-                color: row.hasCursor ? root.selectedBackground : "transparent"
+                color: row.hasCursor ? root.rowFill : "transparent"
 
                 Text {
                   id: iconText
@@ -1986,7 +2020,7 @@ Item {
                     width: Math.max(height, enterKey.implicitWidth + root.px(8))
                     height: root.px(20)
                     radius: root.px(5)
-                    color: Util.alpha(row.ink, 0.14)
+                    color: root.grayRows ? (root.lightCard ? "#ffffff" : Util.alpha("#ffffff", 0.12)) : Util.alpha(row.ink, 0.14)
                     anchors.verticalCenter: parent.verticalCenter
 
                     Text {
@@ -1995,6 +2029,7 @@ Item {
                       textFormat: Text.PlainText
                       text: "↵"
                       color: row.ink
+                      opacity: root.grayRows && root.lightCard ? 0.6 : 1
                       font.family: root.fontFamily
                       font.pixelSize: root.px(13)
                     }
@@ -2078,7 +2113,7 @@ Item {
                   anchors.fill: parent
                   anchors.margins: root.px(3)
                   radius: root.rowRadius
-                  color: cell.hasCursor ? root.selectedBackground : "transparent"
+                  color: cell.hasCursor ? root.rowFill : "transparent"
                 }
 
                 Image {
@@ -2100,7 +2135,7 @@ Item {
                   visible: cell.kind !== "app"
                   textFormat: Text.PlainText
                   text: cell.icon
-                  color: cell.hasCursor ? root.selectedText : root.foreground
+                  color: cell.hasCursor ? root.rowInk : root.foreground
                   font.family: cell.iconFont.length > 0 ? cell.iconFont : root.fontFamily
                   font.pixelSize: root.px(28)
                   anchors.centerIn: gridIcon
@@ -2111,7 +2146,7 @@ Item {
                   text: cell.label
                   width: parent.width - root.px(10)
                   horizontalAlignment: Text.AlignHCenter
-                  color: cell.hasCursor ? root.selectedText : root.foreground
+                  color: cell.hasCursor ? root.rowInk : root.foreground
                   font.family: root.fontFamily
                   font.pixelSize: root.px(14)
                   elide: Text.ElideRight
