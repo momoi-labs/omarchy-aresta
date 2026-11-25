@@ -829,7 +829,8 @@ Window {
         color: look.controlSoft
         clip: true
 
-        Image {
+        RoundedImage {
+          radius: 8
           anchors.fill: parent
           source: window.fileUrl(store.currentWallpaper)
           sourceSize.width: 416
@@ -996,7 +997,8 @@ Window {
                     border.color: look.separator
                     clip: true
 
-                    Image {
+                    RoundedImage {
+                      radius: 6
                       anchors.fill: parent
                       anchors.margins: 1
                       source: window.fileUrl(thumb.modelData)
@@ -1102,7 +1104,8 @@ Window {
         border.color: look.separator
         clip: true
 
-        Image {
+        RoundedImage {
+          radius: 9
           anchors.fill: parent
           anchors.margins: 1
           source: window.fileUrl(store.currentWallpaper)
@@ -1117,6 +1120,8 @@ Window {
           y: 1
           width: parent.width - 2
           height: 28
+          topLeftRadius: 9
+          topRightRadius: 9
           color: Qt.alpha(look.background, (store.revision >= 0 ? store.number("bar_opacity") : 80) / 100)
 
           Row {
