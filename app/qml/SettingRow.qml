@@ -13,8 +13,10 @@ Item {
 
   readonly property int revision: backend.revision
   readonly property bool recording: setting.type === "shortcut" && backend.recording === setting.key
+  readonly property bool missing: setting.type === "plugin" && !backend.pluginInstalled(setting.plugin)
   readonly property bool auto: revision >= 0 && setting.type === "appearance" && backend.flag("appearance_auto")
   readonly property string hint: {
+    if (missing) return qsTr("Not installed. Run install.sh to add it to ~/.config/omarchy/plugins.")
     if (recording) return qsTr("Esc cancels. Backspace removes the shortcut.")
     if (setting.type === "theme") {
       let count = Array.from(backend.themeNames(setting.dark)).length
@@ -76,6 +78,7 @@ Item {
     sourceComponent: {
       switch (row.setting.type) {
       case "toggle": return toggleControl
+      case "plugin": return pluginControl
       case "slider": return sliderControl
       case "stepper": return stepperControl
       case "select": return selectControl
@@ -85,6 +88,7 @@ Item {
       case "segment": return segmentControl
       case "appearance": return appearanceControl
       case "theme": return themeControl
+      case "clear": return clearControl
       }
       return null
     }
@@ -96,6 +100,17 @@ Item {
       ui: row.ui
       checked: row.revision >= 0 && row.backend.flag(row.setting.key)
       onToggled: value => row.backend.setFlag(row.setting.key, value)
+    }
+  }
+
+  Component {
+    id: pluginControl
+    MacToggle {
+      ui: row.ui
+      enabled: !row.missing
+      opacity: enabled ? 1 : 0.4
+      checked: row.revision >= 0 && row.backend.pluginEnabled(row.setting.plugin)
+      onToggled: value => row.backend.setPluginEnabled(row.setting.plugin, value, row.setting.fallback || "")
     }
   }
 
@@ -204,6 +219,33 @@ Item {
       ]
       value: row.auto ? "auto" : row.backend.themeDark(row.backend.themeName) ? "dark" : "light"
       onPicked: value => row.backend.setAppearance(value)
+    }
+  }
+
+  Component {
+    id: clearControl
+    Rectangle {
+      implicitWidth: clearLabel.implicitWidth + 24
+      implicitHeight: 26
+      radius: 7
+      color: clearArea.pressed ? row.ui.control : row.ui.controlSoft
+      border.width: 1
+      border.color: row.ui.controlBorder
+
+      Text {
+        id: clearLabel
+        anchors.centerIn: parent
+        text: row.setting.button
+        color: row.ui.text
+        font.family: row.ui.fontFamily
+        font.pixelSize: 13
+      }
+
+      MouseArea {
+        id: clearArea
+        anchors.fill: parent
+        onClicked: row.setting.keys.forEach(key => row.backend.clearList(key))
+      }
     }
   }
 

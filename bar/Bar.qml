@@ -53,7 +53,8 @@ Item {
   readonly property color background: Commons.Color.bar.background
   readonly property color urgent: Commons.Color.bar.active
 
-  readonly property var leftOnlyIds: ["omarchy.menu", "omarchy.workspaces", "omarchy.active-window", "omarchy.spacer", "omarchy.clock"]
+  readonly property string menuWidgetId: barWidgetRegistry && barWidgetRegistry.widgets && barWidgetRegistry.widgets["dev.momoi-labs.omarchy-cupertino.menu"] ? "dev.momoi-labs.omarchy-cupertino.menu" : "omarchy.menu"
+  readonly property var leftOnlyIds: ["omarchy.menu", "dev.momoi-labs.omarchy-cupertino.menu", "omarchy.workspaces", "omarchy.active-window", "omarchy.spacer", "omarchy.clock"]
   readonly property var sectionOrder: ["left", "centerBegin", "center", "centerEnd", "right", "tray"]
 
   readonly property var layout: barConfig && barConfig.layout ? barConfig.layout : ({})
@@ -466,7 +467,7 @@ Item {
           anchors.verticalCenter: parent.verticalCenter
           spacing: 10
 
-          WidgetSlot { entry: ({ id: "omarchy.menu" }) }
+          WidgetSlot { entry: ({ id: root.menuWidgetId }) }
 
           Text {
             readonly property var toplevel: ToplevelManager.activeToplevel

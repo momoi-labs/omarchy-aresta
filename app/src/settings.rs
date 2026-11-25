@@ -21,6 +21,13 @@ pub struct Entry {
 fn defaults() -> Vec<Entry> {
     use Value::{Flag, List, Number, Text};
     let hyprland = [
+        ("corners_enabled", Flag(true)),
+        ("border_enabled", Flag(true)),
+        ("traffic_lights_enabled", Flag(true)),
+        ("switcher_enabled", Flag(true)),
+        ("quit_enabled", Flag(true)),
+        ("cycle_enabled", Flag(true)),
+        ("quake_enabled", Flag(true)),
         ("window_rounding", Number(16.0)),
         ("window_rounding_power", Number(3.4)),
         ("border_size", Number(1.0)),
@@ -61,6 +68,14 @@ fn defaults() -> Vec<Entry> {
         ("bar_desktops_position", Text("menus".into())),
         ("bar_desktops_style", Text("numbers".into())),
         ("bar_desktops_occupied_only", Flag(false)),
+        ("spotlight_size", Number(100.0)),
+        ("spotlight_selection", Text("gray".into())),
+        ("spotlight_filters", Flag(false)),
+        ("spotlight_menu_on_open", Flag(true)),
+        ("spotlight_shortcuts", Flag(false)),
+        ("spotlight_movable", Flag(true)),
+        ("spotlight_position", List(Vec::new())),
+        ("spotlight_height", List(Vec::new())),
         ("light_theme", Text("osx-light".into())),
         ("dark_theme", Text("osx-dark".into())),
         ("appearance_auto", Flag(false)),

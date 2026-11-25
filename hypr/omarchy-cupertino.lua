@@ -13,6 +13,13 @@ local LIGHTS = {
 local LIGHT_COUNT = 3
 
 local settings = {
+  corners_enabled = true,
+  border_enabled = true,
+  traffic_lights_enabled = true,
+  switcher_enabled = true,
+  quit_enabled = true,
+  cycle_enabled = true,
+  quake_enabled = true,
   window_rounding = 16,
   window_rounding_power = 3.4,
   border_size = 1,
@@ -69,27 +76,41 @@ end
 
 local BUTTON_SIZE = math.floor(settings.traffic_light_size)
 
-hl.config({
-  general = {
-    border_size = math.floor(settings.border_size),
-    col = {
-      active_border = "rgba(ffffff" .. alpha(settings.border_active_opacity) .. ")",
-      inactive_border = "rgba(ffffff" .. alpha(settings.border_inactive_opacity) .. ")",
+if settings.border_enabled then
+  hl.config({
+    general = {
+      border_size = math.floor(settings.border_size),
+      col = {
+        active_border = "rgba(ffffff" .. alpha(settings.border_active_opacity) .. ")",
+        inactive_border = "rgba(ffffff" .. alpha(settings.border_inactive_opacity) .. ")",
+      },
     },
-  },
-  decoration = {
-    rounding = math.floor(settings.window_rounding),
-    rounding_power = settings.window_rounding_power,
-    shadow = {
-      enabled = settings.shadow_enabled,
-      range = math.floor(settings.shadow_range),
-      render_power = 3,
-      offset = "0 " .. math.floor(settings.shadow_offset),
-      color = "rgba(000000" .. alpha(settings.shadow_active_opacity) .. ")",
-      color_inactive = "rgba(000000" .. alpha(settings.shadow_inactive_opacity) .. ")",
+  })
+end
+
+if settings.corners_enabled then
+  hl.config({
+    decoration = {
+      rounding = math.floor(settings.window_rounding),
+      rounding_power = settings.window_rounding_power,
     },
-  },
-})
+  })
+end
+
+if settings.shadow_enabled then
+  hl.config({
+    decoration = {
+      shadow = {
+        enabled = true,
+        range = math.floor(settings.shadow_range),
+        render_power = 3,
+        offset = "0 " .. math.floor(settings.shadow_offset),
+        color = "rgba(000000" .. alpha(settings.shadow_active_opacity) .. ")",
+        color_inactive = "rgba(000000" .. alpha(settings.shadow_inactive_opacity) .. ")",
+      },
+    },
+  })
+end
 
 local MINIMIZED = "special:minimized"
 
@@ -233,20 +254,32 @@ end)
 
 hl.layer_rule({ match = { namespace = "^" .. SWITCHER .. "$" }, no_anim = true, animation = "none" })
 
-hl.unbind("SUPER + TAB")
-hl.unbind("SUPER + SHIFT + TAB")
-bind("shortcut_switcher_next", "Switch apps", switcher_step("next", "shortcut_switcher_next"), { repeating = true })
-bind("shortcut_switcher_previous", "Switch apps backwards", switcher_step("previous", "shortcut_switcher_previous"), { repeating = true })
+if settings.switcher_enabled then
+  hl.unbind("SUPER + TAB")
+  hl.unbind("SUPER + SHIFT + TAB")
+  bind("shortcut_switcher_next", "Switch apps", switcher_step("next", "shortcut_switcher_next"), { repeating = true })
+  bind("shortcut_switcher_previous", "Switch apps backwards", switcher_step("previous", "shortcut_switcher_previous"), { repeating = true })
+end
 
-hl.unbind("SUPER + Q")
-hl.unbind("SUPER + grave")
-hl.unbind("SUPER + SHIFT + grave")
-bind("shortcut_quit", "Quit app (close all its windows)", apps.quit)
-bind("shortcut_cycle", "Cycle windows of the same app", apps.cycle)
-bind("shortcut_quake_toggle", "Toggle Quake console", hl.dsp.workspace.toggle_special("qconsole"))
-bind("shortcut_quake_move", "Move window to Quake console", hl.dsp.window.move({ workspace = "special:qconsole", follow = false }))
+if settings.quit_enabled then
+  hl.unbind("SUPER + Q")
+  bind("shortcut_quit", "Quit app (close all its windows)", apps.quit)
+end
 
-if package.loaded["hypr.titlebars"] then
+if settings.cycle_enabled then
+  hl.unbind("SUPER + grave")
+  bind("shortcut_cycle", "Cycle windows of the same app", apps.cycle)
+end
+
+if settings.quake_enabled then
+  hl.unbind("SUPER + SHIFT + grave")
+  bind("shortcut_quake_toggle", "Toggle Quake console", hl.dsp.workspace.toggle_special("qconsole"))
+  bind("shortcut_quake_move", "Move window to Quake console", hl.dsp.window.move({ workspace = "special:qconsole", follow = false }))
+end
+
+hl.layer_rule({ match = { namespace = "^omarchy-cupertino-bar$" }, no_anim = true, animation = "none" })
+
+if not settings.traffic_lights_enabled or package.loaded["hypr.titlebars"] then
   return
 end
 
@@ -304,5 +337,3 @@ hl.plugin.load = function(path, ...)
   end
   return result
 end
-
-hl.layer_rule({ match = { namespace = "^omarchy-cupertino-bar$" }, no_anim = true, animation = "none" })

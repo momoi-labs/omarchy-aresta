@@ -40,6 +40,11 @@ Window {
     { value: "dots", label: qsTr("Dots") }
   ]
 
+  readonly property var selectionColors: [
+    { value: "gray", label: qsTr("Gray") },
+    { value: "accent", label: qsTr("Theme accent") }
+  ]
+
   readonly property var previewDesktops: [
     { id: 1, occupied: true, current: false },
     { id: 2, occupied: true, current: true },
@@ -132,12 +137,16 @@ Window {
     ] },
     { id: "desktop", name: qsTr("Desktop & Dock"), block: 1, groups: [
       { title: qsTr("Windows"), rows: [
+        { type: "toggle", key: "traffic_lights_enabled", label: qsTr("Traffic lights on title bars"), hint: qsTr("Off brings back Omarchy's title bar buttons") },
         { type: "toggle", key: "traffic_lights_grey_inactive", label: qsTr("Grey traffic lights on unfocused windows") },
         { type: "toggle", key: "traffic_light_icons_on_hover", label: qsTr("Show icons in traffic lights on hover") },
         { type: "select", key: "title_align", label: qsTr("Window title alignment"), options: titleAlignOptions }
       ], note: qsTr("Title bars show on floating workspaces.") }
     ] },
     { id: "menubar", name: qsTr("Menu Bar"), block: 1, groups: [
+      { rows: [
+        { type: "plugin", plugin: "dev.momoi-labs.omarchy-cupertino", fallback: "omarchy.bar", label: qsTr("Use the Cupertino menu bar"), hint: qsTr("Off brings back the Omarchy bar") }
+      ] },
       { title: qsTr("Desktops"), rows: [
         { type: "bar", label: qsTr("Menu bar preview") },
         { type: "toggle", key: "bar_desktops", label: qsTr("Show desktops in the menu bar"), hint: qsTr("Click a desktop to go there. Scroll over the row to move to the next one.") },
@@ -154,8 +163,13 @@ Window {
     ] },
     { id: "keyboard", name: qsTr("Keyboard"), block: 2, groups: [
       { title: qsTr("Keyboard Shortcuts"), rows: [
+        { type: "toggle", key: "quit_enabled", label: qsTr("Use Quit app"), hint: qsTr("Off brings back Omarchy's Super+Q, which closes only the window") },
         { type: "shortcut", key: "shortcut_quit", label: qsTr("Quit app"), hint: qsTr("Closes every window of the app, on all workspaces") },
-        { type: "shortcut", key: "shortcut_cycle", label: qsTr("Cycle windows of the same app"), hint: qsTr("Skips minimized windows") },
+        { type: "toggle", key: "cycle_enabled", label: qsTr("Use Cycle windows"), hint: qsTr("Off brings back Omarchy's Super+`, which toggles the Quake console") },
+        { type: "shortcut", key: "shortcut_cycle", label: qsTr("Cycle windows of the same app"), hint: qsTr("Skips minimized windows") }
+      ] },
+      { title: qsTr("App Switcher"), rows: [
+        { type: "toggle", key: "switcher_enabled", label: qsTr("Use the Cupertino app switcher"), hint: qsTr("Off brings back Omarchy's Super+Tab and Super+Shift+Tab, which go to the next and previous workspace") },
         { type: "shortcut", key: "shortcut_switcher_next", label: qsTr("Switch apps"), hint: qsTr("Hold the first modifier to keep the switcher open") },
         { type: "shortcut", key: "shortcut_switcher_previous", label: qsTr("Switch apps backwards") }
       ] },
@@ -164,16 +178,31 @@ Window {
         { type: "omarchy", label: qsTr("Minimize to the Dock"), keys: ["Super", "M"] }
       ], note: qsTr("Omarchy owns these two. Change them in the Omarchy keybindings.") },
       { title: qsTr("Quake Console"), rows: [
+        { type: "toggle", key: "quake_enabled", label: qsTr("Use Cupertino Quake console keys"), hint: qsTr("Off brings back Omarchy's Super+Shift+`. Super+` toggles the console while Cycle windows is off.") },
         { type: "shortcut", key: "shortcut_quake_toggle", label: qsTr("Toggle Quake console") },
         { type: "shortcut", key: "shortcut_quake_move", label: qsTr("Move window to Quake console") }
       ] }
     ] },
+    { id: "spotlight", name: qsTr("Spotlight"), block: 2, groups: [
+      { rows: [
+        { type: "plugin", plugin: "dev.momoi-labs.omarchy-cupertino.menu", label: qsTr("Use Cupertino Spotlight"), hint: qsTr("Off brings back the Omarchy menu") },
+        { type: "slider", key: "spotlight_size", label: qsTr("Size"), min: 80, max: 150, step: 10, unit: "%" },
+        { type: "segment", key: "spotlight_selection", label: qsTr("Selection color"), options: selectionColors },
+        { type: "toggle", key: "spotlight_filters", label: qsTr("Show filters"), hint: qsTr("Buttons under the search field. Ctrl+1 to Ctrl+9 work either way.") },
+        { type: "toggle", key: "spotlight_menu_on_open", label: qsTr("Show menu on open"), hint: qsTr("Off opens only the search field until you type") },
+        { type: "toggle", key: "spotlight_shortcuts", label: qsTr("Show shortcuts"), hint: qsTr("Keyboard hints at the bottom of the card") },
+        { type: "toggle", key: "spotlight_movable", label: qsTr("Movable"), hint: qsTr("Drag the card to move it, or its top or bottom edge to change its height. It opens that way next time.") },
+        { type: "clear", keys: ["spotlight_position", "spotlight_height"], label: qsTr("Position"), hint: qsTr("Saved for each display"), button: qsTr("Reset position") }
+      ] }
+    ] },
     { id: "cupertino", name: qsTr("Cupertino"), block: 3, lead: qsTr("Options that macOS System Settings does not have."), groups: [
       { title: qsTr("Window Corners"), rows: [
+        { type: "toggle", key: "corners_enabled", label: qsTr("Rounded corners"), hint: qsTr("Off brings back Omarchy's square corners") },
         { type: "slider", key: "window_rounding", label: qsTr("Window corner radius"), min: 0, max: 24, step: 1, unit: "px" },
         { type: "slider", key: "window_rounding_power", label: qsTr("Window corner shape"), hint: qsTr("2 is a circle arc, 4 is a squircle"), min: 2, max: 5, step: 0.1 }
       ] },
       { title: qsTr("Window Border"), rows: [
+        { type: "toggle", key: "border_enabled", label: qsTr("Thin neutral border"), hint: qsTr("Off brings back Omarchy's colored border") },
         { type: "stepper", key: "border_size", label: qsTr("Window border width"), min: 0, max: 8, unit: "px" },
         { type: "slider", key: "border_active_opacity", label: qsTr("Border opacity, focused window"), min: 0, max: 100, step: 5, unit: "%" },
         { type: "slider", key: "border_inactive_opacity", label: qsTr("Border opacity, unfocused window"), min: 0, max: 100, step: 5, unit: "%" }
