@@ -121,34 +121,39 @@ Item {
   // singleton), so consumers can drop them straight into a Rectangle.
   property color background: Commons.Color.menu.background
   property color foreground: Commons.Color.menu.text
-  property color border: Util.alpha(Commons.Color.menu.text, 0.16)
+  readonly property bool lightCard: root.background.hslLightness > 0.5
+  property color border: Util.alpha(Commons.Color.menu.text, root.dmenuActive ? 0.16 : (root.lightCard ? 0.1 : 0.12))
   property color scrim: "transparent"
   property color selectedBackground: Commons.Color.menu.selectedText
   property color selectedText: selectedBackground.hslLightness > 0.6 ? "#000000" : "#ffffff"
-  readonly property int cornerRadius: 16
+  readonly property int cornerRadius: root.dmenuActive ? 16 : root.px(25)
   readonly property real cornerPower: 3.4
-  readonly property int rowRadius: 8
-  property int contentMargin: Style.space(8)
-  property int headerHeight: Style.space(52)
-  readonly property int filterBarHeight: root.dmenuActive ? 0 : Style.space(40)
-  readonly property int footerHeight: Style.space(30)
+  readonly property int rowRadius: root.dmenuActive ? 8 : root.px(14)
+  property int contentMargin: root.dmenuActive ? Style.space(8) : root.px(8)
+  property int headerHeight: root.dmenuActive ? Style.space(52) : root.px(56)
+  readonly property int filterBarHeight: root.dmenuActive ? 0 : root.px(46)
+  readonly property int footerHeight: root.dmenuActive ? Style.space(30) : root.px(32)
   readonly property int chromeHeight: headerHeight + filterBarHeight + footerHeight + 2 + (mode === "input" ? 0 : contentMargin * 2)
-  property int baseRowHeight: Math.max(Style.space(32), Style.font.heading + Style.spacing.rowPaddingX)
+  property int baseRowHeight: root.dmenuActive ? Math.max(Style.space(32), Style.font.heading + Style.spacing.rowPaddingX) : root.px(56)
   property int detailRowHeight: Math.max(Style.space(46), Style.font.body + Style.font.caption + Style.spacing.rowPaddingX * 2)
-  readonly property int calcRowHeight: Math.max(Style.space(64), Style.font.body + Style.font.displayLarge + Style.spacing.rowPaddingX * 2)
+  readonly property int calcRowHeight: root.px(64)
   // How much of the first hidden row stays visible at the fold — enough to
   // read as a cut-off row rather than a bottom border.
   property int rowPeek: Math.round(baseRowHeight * 0.55)
   property int rowSpacing: 0
-  property int dividerHeight: Style.space(17)
+  property int dividerHeight: root.dmenuActive ? Style.space(17) : root.px(17)
   property bool searchDivider: false
   property int layoutSerial: 0
   readonly property bool gridActive: !root.dmenuActive && root.activeMenu === "apps"
   readonly property int gridColumns: 6
-  readonly property int gridCellHeight: Style.space(96)
-  property int cardWidth: Math.min(root.dmenuActive ? Style.space(root.dmenuWidth) : Style.space(640), panel.width - Style.gapsOut * 2)
+  readonly property int gridCellHeight: root.px(96)
+  property int cardWidth: Math.min(root.dmenuActive ? Style.space(root.dmenuWidth) : root.px(640), panel.width - Style.gapsOut * 2)
   property int visibleRowsHeight: root.dmenuActive ? dmenuRowListHeight(layoutSerial, displayModel.count, filterText) : (root.gridActive ? gridHeight(layoutSerial, displayModel.count) : rowListHeight(layoutSerial, displayModel.count, filterText, searchDivider))
   property int cardHeight: Math.min(chromeHeight + (mode === "input" ? 0 : visibleRowsHeight), panel.height - Style.gapsOut * 2)
+
+  function px(macPoints) {
+    return Math.max(1, Math.round(Style.spaceReal(macPoints)))
+  }
 
   readonly property var filters: {
     var revision = root.layoutSerial
@@ -161,6 +166,14 @@ Item {
     return out
   }
   property int hoveredFilter: -1
+  readonly property var currentRow: {
+    var revision = root.layoutSerial
+    return root.cursorActive && root.selectedIndex >= 0 && root.selectedIndex < displayModel.count ? displayModel.get(root.selectedIndex) : null
+  }
+
+  function verbFor(row) {
+    return row && row.kind === "action" ? "Run" : "Open"
+  }
   readonly property string activeFilter: {
     var id = root.activeMenu
     var entry = root.item(id)
@@ -225,7 +238,8 @@ Item {
     var available = panel.height - top - Style.gapsOut - root.chromeHeight
     // The starting menu sets the ceiling along with the offset: drilling into
     // a longer submenu scrolls behind the fold instead of growing the card.
-    if (panel.maxRowsHeight >= 0) available = Math.min(available, panel.maxRowsHeight)
+    if (root.dmenuActive && panel.maxRowsHeight >= 0) available = Math.min(available, panel.maxRowsHeight)
+    if (!root.dmenuActive && !root.gridActive) available = Math.min(available, root.baseRowHeight * 7 + root.rowPeek)
     // A card that swallows the whole screen reads as a page, not a menu.
     return Math.min(available, Math.round(panel.height * 0.7))
   }
@@ -1484,9 +1498,9 @@ Item {
             color: root.foreground
             opacity: 0.55
             font.family: root.fontFamily
-            font.pixelSize: Style.font.heading
+            font.pixelSize: root.dmenuActive ? Style.font.heading : root.px(22)
             anchors.left: parent.left
-            anchors.leftMargin: Style.space(18)
+            anchors.leftMargin: root.dmenuActive ? Style.space(18) : root.px(16)
             anchors.verticalCenter: parent.verticalCenter
           }
 
@@ -1495,8 +1509,8 @@ Item {
             readonly property var entry: root.item(root.activeMenu)
             visible: !root.dmenuActive && root.activeMenu !== "root" && !!entry
             width: visible ? chipRow.implicitWidth + Style.space(16) : 0
-            height: Style.space(26)
-            radius: 7
+            height: root.dmenuActive ? Style.space(26) : root.px(28)
+            radius: root.dmenuActive ? 7 : height / 2
             color: Util.alpha(root.foreground, 0.1)
             anchors.left: searchGlyph.right
             anchors.leftMargin: Style.space(10)
@@ -1513,7 +1527,7 @@ Item {
                 text: chip.entry ? chip.entry.icon : ""
                 color: root.foreground
                 font.family: chip.entry && chip.entry.iconFont ? chip.entry.iconFont : root.fontFamily
-                font.pixelSize: Style.font.body
+                font.pixelSize: root.px(15)
                 anchors.verticalCenter: parent.verticalCenter
               }
 
@@ -1522,7 +1536,7 @@ Item {
                 text: chip.entry ? (chip.entry.title || chip.entry.label) : ""
                 color: root.foreground
                 font.family: root.fontFamily
-                font.pixelSize: Style.font.body
+                font.pixelSize: root.px(15)
                 font.weight: Font.Medium
                 anchors.verticalCenter: parent.verticalCenter
               }
@@ -1533,16 +1547,69 @@ Item {
             id: filterInput
             anchors.left: chip.visible ? chip.right : searchGlyph.right
             anchors.leftMargin: Style.space(10)
-            anchors.right: parent.right
-            anchors.rightMargin: Style.space(18)
+            anchors.right: fieldIcon.visible ? fieldIcon.left : parent.right
+            anchors.rightMargin: root.dmenuActive ? Style.space(18) : root.px(16)
             anchors.verticalCenter: parent.verticalCenter
             keyHandler: keyCatcher
             // Input-method commits bypass key handling, so the dialog has to refuse them here.
             readOnly: root.deleteConfirmOpen
             color: root.foreground
             font.family: root.fontFamily
-            font.pixelSize: Math.round(Style.font.heading * 1.375)
+            font.pixelSize: root.dmenuActive ? Math.round(Style.font.heading * 1.375) : root.px(26)
             onTextChanged: if (text !== root.filterText) root.setFilter(text)
+          }
+
+          Rectangle {
+            readonly property real room: fieldIcon.x - x - root.px(8)
+            visible: !root.dmenuActive && !!root.currentRow && root.filterText.length > 0 && width <= room
+            x: filterInput.x + filterInput.contentWidth + root.px(8)
+            anchors.verticalCenter: parent.verticalCenter
+            width: openHint.implicitWidth + root.px(16)
+            height: root.px(26)
+            radius: height / 2
+            color: Util.alpha(root.foreground, 0.08)
+
+            Text {
+              id: openHint
+              anchors.centerIn: parent
+              textFormat: Text.PlainText
+              text: "— " + root.verbFor(root.currentRow)
+              color: root.foreground
+              opacity: 0.55
+              font.family: root.fontFamily
+              font.pixelSize: root.px(15)
+            }
+          }
+
+          Item {
+            id: fieldIcon
+            visible: !root.dmenuActive && !!root.currentRow && root.filterText.length > 0
+            width: root.px(26)
+            height: width
+            anchors.right: parent.right
+            anchors.rightMargin: root.px(16)
+            anchors.verticalCenter: parent.verticalCenter
+
+            Image {
+              anchors.fill: parent
+              visible: !!root.currentRow && root.currentRow.kind === "app"
+              fillMode: Image.PreserveAspectFit
+              sourceSize.width: width * Screen.devicePixelRatio
+              sourceSize.height: height * Screen.devicePixelRatio
+              source: visible && root.appLibrary ? root.appLibrary.iconSource(root.currentRow.appIcon) : ""
+              asynchronous: true
+            }
+
+            Text {
+              anchors.centerIn: parent
+              visible: !!root.currentRow && root.currentRow.kind !== "app"
+              textFormat: Text.PlainText
+              text: root.currentRow ? root.currentRow.icon : ""
+              color: root.foreground
+              opacity: 0.55
+              font.family: root.currentRow && root.currentRow.iconFont ? root.currentRow.iconFont : root.fontFamily
+              font.pixelSize: root.px(22)
+            }
           }
 
           Text {
@@ -1560,7 +1627,8 @@ Item {
         }
 
         Rectangle {
-          width: parent.width
+          x: root.dmenuActive ? 0 : root.px(16)
+          width: parent.width - x * 2
           height: 1
           color: root.border
         }
@@ -1573,9 +1641,9 @@ Item {
           Row {
             id: filterRow
             anchors.left: parent.left
-            anchors.leftMargin: Style.space(14)
+            anchors.leftMargin: root.px(14)
             anchors.verticalCenter: parent.verticalCenter
-            spacing: Style.space(8)
+            spacing: root.px(8)
 
             Repeater {
               model: root.filters
@@ -1586,7 +1654,7 @@ Item {
                 required property int index
                 readonly property bool active: root.activeFilter === modelData.id
 
-                width: Style.space(28)
+                width: root.px(32)
                 height: width
                 radius: width / 2
                 color: active ? root.selectedBackground : Util.alpha(root.foreground, filterMouse.containsMouse ? 0.16 : 0.08)
@@ -1597,7 +1665,7 @@ Item {
                   text: filterButton.modelData.icon
                   color: filterButton.active ? root.selectedText : root.foreground
                   font.family: root.fontFamily
-                  font.pixelSize: Style.font.body
+                  font.pixelSize: root.px(16)
                 }
 
                 MouseArea {
@@ -1625,9 +1693,9 @@ Item {
             color: root.foreground
             opacity: 0.6
             font.family: root.fontFamily
-            font.pixelSize: Style.font.body
+            font.pixelSize: root.px(15)
             anchors.left: filterRow.right
-            anchors.leftMargin: Style.space(12)
+            anchors.leftMargin: root.px(12)
             anchors.verticalCenter: parent.verticalCenter
           }
         }
@@ -1701,7 +1769,9 @@ Item {
                 readonly property bool isApp: row.kind === "app"
                 readonly property bool isCalc: row.kind === "calc"
                 readonly property bool hasIcon: row.icon.length > 0 || row.isApp
-                readonly property bool inlineDetail: !root.dmenuActive && !row.isCalc && root.filterText.length > 0 && row.detail.length > 0
+                readonly property bool spot: !root.dmenuActive
+                readonly property bool subtitle: row.spot && !row.isCalc && root.filterText.length > 0 && row.detail.length > 0
+                readonly property color ink: row.hasCursor ? root.selectedText : root.foreground
 
                 width: ListView.view.width
                 height: row.isCalc ? root.calcRowHeight : root.rowHeightForDetail(row.detail)
@@ -1716,22 +1786,22 @@ Item {
                   textFormat: Text.PlainText
                   visible: row.hasIcon && !row.isApp
                   text: row.icon
-                  color: row.hasCursor ? root.selectedText : root.foreground
+                  color: row.ink
                   font.family: row.iconFont.length > 0 ? row.iconFont : root.fontFamily
-                  font.pixelSize: row.isCalc ? Style.font.displayLarge : Style.font.heading
-                  width: Style.space(row.isCalc ? 40 : 28)
+                  font.pixelSize: row.isCalc ? root.px(28) : (row.spot ? root.px(20) : Style.font.heading)
+                  width: row.spot ? root.px(32) : Style.space(28)
                   horizontalAlignment: Text.AlignHCenter
                   verticalAlignment: Text.AlignVCenter
                   anchors.left: parent.left
-                  anchors.leftMargin: Style.space(6)
-                  y: row.isCalc ? (row.height - height) / 2 : contentColumn.y + labelText.y + (labelText.height - height) / 2
+                  anchors.leftMargin: row.spot ? root.px(10) : Style.space(6)
+                  y: row.spot ? (row.height - height) / 2 : contentColumn.y + labelText.y + (labelText.height - height) / 2
                 }
 
                 Image {
                   id: appIconImage
                   visible: row.isApp
-                  width: Style.space(22)
-                  height: Style.space(22)
+                  width: row.spot ? root.px(32) : Style.space(22)
+                  height: width
                   fillMode: Image.PreserveAspectFit
                   // Decode at physical pixels — a logical-size decode leaves
                   // PNG icons upscaled and blurry on HiDPI displays.
@@ -1740,28 +1810,28 @@ Item {
                   source: row.isApp && root.appLibrary ? root.appLibrary.iconSource(row.appIcon) : ""
                   asynchronous: true
                   anchors.left: parent.left
-                  anchors.leftMargin: Style.space(6) + (Style.space(28) - width) / 2
-                  y: contentColumn.y + labelText.y + (labelText.height - height) / 2
+                  anchors.leftMargin: row.spot ? root.px(10) : Style.space(6) + (Style.space(28) - width) / 2
+                  y: row.spot ? (row.height - height) / 2 : contentColumn.y + labelText.y + (labelText.height - height) / 2
                 }
 
                 Column {
                   id: contentColumn
                   anchors.left: row.hasIcon ? iconText.right : parent.left
-                  anchors.leftMargin: row.hasIcon ? Style.space(8) : Style.space(14)
-                  anchors.right: row.inlineDetail ? detailText.left : trail.left
-                  anchors.rightMargin: Style.space(8)
+                  anchors.leftMargin: row.hasIcon ? (row.spot ? root.px(10) : Style.space(8)) : (row.spot ? root.px(16) : Style.space(14))
+                  anchors.right: openHintRow.visible ? openHintRow.left : trail.left
+                  anchors.rightMargin: row.spot ? root.px(10) : Style.space(8)
                   anchors.verticalCenter: parent.verticalCenter
-                  spacing: Style.space(2)
+                  spacing: row.spot ? root.px(1) : Style.space(2)
 
                   Text {
                     id: labelText
                     textFormat: Text.PlainText
                     width: parent.width
                     text: row.label
-                    color: row.hasCursor ? root.selectedText : root.foreground
+                    color: row.ink
                     opacity: row.isCalc ? 0.6 : 1
                     font.family: root.fontFamily
-                    font.pixelSize: row.isCalc ? Style.font.body : Style.font.title
+                    font.pixelSize: row.isCalc ? root.px(14) : (row.spot ? root.px(18) : Style.font.title)
                     elide: Text.ElideRight
                   }
 
@@ -1770,10 +1840,23 @@ Item {
                     width: parent.width
                     text: row.detail
                     visible: row.isCalc
-                    color: row.hasCursor ? root.selectedText : root.foreground
+                    color: row.ink
                     font.family: root.fontFamily
-                    font.pixelSize: Style.font.displayLarge
+                    font.pixelSize: root.px(24)
                     elide: Text.ElideRight
+                  }
+
+                  Text {
+                    textFormat: Text.PlainText
+                    width: parent.width
+                    // A parent path's separator points along the reading direction.
+                    text: Commons.I18n.rightToLeft ? row.detail.replace(/ › /g, " ‹ ") : row.detail
+                    visible: row.subtitle
+                    color: row.ink
+                    opacity: 0.6
+                    font.family: root.fontFamily
+                    font.pixelSize: root.px(15)
+                    elide: Text.ElideLeft
                   }
 
                   Text {
@@ -1781,7 +1864,7 @@ Item {
                     width: parent.width
                     text: row.detail
                     visible: root.dmenuActive && row.detail.length > 0
-                    color: row.hasCursor ? root.selectedText : root.foreground
+                    color: row.ink
                     opacity: 0.6
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.bodySmall
@@ -1789,35 +1872,55 @@ Item {
                   }
                 }
 
-                Text {
-                  id: detailText
-                  textFormat: Text.PlainText
-                  visible: row.inlineDetail
-                  // A parent path's separator points along the reading direction.
-                  text: Commons.I18n.rightToLeft ? row.detail.replace(/ › /g, " ‹ ") : row.detail
-                  width: Math.min(implicitWidth, row.width * 0.45)
-                  horizontalAlignment: Text.AlignRight
-                  color: row.hasCursor ? root.selectedText : root.foreground
-                  opacity: 0.55
-                  font.family: root.fontFamily
-                  font.pixelSize: Style.font.body
-                  elide: Text.ElideLeft
-                  anchors.right: trail.left
-                  anchors.rightMargin: Style.space(6)
+                Row {
+                  id: openHintRow
+                  visible: row.spot && row.hasCursor
+                  anchors.right: parent.right
+                  anchors.rightMargin: root.px(12)
                   anchors.verticalCenter: parent.verticalCenter
+                  spacing: root.px(6)
+
+                  Text {
+                    textFormat: Text.PlainText
+                    text: row.isCalc ? "Copy" : root.verbFor(row)
+                    color: row.ink
+                    opacity: 0.7
+                    font.family: root.fontFamily
+                    font.pixelSize: root.px(13)
+                    anchors.verticalCenter: parent.verticalCenter
+                  }
+
+                  Rectangle {
+                    width: Math.max(height, enterKey.implicitWidth + root.px(8))
+                    height: root.px(20)
+                    radius: root.px(5)
+                    color: Util.alpha(row.ink, 0.14)
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    Text {
+                      id: enterKey
+                      anchors.centerIn: parent
+                      textFormat: Text.PlainText
+                      text: "↵"
+                      color: row.ink
+                      font.family: root.fontFamily
+                      font.pixelSize: root.px(13)
+                    }
+                  }
                 }
 
                 Text {
                   id: trail
                   textFormat: Text.PlainText
-                  width: Style.space(14)
+                  visible: !openHintRow.visible
+                  width: row.spot ? root.px(14) : Style.space(14)
                   text: row.kind === "menu" || row.kind === "link" ? (Commons.I18n.rightToLeft ? "‹" : "›") : ""
-                  color: row.hasCursor ? root.selectedText : root.foreground
+                  color: row.ink
                   opacity: row.kind === "menu" || row.kind === "link" ? 0.45 : 0
                   font.family: root.fontFamily
-                  font.pixelSize: Style.font.heading
+                  font.pixelSize: row.spot ? root.px(18) : Style.font.heading
                   anchors.right: parent.right
-                  anchors.rightMargin: Style.space(8)
+                  anchors.rightMargin: row.spot ? root.px(10) : Style.space(8)
                   anchors.verticalCenter: parent.verticalCenter
                 }
 
@@ -1841,6 +1944,16 @@ Item {
                   }
                 }
               }
+            }
+
+            Rectangle {
+              visible: !root.dmenuActive && !root.gridActive && resultList.contentHeight > resultList.height + 1
+              width: root.px(3)
+              radius: width / 2
+              x: resultList.width + (root.contentMargin - width) / 2
+              y: resultList.visibleArea.yPosition * resultList.height
+              height: resultList.visibleArea.heightRatio * resultList.height
+              color: Util.alpha(root.foreground, 0.3)
             }
 
             GridView {
@@ -1871,16 +1984,16 @@ Item {
 
                 Rectangle {
                   anchors.fill: parent
-                  anchors.margins: Style.space(3)
-                  radius: root.rowRadius + 2
+                  anchors.margins: root.px(3)
+                  radius: root.rowRadius
                   color: cell.hasCursor ? root.selectedBackground : "transparent"
                 }
 
                 Image {
                   id: gridIcon
                   visible: cell.kind === "app"
-                  width: Style.space(48)
-                  height: Style.space(48)
+                  width: root.px(48)
+                  height: root.px(48)
                   fillMode: Image.PreserveAspectFit
                   sourceSize.width: width * Screen.devicePixelRatio
                   sourceSize.height: height * Screen.devicePixelRatio
@@ -1888,7 +2001,7 @@ Item {
                   asynchronous: true
                   anchors.horizontalCenter: parent.horizontalCenter
                   anchors.top: parent.top
-                  anchors.topMargin: Style.space(10)
+                  anchors.topMargin: root.px(10)
                 }
 
                 Text {
@@ -1897,22 +2010,22 @@ Item {
                   text: cell.icon
                   color: cell.hasCursor ? root.selectedText : root.foreground
                   font.family: cell.iconFont.length > 0 ? cell.iconFont : root.fontFamily
-                  font.pixelSize: Style.font.displayLarge
+                  font.pixelSize: root.px(28)
                   anchors.centerIn: gridIcon
                 }
 
                 Text {
                   textFormat: Text.PlainText
                   text: cell.label
-                  width: parent.width - Style.space(10)
+                  width: parent.width - root.px(10)
                   horizontalAlignment: Text.AlignHCenter
                   color: cell.hasCursor ? root.selectedText : root.foreground
                   font.family: root.fontFamily
-                  font.pixelSize: Style.font.body
+                  font.pixelSize: root.px(14)
                   elide: Text.ElideRight
                   anchors.horizontalCenter: parent.horizontalCenter
                   anchors.top: gridIcon.bottom
-                  anchors.topMargin: Style.space(8)
+                  anchors.topMargin: root.px(8)
                 }
 
                 MouseArea {
@@ -1939,7 +2052,7 @@ Item {
 
             Column {
               anchors.centerIn: parent
-              spacing: Style.space(8)
+              spacing: root.px(8)
               visible: displayModel.count === 0 && root.mode !== "input"
 
               Text {
@@ -1947,9 +2060,9 @@ Item {
                 color: root.selectedBackground
                 opacity: 0.8
                 font.family: root.fontFamily
-                font.pixelSize: Style.font.displayLarge
+                font.pixelSize: root.px(28)
                 horizontalAlignment: Text.AlignHCenter
-                width: Style.space(320)
+                width: root.px(320)
               }
 
               Text {
@@ -1958,9 +2071,9 @@ Item {
                 color: root.foreground
                 opacity: 0.7
                 font.family: root.fontFamily
-                font.pixelSize: Style.font.title
+                font.pixelSize: root.px(16)
                 horizontalAlignment: Text.AlignHCenter
-                width: Style.space(320)
+                width: root.px(320)
               }
             }
           }
@@ -1978,14 +2091,11 @@ Item {
 
           Row {
             id: footerRow
-            readonly property var current: {
-              var revision = root.layoutSerial
-              return root.cursorActive && root.selectedIndex >= 0 && root.selectedIndex < displayModel.count ? displayModel.get(root.selectedIndex) : null
-            }
+            readonly property var current: root.currentRow
             anchors.right: parent.right
-            anchors.rightMargin: Style.space(16)
+            anchors.rightMargin: root.dmenuActive ? Style.space(16) : root.px(16)
             anchors.verticalCenter: parent.verticalCenter
-            spacing: Style.space(16)
+            spacing: root.dmenuActive ? Style.space(16) : root.px(16)
 
             Repeater {
               model: [
@@ -2003,7 +2113,7 @@ Item {
                 color: root.foreground
                 opacity: 0.5
                 font.family: root.fontFamily
-                font.pixelSize: Style.font.bodySmall
+                font.pixelSize: root.dmenuActive ? Style.font.bodySmall : root.px(13)
               }
             }
           }
