@@ -798,13 +798,13 @@ Window {
       readonly property int perRow: Math.max(1, Math.floor((width - 20 + 10) / 138))
 
       Repeater {
-        model: store.revision >= 0 && store.themeName !== "-" ? store.wallpaperSources() : []
+        model: store.wallpapers >= 0 && store.themeName !== "-" ? store.wallpaperSources() : []
 
         Column {
           id: source
           required property string modelData
           readonly property var parts: modelData.split("\t")
-          readonly property var images: store.revision >= 0 ? store.wallpaperImages(parts[2]) : []
+          readonly property var images: store.wallpapers >= 0 ? store.wallpaperImages(parts[2]) : []
           property bool expanded: false
           width: sources.width
           spacing: 8

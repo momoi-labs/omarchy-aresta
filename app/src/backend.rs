@@ -22,6 +22,7 @@ pub mod qobject {
         #[qproperty(f64, auto_next, cxx_name = "autoNext")]
         #[qproperty(bool, auto_next_dark, cxx_name = "autoNextDark")]
         #[qproperty(QString, auto_error, cxx_name = "autoError")]
+        #[qproperty(i32, wallpapers)]
         type Backend = super::BackendRust;
 
         #[qinvokable]
@@ -180,6 +181,7 @@ pub struct BackendRust {
     auto_next: f64,
     auto_next_dark: bool,
     auto_error: QString,
+    wallpapers: i32,
     modes: Vec<(String, bool)>,
     plugins: Vec<String>,
     settings: Settings,
@@ -204,6 +206,7 @@ impl Default for BackendRust {
             auto_next: 0.0,
             auto_next_dark: false,
             auto_error: QString::default(),
+            wallpapers: 0,
             modes: Vec::new(),
             plugins: Vec::new(),
             settings: Settings::load(),
@@ -367,7 +370,20 @@ impl qobject::Backend {
         self.as_mut().set_revision(next);
     }
 
+    fn folders(&self) -> Vec<String> {
+        match self.settings.get("wallpaper_folders") {
+            Some(Value::List(folders)) => folders.clone(),
+            _ => Vec::new(),
+        }
+    }
+
+    fn bump_wallpapers(mut self: Pin<&mut Self>) {
+        let next = self.wallpapers().wrapping_add(1);
+        self.as_mut().set_wallpapers(next);
+    }
+
     fn store(mut self: Pin<&mut Self>, key: &QString, value: Value) {
+        let folders = self.folders();
         let Some(hyprland) = self
             .as_mut()
             .rust_mut()
@@ -388,6 +404,9 @@ impl qobject::Backend {
             }
         }
         self.as_mut().report(saved);
+        if self.folders() != folders {
+            self.as_mut().bump_wallpapers();
+        }
         self.bump();
     }
 
@@ -399,7 +418,11 @@ impl qobject::Backend {
         let stamp = modified(&Settings::path());
         if stamp != self.settings_stamp {
             self.as_mut().rust_mut().settings_stamp = stamp;
+            let folders = self.folders();
             self.as_mut().rust_mut().settings.reload();
+            if self.folders() != folders {
+                self.as_mut().bump_wallpapers();
+            }
             self.as_mut().bump();
         }
 
@@ -634,7 +657,7 @@ impl qobject::Backend {
             .map(|_| ())
             .map_err(|error| format!("Could not add the photo: {error}"));
         self.as_mut().report(result);
-        self.bump();
+        self.bump_wallpapers();
     }
 
     pub fn add_folder(self: Pin<&mut Self>, path: &QString) {
