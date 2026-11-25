@@ -262,7 +262,7 @@ Item {
 
   function gridHeight(_serial, _count) {
     var rows = Math.max(1, Math.ceil(displayModel.count / root.gridColumns))
-    return Math.min(rows * root.gridCellHeight, Math.max(root.gridCellHeight, root.availableRowsHeight()))
+    return Math.min(rows * root.gridCellHeight, root.availableRowsHeight())
   }
 
   function finishRequest(selection) {
@@ -1514,6 +1514,7 @@ Item {
         movedLeft = card.x
         movedTop = top
         movedHeight = bottom - top
+        movedTop = bottom - card.height
       } else {
         movedHeight = Math.round(Math.max(defaultHeight, Math.min(resizeHeight + dy, bottomLimit - card.y)))
       }
