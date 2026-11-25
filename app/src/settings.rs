@@ -70,6 +70,8 @@ fn defaults() -> Vec<Entry> {
         ("bar_desktops_occupied_only", Flag(false)),
         ("spotlight_size", Number(100.0)),
         ("spotlight_selection", Text("gray".into())),
+        ("spotlight_filters", Flag(false)),
+        ("spotlight_menu_on_open", Flag(true)),
         ("spotlight_shortcuts", Flag(false)),
         ("spotlight_movable", Flag(true)),
         ("spotlight_position", List(Vec::new())),

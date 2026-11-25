@@ -188,6 +188,8 @@ Window {
         { type: "plugin", plugin: "dev.momoi-labs.omarchy-cupertino.menu", label: qsTr("Use Cupertino Spotlight"), hint: qsTr("Off brings back the Omarchy menu") },
         { type: "slider", key: "spotlight_size", label: qsTr("Size"), min: 80, max: 150, step: 10, unit: "%" },
         { type: "segment", key: "spotlight_selection", label: qsTr("Selection color"), options: selectionColors },
+        { type: "toggle", key: "spotlight_filters", label: qsTr("Show filters"), hint: qsTr("Buttons under the search field. Ctrl+1 to Ctrl+9 work either way.") },
+        { type: "toggle", key: "spotlight_menu_on_open", label: qsTr("Show menu on open"), hint: qsTr("Off opens only the search field until you type") },
         { type: "toggle", key: "spotlight_shortcuts", label: qsTr("Show shortcuts"), hint: qsTr("Keyboard hints at the bottom of the card") },
         { type: "toggle", key: "spotlight_movable", label: qsTr("Movable"), hint: qsTr("Drag the card to move it, or its top or bottom edge to change its height. It opens that way next time.") },
         { type: "clear", keys: ["spotlight_position", "spotlight_height"], label: qsTr("Position"), hint: qsTr("Saved for each display"), button: qsTr("Reset position") }

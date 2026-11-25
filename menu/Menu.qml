@@ -127,7 +127,7 @@ Item {
   property color selectedBackground: Commons.Color.menu.selectedText
   property color selectedText: selectedBackground.hslLightness > 0.6 ? "#000000" : "#ffffff"
   readonly property var spotlightSettings: {
-    var values = { spotlight_size: 100, spotlight_selection: "gray", spotlight_shortcuts: false, spotlight_movable: true, spotlight_position: [], spotlight_height: [] }
+    var values = { spotlight_size: 100, spotlight_selection: "gray", spotlight_shortcuts: false, spotlight_movable: true, spotlight_position: [], spotlight_height: [], spotlight_filters: false, spotlight_menu_on_open: true }
     var lines = settingsFile.text().split("\n")
     for (var i = 0; i < lines.length; i++) {
       var match = lines[i].match(/^\s*(\w+)\s*=\s*(.*?)\s*$/)
@@ -147,8 +147,10 @@ Item {
     return values
   }
   readonly property bool movable: root.spotlightSettings.spotlight_movable
-  readonly property bool emptyRoot: !root.dmenuActive && root.activeMenu === "root" && root.filterText.trim() === ""
+  readonly property bool showFilters: !root.dmenuActive && root.spotlightSettings.spotlight_filters
+  readonly property bool emptyRoot: !root.dmenuActive && !root.spotlightSettings.spotlight_menu_on_open && root.activeMenu === "root" && root.filterText.trim() === ""
   readonly property bool listShown: root.mode !== "input" && !root.emptyRoot
+  readonly property bool headerDivider: root.dmenuActive || root.showFilters || root.listShown
   readonly property real sizeScale: Math.max(80, Math.min(150, root.spotlightSettings.spotlight_size)) / 100
   readonly property bool showFooter: root.dmenuActive || root.spotlightSettings.spotlight_shortcuts
   readonly property bool grayRows: !root.dmenuActive && root.spotlightSettings.spotlight_selection !== "accent"
@@ -159,9 +161,9 @@ Item {
   readonly property int rowRadius: root.dmenuActive ? 8 : root.px(14)
   property int contentMargin: root.dmenuActive ? Style.space(8) : root.px(8)
   property int headerHeight: root.dmenuActive ? Style.space(52) : root.px(56)
-  readonly property int filterBarHeight: root.dmenuActive ? 0 : root.px(46)
+  readonly property int filterBarHeight: root.showFilters ? root.px(46) : 0
   readonly property int footerHeight: root.dmenuActive ? Style.space(30) : (root.showFooter ? root.px(32) : 0)
-  readonly property int chromeHeight: headerHeight + calcAreaHeight + filterBarHeight + footerHeight + (root.showFooter ? 2 : 1) + (root.listShown ? contentMargin * 2 : 0)
+  readonly property int chromeHeight: headerHeight + calcAreaHeight + filterBarHeight + footerHeight + (root.showFooter ? 1 : 0) + (root.headerDivider ? 1 : 0) + (root.listShown ? contentMargin * 2 : 0)
   property int baseRowHeight: root.dmenuActive ? Math.max(Style.space(32), Style.font.heading + Style.spacing.rowPaddingX) : root.px(56)
   property int detailRowHeight: Math.max(Style.space(46), Style.font.body + Style.font.caption + Style.spacing.rowPaddingX * 2)
   property string calcResult: ""
@@ -1817,6 +1819,7 @@ Item {
           x: root.dmenuActive ? 0 : root.px(16)
           width: parent.width - x * 2
           height: 1
+          visible: root.headerDivider
           color: root.border
         }
 
@@ -1899,7 +1902,7 @@ Item {
         Item {
           width: parent.width
           height: root.filterBarHeight
-          visible: !root.dmenuActive
+          visible: root.showFilters
           z: 2
 
           Row {
