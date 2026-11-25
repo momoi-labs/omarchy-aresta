@@ -33,7 +33,8 @@ Item {
     return setting.hint || ""
   }
 
-  readonly property bool available: !setting.requires || (revision >= 0 && backend.flag(setting.requires))
+  readonly property bool available: !setting.requires || (revision >= 0
+    && (setting.requires.plugin ? backend.pluginEnabled(setting.requires.plugin) : backend.flag(setting.requires)))
 
   enabled: available
   opacity: available ? 1 : 0.4
