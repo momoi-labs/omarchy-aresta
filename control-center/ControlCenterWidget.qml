@@ -165,14 +165,14 @@ BarWidget {
       onAnchoring: {
         var win = button.QsWindow.window
         if (!win) return
-        var margin = 10
+        var margin = Commons.Style.gapsOut
         var targetX = win.width - popup.implicitWidth - margin
         if (!root.panelsAlignRight) {
           var point = win.contentItem.mapFromItem(button, button.width / 2 - popup.implicitWidth / 2, 0)
           targetX = Math.max(margin, Math.min(point.x, win.width - popup.implicitWidth - margin))
         }
         popupAnchor.rect.x = Math.round(Math.max(margin, targetX))
-        popupAnchor.rect.y = Math.round(win.height + 6)
+        popupAnchor.rect.y = Math.round(win.height + margin)
       }
     }
 
