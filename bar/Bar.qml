@@ -359,7 +359,8 @@ Item {
 
         Rectangle {
           visible: !desktops.dots && desktop.modelData.current
-          anchors.centerIn: parent
+          anchors.horizontalCenter: parent.horizontalCenter
+          y: (parent.height - height) / 2
           width: parent.width
           height: 18
           radius: 5
@@ -368,7 +369,8 @@ Item {
 
         Text {
           visible: !desktops.dots
-          anchors.centerIn: parent
+          anchors.horizontalCenter: parent.horizontalCenter
+          y: (parent.height - height) / 2
           text: desktop.modelData.slot === 10 ? "0" : desktop.modelData.slot
           color: desktop.modelData.current ? root.accentForeground : desktop.modelData.occupied ? root.foreground : Qt.alpha(root.foreground, 0.45)
           font.family: root.fontFamily
@@ -378,7 +380,8 @@ Item {
 
         Rectangle {
           visible: desktops.dots
-          anchors.centerIn: parent
+          anchors.horizontalCenter: parent.horizontalCenter
+          y: (parent.height - height) / 2
           width: parent.width
           height: 7
           radius: 3.5
@@ -417,6 +420,9 @@ Item {
     readonly property bool tucked: root.controlCenter && !!root.controlCenterIcons[moduleName] && !root.settings[root.controlCenterIcons[moduleName]]
     readonly property bool alignRight: tucked && root.settings.panels_align_right
     readonly property real scaledWidth: activeItem ? activeItem.implicitWidth * itemScale : 0
+    property var labelButton: null
+    readonly property bool textLabel: !!labelButton && labelButton.labelVisible && !labelButton.iconLabel
+    readonly property real figureHeight: Math.min(labelMetrics.capitalHeight, labelMetrics.tightBoundingRect("0").height)
 
     opacity: tucked ? 0 : 1
     enabled: !tucked
@@ -430,16 +436,30 @@ Item {
       if ("bar" in target) target.bar = root.barApiFor(slot.moduleName, slot.firstParty)
       if ("moduleName" in target) target.moduleName = slot.moduleName
       if ("settings" in target) target.settings = slot.settings
+      var items = target.children
+      for (var i = 0; i < items.length; i++) {
+        if (!("centerFigures" in items[i])) continue
+        items[i].centerFigures = false
+        labelButton = items[i]
+      }
     }
 
     onSettingsChanged: inject()
     Component.onCompleted: root.widgetSlots = root.widgetSlots.concat([slot])
     Component.onDestruction: root.widgetSlots = root.widgetSlots.filter(function(item) { return item !== slot })
 
+    FontMetrics {
+      id: labelMetrics
+
+      font.family: slot.labelButton ? slot.labelButton.fontFamily : root.fontFamily
+      font.pixelSize: slot.labelButton ? slot.labelButton.fontSize : Style.font.body
+    }
+
     Loader {
       id: loader
 
       anchors.verticalCenter: parent.verticalCenter
+      anchors.verticalCenterOffset: slot.textLabel ? (Math.ceil(labelMetrics.height) / 2 - labelMetrics.ascent + slot.figureHeight / 2) * scale : 0
       x: slot.alignRight ? 100000 : Math.round((slot.width - slot.scaledWidth) / 2)
       width: item ? item.implicitWidth : 0
       scale: slot.tucked ? 1 : slot.itemScale
