@@ -113,13 +113,13 @@ Open it from the app launcher.
 
 | Section | What you set |
 | --- | --- |
-| Appearance | Light, Dark or Auto; the light and the dark theme from the installed Omarchy themes; window shadows. It also shows the colors of the current theme. Auto picks the light theme at sunrise and the dark theme at sunset. |
+| Appearance | Light, Dark or Auto; the light and the dark theme from the installed Omarchy themes; window shadows; translucent panel backgrounds and opacity for Control Center, Spotlight and the app switcher. It also shows the colors of the current theme. Auto picks the light theme at sunrise and the dark theme at sunset. |
 | Wallpaper | The current wallpaper and a switch that keeps it when the theme changes. It lists the pictures of the theme, of `~/.config/omarchy/backgrounds/<theme>` and of folders you add. Add Photo copies a picture into `~/.config/omarchy/backgrounds/<theme>`. |
 | Menu Bar | The menu bar itself; desktops in the bar (after the menus, in the center or before the status icons, as numbers or dots); the bar background opacity; the clock format. |
+| Spotlight | Spotlight itself (off gives back the Omarchy menu); size from 80% to 150%; a gray or theme accent selected row; the filter buttons; open with only the search field until you type; keyboard hints at the bottom of the card; lock the card's place and size; put it back at its default place and height. |
 | Title Bars | The title bars themselves, with a preview of two windows on your wallpaper; title bars on tiled windows too; button position (left or right); grey traffic lights on unfocused windows; icons in the traffic lights on hover; title alignment; traffic light size. Off gives back Omarchy's own title bars. |
 | Control Center | The Control Center itself (off gives back Omarchy's bar icons); the controls the panel shows; the Omarchy icons that also stay in the menu bar. |
 | Keyboard | Quit app, Cycle windows, the app switcher and the Quake console keys on or off, and new shortcuts for them. Omarchy's own bindings show as read-only. |
-| Spotlight | Spotlight itself (off gives back the Omarchy menu); size from 80% to 150%; a gray or theme accent selected row; the filter buttons; open with only the search field until you type; keyboard hints at the bottom of the card; lock the card's place and size; put it back at its default place and height. |
 | Cupertino | Options that macOS does not have: rounded corners and their radius and shape, the thin border, the shadow and the bar size. |
 
 Turning a part off gives back Omarchy's own behavior: the Omarchy bar, its

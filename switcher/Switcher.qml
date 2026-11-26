@@ -48,6 +48,39 @@ Item {
 
   readonly property real naturalWidth: padding * 2 + apps.length * cell + Math.max(0, apps.length - 1) * gap
   readonly property real fit: targetScreen ? Math.min(1, (targetScreen.width - screenMargin * 2) / Math.max(1, naturalWidth)) : 1
+  readonly property var panelSettings: {
+    var values = { panels_translucent: true, panels_opacity: 70 }
+    var lines = settingsFile.text().split("\n")
+    for (var i = 0; i < lines.length; i++) {
+      var match = lines[i].match(/^\s*(\w+)\s*=\s*(.*?)\s*$/)
+      if (!match || !(match[1] in values)) continue
+      if (typeof values[match[1]] === "boolean") {
+        if (match[2] === "true" || match[2] === "false") values[match[1]] = match[2] === "true"
+      } else if (match[2] !== "" && !isNaN(Number(match[2]))) {
+        values[match[1]] = Number(match[2])
+      }
+    }
+    return values
+  }
+  readonly property bool panelsTranslucent: panelSettings.panels_translucent
+  readonly property real panelsAlpha: Math.max(0.3, Math.min(1, panelSettings.panels_opacity / 100))
+  readonly property color baseSurface: Qt.tint(Commons.Color.popups.background, Qt.alpha(Commons.Color.popups.text, 0.1))
+  readonly property bool darkSurface: (0.2126 * Commons.Color.popups.background.r + 0.7152 * Commons.Color.popups.background.g + 0.0722 * Commons.Color.popups.background.b) < 0.4
+
+  FileView {
+    id: settingsFile
+    path: Quickshell.env("HOME") + "/.config/omarchy-cupertino/settings.toml"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoadFailed: settingsRetry.restart()
+  }
+
+  Timer {
+    id: settingsRetry
+    interval: 2000
+    onTriggered: settingsFile.reload()
+  }
 
   function normalizedAddress(address) {
     var value = String(address || "")
@@ -256,9 +289,20 @@ Item {
       Rectangle {
         anchors.fill: parent
         radius: root.stripRadius
-        color: Qt.tint(Commons.Color.popups.background, Qt.alpha(Commons.Color.popups.text, 0.1))
+        color: root.panelsTranslucent ? Qt.rgba(root.baseSurface.r, root.baseSurface.g, root.baseSurface.b, root.panelsAlpha) : root.baseSurface
         border.width: 1
-        border.color: Qt.alpha(Commons.Color.popups.text, 0.12)
+        border.color: root.panelsTranslucent ? (root.darkSurface ? Qt.rgba(1, 1, 1, 0.22) : Qt.rgba(0, 0, 0, 0.14)) : Qt.alpha(Commons.Color.popups.text, 0.12)
+
+        Rectangle {
+          anchors.fill: parent
+          anchors.margins: 1
+          radius: parent.radius - 1
+          visible: root.panelsTranslucent
+          gradient: Gradient {
+            GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, root.darkSurface ? 0.07 : 0.22) }
+            GradientStop { position: 0.45; color: "transparent" }
+          }
+        }
       }
 
       MouseArea {

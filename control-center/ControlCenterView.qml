@@ -13,6 +13,7 @@ Column {
   property string fontFamily: "sans-serif"
   property string iconFamily: "monospace"
   property bool outputsOpen: false
+  property bool translucent: true
 
   signal act(var command)
 
@@ -20,8 +21,8 @@ Column {
 
   readonly property int w: 316
   readonly property bool dark: luminance(background) < 0.4
-  readonly property color card: Qt.alpha(foreground, dark ? 0.09 : 0.055)
-  readonly property color well: Qt.alpha(foreground, dark ? 0.17 : 0.12)
+  readonly property color card: translucent ? (dark ? Qt.rgba(1, 1, 1, 0.11) : Qt.rgba(1, 1, 1, 0.45)) : Qt.alpha(foreground, dark ? 0.09 : 0.055)
+  readonly property color well: Qt.alpha(foreground, translucent ? (dark ? 0.2 : 0.14) : (dark ? 0.17 : 0.12))
   readonly property color dim: Qt.alpha(foreground, 0.58)
   readonly property color fill: dark ? "#f2f2f4" : "#48484a"
   readonly property color fillInk: dark ? "#5a5a5f" : "#ffffff"
@@ -98,6 +99,8 @@ Column {
   component Card: Rectangle {
     radius: 16
     color: view.card
+    border.width: view.translucent ? 1 : 0
+    border.color: view.dark ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(0, 0, 0, 0.08)
   }
 
   component Step: Glyph {
