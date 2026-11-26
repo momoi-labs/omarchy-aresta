@@ -20,7 +20,7 @@ BarWidget {
 
   readonly property var options: settings || ({})
   readonly property var panelSettings: {
-    var values = { panels_translucent: true, panels_opacity: 70 }
+    var values = { panels_translucent: true, panels_opacity: 70, panels_align_right: true, control_center_halo: false }
     var lines = settingsFile.text().split("\n")
     for (var i = 0; i < lines.length; i++) {
       var match = lines[i].match(/^\s*(\w+)\s*=\s*(.*?)\s*$/)
@@ -35,6 +35,8 @@ BarWidget {
   }
   readonly property bool panelsTranslucent: panelSettings.panels_translucent
   readonly property real panelsAlpha: Math.max(0.3, Math.min(1, panelSettings.panels_opacity / 100))
+  readonly property bool panelsAlignRight: panelSettings.panels_align_right
+  readonly property bool controlCenterHalo: panelSettings.control_center_halo
   readonly property bool darkCard: (0.2126 * Commons.Color.popups.background.r + 0.7152 * Commons.Color.popups.background.g + 0.0722 * Commons.Color.popups.background.b) < 0.4
 
   FileView {
@@ -76,7 +78,10 @@ BarWidget {
     if (verb === "wifi" && copy.wifi) copy.wifi.on = command[1] === "on"
     else if (verb === "bluetooth" && copy.bt) copy.bt.on = command[1] === "on"
     else if (verb === "focus" && copy.focus) copy.focus.on = !copy.focus.on
-    else if (verb === "brightness" && copy.display) copy.display.percent = Number(command[1])
+    else if (verb === "nightlight") {
+      if (!copy.nightlight) copy.nightlight = {}
+      copy.nightlight.on = !copy.nightlight.on
+    } else if (verb === "brightness" && copy.display) copy.display.percent = Number(command[1])
     else if (verb === "volume" && copy.sound) { copy.sound.percent = Number(command[1]); copy.sound.muted = false }
     else return
     info = copy
@@ -146,16 +151,29 @@ BarWidget {
 
     visible: root.open
     color: "transparent"
-    implicitWidth: card.width + 16
-    implicitHeight: card.height + 16
+    implicitWidth: card.width
+    implicitHeight: card.height
 
     anchor {
-      item: button
-      edges: Edges.Bottom | Edges.Right
-      gravity: Edges.Bottom | Edges.Left
+      id: popupAnchor
+      window: button.QsWindow.window
       adjustment: PopupAdjustment.Slide
-      margins.top: 4
-      margins.right: -8
+      edges: Edges.Top | Edges.Left
+      gravity: Edges.Bottom | Edges.Right
+      rect.width: 1
+      rect.height: 1
+      onAnchoring: {
+        var win = button.QsWindow.window
+        if (!win) return
+        var margin = Commons.Style.gapsOut
+        var targetX = win.width - popup.implicitWidth - margin
+        if (!root.panelsAlignRight) {
+          var point = win.contentItem.mapFromItem(button, button.width / 2 - popup.implicitWidth / 2, 0)
+          targetX = Math.max(margin, Math.min(point.x, win.width - popup.implicitWidth - margin))
+        }
+        popupAnchor.rect.x = Math.round(Math.max(margin, targetX))
+        popupAnchor.rect.y = Math.round(win.height + margin)
+      }
     }
 
     HyprlandFocusGrab {
@@ -166,36 +184,44 @@ BarWidget {
 
     Rectangle {
       id: card
-      x: 8
-      y: 8
-      width: view.implicitWidth + 24
-      height: view.implicitHeight + 24
-      radius: 24
-      color: root.panelsTranslucent ? Qt.rgba(Commons.Color.popups.background.r, Commons.Color.popups.background.g, Commons.Color.popups.background.b, root.panelsAlpha) : Commons.Color.popups.background
-      border.width: 1
-      border.color: root.panelsTranslucent ? (root.darkCard ? Qt.rgba(1, 1, 1, 0.22) : Qt.rgba(0, 0, 0, 0.14)) : Qt.alpha(Commons.Color.popups.text, 0.16)
+      x: 0
+      y: 0
+      width: view.implicitWidth + (root.controlCenterHalo ? 24 : 0)
+      height: view.implicitHeight + (root.controlCenterHalo ? 24 : 0)
+      radius: root.controlCenterHalo ? 34 : 0
+      color: !root.controlCenterHalo
+        ? "transparent"
+        : root.panelsTranslucent
+          ? Qt.rgba(Commons.Color.popups.background.r, Commons.Color.popups.background.g, Commons.Color.popups.background.b, Math.max(0.24, Math.min(0.55, root.panelsAlpha * 0.48)))
+          : Commons.Color.popups.background
+      border.width: root.controlCenterHalo ? 1 : 0
+      border.color: root.panelsTranslucent
+        ? (root.darkCard ? Qt.rgba(1, 1, 1, 0.16) : Qt.rgba(0, 0, 0, 0.12))
+        : Qt.alpha(Commons.Color.popups.text, 0.16)
 
       Rectangle {
         anchors.fill: parent
         anchors.margins: 1
-        radius: parent.radius - 1
-        visible: root.panelsTranslucent
+        radius: Math.max(0, parent.radius - 1)
+        visible: root.controlCenterHalo && root.panelsTranslucent
         gradient: Gradient {
-          GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, root.darkCard ? 0.07 : 0.22) }
+          GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, root.darkCard ? 0.06 : 0.22) }
           GradientStop { position: 0.45; color: "transparent" }
         }
       }
 
       ControlCenterView {
         id: view
-        x: 12
-        y: 12
+        x: root.controlCenterHalo ? 12 : 0
+        y: root.controlCenterHalo ? 12 : 0
         info: root.info
         show: ({ wifi: root.flag("wifi"), bluetooth: root.flag("bluetooth"), focus: root.flag("focus"), display: root.flag("display"), sound: root.flag("sound"), media: root.flag("media") })
         background: Commons.Color.popups.background
         foreground: Commons.Color.popups.text
         accent: Commons.Color.accent
         translucent: root.panelsTranslucent
+        panelAlpha: root.panelsAlpha
+        halo: root.controlCenterHalo
         fontFamily: root.bar ? root.bar.fontFamily : "sans-serif"
         onAct: function(command) { root.act(command) }
       }

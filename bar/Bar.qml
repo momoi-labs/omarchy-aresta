@@ -24,7 +24,7 @@ Item {
   readonly property string position: "top"
   readonly property bool vertical: false
   readonly property var settings: {
-    var values = { bar_height: 29, bar_opacity: 30, clock_format: "ddd d MMM  HH:mm", status_icon_scale: 120, status_item_width: 38, bar_desktops: false, bar_desktops_position: "menus", bar_desktops_style: "numbers", bar_desktops_occupied_only: false, control_center_enabled: true, cc_wifi: true, cc_bluetooth: true, cc_focus: true, cc_display: true, cc_sound: true, cc_media: true, cc_bar_network: false, cc_bar_bluetooth: false, cc_bar_audio: false, cc_bar_monitor: false, cc_bar_power: true }
+    var values = { bar_height: 29, bar_opacity: 30, clock_format: "ddd d MMM  HH:mm", status_icon_scale: 120, status_item_width: 38, bar_desktops: false, bar_desktops_position: "menus", bar_desktops_style: "numbers", bar_desktops_occupied_only: false, panels_align_right: true, control_center_enabled: true, cc_wifi: true, cc_bluetooth: true, cc_focus: true, cc_display: true, cc_sound: true, cc_media: true, cc_bar_network: false, cc_bar_bluetooth: false, cc_bar_audio: false, cc_bar_monitor: false, cc_bar_power: true }
     var lines = settingsFile.text().split("\n")
     for (var i = 0; i < lines.length; i++) {
       var match = lines[i].match(/^\s*(\w+)\s*=\s*(.*?)\s*$/)
@@ -410,10 +410,12 @@ Item {
     property real itemScale: 1
     property real cellWidth: 0
     readonly property bool tucked: root.controlCenter && !!root.controlCenterIcons[moduleName] && !root.settings[root.controlCenterIcons[moduleName]]
+    readonly property bool alignRight: tucked && root.settings.panels_align_right
     readonly property real scaledWidth: activeItem ? activeItem.implicitWidth * itemScale : 0
 
-    visible: !tucked
-    implicitWidth: activeItem && activeItem.visible ? Math.max(cellWidth, Math.ceil(scaledWidth)) : 0
+    opacity: tucked ? 0 : 1
+    enabled: !tucked
+    implicitWidth: !tucked && activeItem && activeItem.visible ? Math.max(cellWidth, Math.ceil(scaledWidth)) : 0
     implicitHeight: root.barSize
 
     function inject() {
@@ -433,9 +435,9 @@ Item {
       id: loader
 
       anchors.verticalCenter: parent.verticalCenter
-      x: Math.round((slot.width - slot.scaledWidth) / 2)
+      x: slot.alignRight ? 100000 : Math.round((slot.width - slot.scaledWidth) / 2)
       width: item ? item.implicitWidth : 0
-      scale: slot.itemScale
+      scale: slot.tucked ? 1 : slot.itemScale
       transformOrigin: Item.Left
       height: item ? item.implicitHeight : 0
       sourceComponent: slot.registered ? slot.registered.component : null
