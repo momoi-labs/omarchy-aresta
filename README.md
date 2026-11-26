@@ -2,97 +2,129 @@
 
 A macOS look for [Omarchy](https://omarchy.org) 4.5 or newer.
 
-It has:
+| Part | What you get |
+| --- | --- |
+| [Menu bar](#menu-bar) | A Mac-style top bar in place of the Omarchy bar |
+| [Control Center](#control-center) | One panel for Wi-Fi, Bluetooth, Focus, display, sound and media |
+| [Spotlight](#spotlight) | The Omarchy menu drawn as macOS Spotlight |
+| [Title bars](#title-bars-and-windows) | Traffic lights on floating workspaces, rounded corners everywhere |
+| [Themes](#themes) | OSX Light and OSX Dark |
+| [Shortcuts](#keyboard-shortcuts) | Super+Tab, Super+Q and other macOS keys on Super |
+| [Cupertino Settings](#cupertino-settings) | One app that turns each part on or off |
 
-- A Mac-style top bar that replaces the Omarchy bar: the Omarchy menu button
-  and the focused app's name on the left, your status widgets (third-party
-  ones too) and the date and time on the right, sized and spaced like the
-  macOS menu bar. It has white text on a translucent, unblurred background
-  in your theme colors, and uses SF Pro when it is installed, or Inter.
-- A Control Center next to the clock: one panel that turns Wi-Fi, Bluetooth
-  and Focus on or off, picks the sound output, sets the display brightness
-  and the volume, and controls the media that plays. While it is on, the
-  bar hides Omarchy's network, Bluetooth, sound, system monitor and battery
-  icons, unless you keep one in the bar.
-- Windows on floating workspaces get a title bar with traffic lights: close,
-  minimize and maximize on the left, grey when the window is unfocused, icons
-  on hover, and the title centered.
-- Tiled windows get no title bar.
-- Every window gets rounded corners, a soft shadow and a thin neutral outline
-  instead of a colored border.
-- The Omarchy menu drawn as macOS Spotlight. Super+Space, the bar's menu
-  button and `omarchy-menu` open one search field with a blinking cursor
-  that ranks apps first, then menu rows with their path. A math expression
-  such as `2^10` or `sqrt(2)*pi` shows its result in the field and on a card
-  above the results, and Enter or the copy button copies it. A submenu shows
-  as a chip in the field, and Backspace on an empty field goes back. Ctrl+1
-  to Ctrl+9 open Apps, as an icon grid, or a menu section, because Super+1 to
-  Super+9 switch workspaces. An optional row of filter buttons under the
-  field does the same, and each button shows its name and shortcut on hover.
-  The card grows with the results up to the screen edge, then scrolls. Drag
-  the card by its field or its sides to move it, or by its top or bottom
-  edge to change its height, and it opens that way next time on that
-  display. Scripts that use the menu as a picker, such as
+Each part has a switch. Turning one off gives back Omarchy's own behavior.
+See [Install](#install) to get started.
+
+## Menu bar
+
+![Turning the Cupertino menu bar on in Cupertino Settings](docs/media/menu-bar.gif)
+
+The menu bar replaces the Omarchy bar. It is sized and spaced like the macOS
+menu bar.
+
+- **Left:** the Omarchy menu button and the focused app's name.
+- **Right:** your status widgets, third-party ones too, and the date and time.
+- **Look:** white text on a translucent, unblurred background in your theme
+  colors. It uses SF Pro when it is installed, or Inter.
+
+## Control Center
+
+![Opening the Control Center, its Wi-Fi details and its sound details](docs/media/control-center.gif)
+
+The Control Center sits next to the clock. One panel:
+
+- turns Wi-Fi, Bluetooth and Focus on or off;
+- picks the sound output;
+- sets the display brightness and the volume;
+- controls the media that plays.
+
+While it is on, the bar hides Omarchy's network, Bluetooth, sound, system
+monitor and battery icons, unless you keep one in the bar.
+
+## Spotlight
+
+![Turning Spotlight on, then searching for an app and doing math](docs/media/spotlight.gif)
+
+Super+Space, the bar's menu button and `omarchy-menu` open one search field
+with a blinking cursor. Results show apps first, then menu rows with their
+path.
+
+- **Math:** an expression such as `2^10` or `sqrt(2)*pi` shows its result in
+  the field and on a card above the results. Enter or the copy button copies
+  it.
+- **Submenus:** a submenu shows as a chip in the field. Backspace on an empty
+  field goes back.
+- **Sections:** Ctrl+1 to Ctrl+9 open Apps, as an icon grid, or a menu
+  section, because Super+1 to Super+9 switch workspaces. An optional row of
+  filter buttons under the field does the same. Each button shows its name
+  and shortcut on hover.
+- **Size and place:** the card grows with the results up to the screen edge,
+  then scrolls. Drag the card by its field or its sides to move it, or by its
+  top or bottom edge to change its height. It opens that way next time on
+  that display.
+- **Scripts:** scripts that use the menu as a picker, such as
   `omarchy-menu-keybindings`, keep working.
-- Two Omarchy themes in macOS system colors: OSX Light and OSX Dark. Pick
-  them in the Omarchy theme menu or with `omarchy-theme-set "osx light"`.
-  Each has the Yaru blue icons and an original gradient background.
 
-It also adds macOS shortcuts on Super:
+## Title bars and windows
 
-- Super+Tab opens an app switcher like Cmd+Tab: one icon per app in
-  most-recently-used order, in a rounded strip in the middle of the screen.
-  Hold Super, press Tab or Shift+Tab or point at an icon to move, release
-  Super to switch, click an icon to switch at once, or press Esc to cancel.
-  Switching to a minimized app brings its window back.
-  It replaces Omarchy's next and previous workspace bindings on Super+Tab and
-  Super+Shift+Tab. It is its own shell plugin, so it keeps working when you
-  switch back to the Omarchy bar.
-- Super+Q quits the app: it closes every window of the focused window's class,
-  on all workspaces. Super+W still closes only the window.
-- Super+M minimizes the window to the dock (Omarchy's binding, unchanged).
-- Super+` cycles between windows of the same app, skipping minimized
-  windows.
-- The Quake console moves from Super+` to Super+Alt+`.
+![Turning title bars on for a floating workspace](docs/media/title-bars.gif)
+
+- **Windows on floating workspaces** get a title bar with traffic lights:
+  close, minimize and maximize on the left, grey when the window is
+  unfocused, icons on hover, and the title centered.
+- **Tiled windows** get no title bar.
+- **Every window** gets rounded corners, a soft shadow and a thin neutral
+  outline instead of a colored border.
+
+Turn a workspace floating with Omarchy's workspace layout toggle to see the
+title bars.
+
+## Themes
+
+Two Omarchy themes in macOS system colors: OSX Light and OSX Dark. Each has
+the Yaru blue icons and an original gradient background. Pick them in the
+Omarchy theme menu or with `omarchy-theme-set "osx light"`.
+
+## Keyboard shortcuts
+
+| Shortcut | Action |
+| --- | --- |
+| Super+Tab | App switcher, like Cmd+Tab |
+| Super+Q | Quit the app: close every window of its class, on all workspaces |
+| Super+W | Close only the window (unchanged) |
+| Super+M | Minimize the window to the dock (Omarchy's binding, unchanged) |
+| `` Super+` `` | Cycle between windows of the same app, skipping minimized ones |
+| `` Super+Alt+` `` | Quake console, moved from `` Super+` `` |
+
+The app switcher shows one icon per app in most-recently-used order, in a
+rounded strip in the middle of the screen. Hold Super, press Tab or Shift+Tab
+or point at an icon to move, and release Super to switch. Click an icon to
+switch at once, or press Esc to cancel. Switching to a minimized app brings
+its window back.
+
+The switcher replaces Omarchy's next and previous workspace bindings on
+Super+Tab and Super+Shift+Tab. It is its own shell plugin, so it keeps
+working when you switch back to the Omarchy bar.
 
 ## Cupertino Settings
 
 Cupertino Settings is a small app in the style of macOS System Settings.
-Open it from the app launcher. It has these sections:
+Open it from the app launcher.
 
-- Appearance: switch between Light, Dark and Auto, pick the light and the
-  dark theme from the installed Omarchy themes, see the colors of the current
-  theme, and turn window shadows on or off. Auto picks the light theme at
-  sunrise and the dark theme at sunset.
-- Wallpaper: the current wallpaper, a switch that keeps it when the theme
-  changes, and the pictures of the theme, of
-  `~/.config/omarchy/backgrounds/<theme>` and of folders you add. Add Photo
-  copies a picture into `~/.config/omarchy/backgrounds/<theme>`.
-- Menu Bar: the Cupertino menu bar itself, desktops in the bar (after the
-  menus, in the center or before the status icons, as numbers or dots), the
-  bar background opacity and the clock format.
-- Title Bars: the Cupertino title bars themselves, with a preview of two
-  windows on your wallpaper, showing title bars on tiled windows too, button
-  position (left or right), grey traffic lights on unfocused windows, icons
-  in the traffic lights on hover, the window title alignment and the traffic
-  light size. Off gives back Omarchy's own title bars.
-- Control Center: turn it off to get Omarchy's bar icons back, choose the
-  controls the panel shows, and choose the Omarchy icons that also stay in
-  the menu bar.
-- Keyboard: turn Quit app, Cycle windows, the app switcher and the Quake
-  console keys on or off, and record new shortcuts for them. Omarchy's own
-  bindings show as read-only.
-- Spotlight: turn Cupertino Spotlight off to get the Omarchy menu back, set
-  its size from 80% to 150%, pick a gray or theme accent selected row, show
-  the filter buttons, open with only the search field until you type, show
-  the keyboard hints at the bottom of the card, stop the card from moving
-  or resizing, and put it back at its default place and height.
-- Cupertino: options that macOS does not have, such as rounded corners and
-  their radius and shape, the thin border, the shadow and the bar size.
+| Section | What you set |
+| --- | --- |
+| Appearance | Light, Dark or Auto; the light and the dark theme from the installed Omarchy themes; window shadows. It also shows the colors of the current theme. Auto picks the light theme at sunrise and the dark theme at sunset. |
+| Wallpaper | The current wallpaper and a switch that keeps it when the theme changes. It lists the pictures of the theme, of `~/.config/omarchy/backgrounds/<theme>` and of folders you add. Add Photo copies a picture into `~/.config/omarchy/backgrounds/<theme>`. |
+| Menu Bar | The menu bar itself; desktops in the bar (after the menus, in the center or before the status icons, as numbers or dots); the bar background opacity; the clock format. |
+| Title Bars | The title bars themselves, with a preview of two windows on your wallpaper; title bars on tiled windows too; button position (left or right); grey traffic lights on unfocused windows; icons in the traffic lights on hover; title alignment; traffic light size. Off gives back Omarchy's own title bars. |
+| Control Center | The Control Center itself (off gives back Omarchy's bar icons); the controls the panel shows; the Omarchy icons that also stay in the menu bar. |
+| Keyboard | Quit app, Cycle windows, the app switcher and the Quake console keys on or off, and new shortcuts for them. Omarchy's own bindings show as read-only. |
+| Spotlight | Spotlight itself (off gives back the Omarchy menu); size from 80% to 150%; a gray or theme accent selected row; the filter buttons; open with only the search field until you type; keyboard hints at the bottom of the card; lock the card's place and size; put it back at its default place and height. |
+| Cupertino | Options that macOS does not have: rounded corners and their radius and shape, the thin border, the shadow and the bar size. |
 
-Each part of the plugin has a switch. Turning one off gives back Omarchy's own
-behavior: the Omarchy bar, its status icons, title bars, square corners, colored border,
-menu, or its Super+Q, Super+`, Super+Shift+`, Super+Tab and Super+Shift+Tab
+Turning a part off gives back Omarchy's own behavior: the Omarchy bar, its
+status icons, title bars, square corners, colored border, menu, or its
+Super+Q, `` Super+` ``, `` Super+Shift+` ``, Super+Tab and Super+Shift+Tab
 bindings.
 
 Changes apply at once. The app saves them to
@@ -134,9 +166,6 @@ It also installs the `cupertino-auto` systemd user timer, which runs
 location from `~/.local/state/omarchy/settings/weather.json`, else from
 `https://geo.omarchy.org/`, and computes sunrise and sunset on your computer.
 Running the script again changes nothing.
-
-Turn a workspace floating with Omarchy's workspace layout toggle to see the
-title bars.
 
 ## Uninstall
 
