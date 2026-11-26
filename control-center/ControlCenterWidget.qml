@@ -19,6 +19,38 @@ BarWidget {
   property bool stale: false
 
   readonly property var options: settings || ({})
+  readonly property var panelSettings: {
+    var values = { panels_translucent: true, panels_opacity: 70 }
+    var lines = settingsFile.text().split("\n")
+    for (var i = 0; i < lines.length; i++) {
+      var match = lines[i].match(/^\s*(\w+)\s*=\s*(.*?)\s*$/)
+      if (!match || !(match[1] in values)) continue
+      if (typeof values[match[1]] === "boolean") {
+        if (match[2] === "true" || match[2] === "false") values[match[1]] = match[2] === "true"
+      } else if (match[2] !== "" && !isNaN(Number(match[2]))) {
+        values[match[1]] = Number(match[2])
+      }
+    }
+    return values
+  }
+  readonly property bool panelsTranslucent: panelSettings.panels_translucent
+  readonly property real panelsAlpha: Math.max(0.3, Math.min(1, panelSettings.panels_opacity / 100))
+  readonly property bool darkCard: (0.2126 * Commons.Color.popups.background.r + 0.7152 * Commons.Color.popups.background.g + 0.0722 * Commons.Color.popups.background.b) < 0.4
+
+  FileView {
+    id: settingsFile
+    path: Quickshell.env("HOME") + "/.config/omarchy-cupertino/settings.toml"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoadFailed: settingsRetry.restart()
+  }
+
+  Timer {
+    id: settingsRetry
+    interval: 2000
+    onTriggered: settingsFile.reload()
+  }
 
   function flag(name) { return options[name] === undefined ? true : options[name] === true }
   function close() { open = false; pinned = false }
@@ -139,9 +171,20 @@ BarWidget {
       width: view.implicitWidth + 24
       height: view.implicitHeight + 24
       radius: 24
-      color: Commons.Color.popups.background
+      color: root.panelsTranslucent ? Qt.rgba(Commons.Color.popups.background.r, Commons.Color.popups.background.g, Commons.Color.popups.background.b, root.panelsAlpha) : Commons.Color.popups.background
       border.width: 1
-      border.color: Qt.alpha(Commons.Color.popups.text, 0.16)
+      border.color: root.panelsTranslucent ? (root.darkCard ? Qt.rgba(1, 1, 1, 0.22) : Qt.rgba(0, 0, 0, 0.14)) : Qt.alpha(Commons.Color.popups.text, 0.16)
+
+      Rectangle {
+        anchors.fill: parent
+        anchors.margins: 1
+        radius: parent.radius - 1
+        visible: root.panelsTranslucent
+        gradient: Gradient {
+          GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, root.darkCard ? 0.07 : 0.22) }
+          GradientStop { position: 0.45; color: "transparent" }
+        }
+      }
 
       ControlCenterView {
         id: view
@@ -152,6 +195,7 @@ BarWidget {
         background: Commons.Color.popups.background
         foreground: Commons.Color.popups.text
         accent: Commons.Color.accent
+        translucent: root.panelsTranslucent
         fontFamily: root.bar ? root.bar.fontFamily : "sans-serif"
         onAct: function(command) { root.act(command) }
       }

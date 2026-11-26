@@ -127,7 +127,7 @@ Item {
   property color selectedBackground: Commons.Color.menu.selectedText
   property color selectedText: selectedBackground.hslLightness > 0.6 ? "#000000" : "#ffffff"
   readonly property var spotlightSettings: {
-    var values = { spotlight_size: 100, spotlight_selection: "gray", spotlight_shortcuts: false, spotlight_movable: true, spotlight_position: [], spotlight_height: [], spotlight_filters: false, spotlight_menu_on_open: true }
+    var values = { spotlight_size: 100, spotlight_selection: "gray", spotlight_shortcuts: false, spotlight_movable: true, spotlight_position: [], spotlight_height: [], spotlight_filters: false, spotlight_menu_on_open: true, panels_translucent: true, panels_opacity: 70 }
     var lines = settingsFile.text().split("\n")
     for (var i = 0; i < lines.length; i++) {
       var match = lines[i].match(/^\s*(\w+)\s*=\s*(.*?)\s*$/)
@@ -146,6 +146,10 @@ Item {
     }
     return values
   }
+  readonly property bool panelsTranslucent: root.spotlightSettings.panels_translucent
+  readonly property real panelsAlpha: Math.max(0.3, Math.min(1, root.spotlightSettings.panels_opacity / 100))
+  readonly property color cardBackground: root.panelsTranslucent ? Qt.rgba(root.background.r, root.background.g, root.background.b, root.panelsAlpha) : root.background
+  readonly property color cardBorder: root.panelsTranslucent ? (root.lightCard ? Qt.rgba(0, 0, 0, 0.14) : Qt.rgba(1, 1, 1, 0.22)) : root.border
   readonly property bool movable: root.spotlightSettings.spotlight_movable
   readonly property bool showFilters: !root.dmenuActive && root.spotlightSettings.spotlight_filters
   readonly property bool emptyRoot: !root.dmenuActive && !root.spotlightSettings.spotlight_menu_on_open && root.activeMenu === "root" && root.filterText.trim() === ""
@@ -1560,8 +1564,8 @@ Item {
         anchors.fill: parent
         radius: root.cornerRadius
         power: root.cornerPower
-        color: root.background
-        borderColor: root.border
+        color: root.cardBackground
+        borderColor: root.cardBorder
       }
 
       MouseArea {

@@ -81,6 +81,8 @@ fn defaults() -> Vec<Entry> {
         ("light_theme", Text("osx-light".into())),
         ("dark_theme", Text("osx-dark".into())),
         ("appearance_auto", Flag(false)),
+        ("panels_translucent", Flag(true)),
+        ("panels_opacity", Number(70.0)),
         ("wallpaper_keep", Flag(true)),
         ("wallpaper_folders", List(Vec::new())),
         ("control_center_enabled", Flag(true)),

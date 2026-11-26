@@ -148,7 +148,11 @@ Window {
         { type: "theme", key: "light_theme", dark: false, label: qsTr("Light theme") },
         { type: "theme", key: "dark_theme", dark: true, label: qsTr("Dark theme") }
       ], note: qsTr("Each list shows only themes of its mode. \"osx light\" and \"osx dark\" are the defaults.") },
-      { title: qsTr("Windows"), rows: [{ type: "toggle", key: "shadow_enabled", label: qsTr("Show window shadows"), hint: qsTr("Floating workspaces always show shadows") }] }
+      { title: qsTr("Windows"), rows: [{ type: "toggle", key: "shadow_enabled", label: qsTr("Show window shadows"), hint: qsTr("Floating workspaces always show shadows") }] },
+      { title: qsTr("Panels"), rows: [
+        { type: "toggle", key: "panels_translucent", label: qsTr("Translucent panels"), hint: qsTr("Translucent background for Control Center, Spotlight and the app switcher") },
+        { type: "slider", key: "panels_opacity", requires: "panels_translucent", label: qsTr("Panel background opacity"), min: 30, max: 100, step: 5, unit: "%" }
+      ] }
     ] },
     { id: "wallpaper", name: qsTr("Wallpaper"), block: 1, groups: [
       { rows: [
@@ -173,6 +177,19 @@ Window {
       ] },
       { title: qsTr("Clock"), rows: [
         { type: "text", key: "clock_format", label: qsTr("Clock format"), hint: qsTr("Qt date format, like ddd d MMM  HH:mm") }
+      ] }
+    ] },
+    { id: "spotlight", name: qsTr("Spotlight"), block: 1, groups: [
+      { rows: [
+        { type: "plugin", plugin: spotlightPlugin, label: qsTr("Use Cupertino Spotlight") },
+        { type: "spotlight", label: qsTr("Spotlight preview") },
+        { type: "slider", requires: { plugin: spotlightPlugin }, key: "spotlight_size", label: qsTr("Size"), min: 80, max: 150, step: 10, unit: "%" },
+        { type: "segment", requires: { plugin: spotlightPlugin }, key: "spotlight_selection", label: qsTr("Selection color"), options: selectionColors },
+        { type: "toggle", requires: { plugin: spotlightPlugin }, key: "spotlight_filters", label: qsTr("Show filters"), hint: qsTr("Buttons under the search field. Ctrl+1 to Ctrl+9 work either way.") },
+        { type: "toggle", requires: { plugin: spotlightPlugin }, key: "spotlight_menu_on_open", label: qsTr("Show menu on open"), hint: qsTr("Off opens only the search field until you type") },
+        { type: "toggle", requires: { plugin: spotlightPlugin }, key: "spotlight_shortcuts", label: qsTr("Show shortcuts"), hint: qsTr("Keyboard hints at the bottom of the card") },
+        { type: "toggle", requires: { plugin: spotlightPlugin }, key: "spotlight_movable", label: qsTr("Movable"), hint: qsTr("Drag the card to move it, or its top or bottom edge to change its height. It opens that way next time.") },
+        { type: "clear", requires: { plugin: spotlightPlugin }, keys: ["spotlight_position", "spotlight_height"], label: qsTr("Position"), hint: qsTr("Saved for each display"), button: qsTr("Reset position") }
       ] }
     ] },
     { id: "titlebars", name: qsTr("Title Bars"), block: 1, groups: [
@@ -232,20 +249,7 @@ Window {
         { type: "shortcut", key: "shortcut_quake_move", label: qsTr("Move window to Quake console") }
       ] }
     ] },
-    { id: "spotlight", name: qsTr("Spotlight"), block: 2, groups: [
-      { rows: [
-        { type: "plugin", plugin: spotlightPlugin, label: qsTr("Use Cupertino Spotlight") },
-        { type: "spotlight", label: qsTr("Spotlight preview") },
-        { type: "slider", requires: { plugin: spotlightPlugin }, key: "spotlight_size", label: qsTr("Size"), min: 80, max: 150, step: 10, unit: "%" },
-        { type: "segment", requires: { plugin: spotlightPlugin }, key: "spotlight_selection", label: qsTr("Selection color"), options: selectionColors },
-        { type: "toggle", requires: { plugin: spotlightPlugin }, key: "spotlight_filters", label: qsTr("Show filters"), hint: qsTr("Buttons under the search field. Ctrl+1 to Ctrl+9 work either way.") },
-        { type: "toggle", requires: { plugin: spotlightPlugin }, key: "spotlight_menu_on_open", label: qsTr("Show menu on open"), hint: qsTr("Off opens only the search field until you type") },
-        { type: "toggle", requires: { plugin: spotlightPlugin }, key: "spotlight_shortcuts", label: qsTr("Show shortcuts"), hint: qsTr("Keyboard hints at the bottom of the card") },
-        { type: "toggle", requires: { plugin: spotlightPlugin }, key: "spotlight_movable", label: qsTr("Movable"), hint: qsTr("Drag the card to move it, or its top or bottom edge to change its height. It opens that way next time.") },
-        { type: "clear", requires: { plugin: spotlightPlugin }, keys: ["spotlight_position", "spotlight_height"], label: qsTr("Position"), hint: qsTr("Saved for each display"), button: qsTr("Reset position") }
-      ] }
-    ] },
-    { id: "cupertino", name: qsTr("Cupertino"), block: 3, lead: qsTr("Options that macOS System Settings does not have."), groups: [
+    { id: "cupertino", name: qsTr("Cupertino"), block: 2, lead: qsTr("Options that macOS System Settings does not have."), groups: [
       { title: qsTr("Window Corners"), rows: [
         { type: "toggle", key: "corners_enabled", label: qsTr("Rounded corners"), hint: qsTr("Off brings back Omarchy's square corners") },
         { type: "slider", key: "window_rounding", label: qsTr("Window corner radius"), min: 0, max: 24, step: 1, unit: "px" },
@@ -1340,6 +1344,8 @@ Window {
       readonly property bool filters: store.revision >= 0 && store.flag("spotlight_filters")
       readonly property bool list: store.revision >= 0 && store.flag("spotlight_menu_on_open")
       readonly property bool footer: store.revision >= 0 && store.flag("spotlight_shortcuts")
+      readonly property bool translucent: store.revision >= 0 && store.flag("panels_translucent")
+      readonly property real panelAlpha: Math.max(0.3, Math.min(1, (store.revision >= 0 ? store.number("panels_opacity") : 70) / 100))
       readonly property real rounding: store.revision >= 0 && store.flag("corners_enabled") ? store.number("window_rounding") : 0
       readonly property real zoom: 0.5
       readonly property real gaps: 5
@@ -1417,9 +1423,9 @@ Window {
           Rectangle {
             anchors.fill: parent
             radius: card.px(25)
-            color: look.background
+            color: spot.translucent ? Qt.alpha(look.background, spot.panelAlpha) : look.background
             border.width: 1
-            border.color: card.line
+            border.color: spot.translucent ? (card.light ? Qt.rgba(0, 0, 0, 0.14) : Qt.rgba(1, 1, 1, 0.22)) : card.line
           }
 
           Column {
@@ -1753,6 +1759,8 @@ Window {
       id: ccPreview
       readonly property int tick: store.revision
       readonly property bool on: tick >= 0 && store.flag("control_center_enabled")
+      readonly property bool translucent: tick >= 0 && store.flag("panels_translucent")
+      readonly property real panelAlpha: Math.max(0.3, Math.min(1, (tick >= 0 ? store.number("panels_opacity") : 70) / 100))
       readonly property color ink: look.text
       readonly property var barIcons: {
         var all = [
@@ -1883,9 +1891,9 @@ Window {
           width: 190
           height: Math.min(parent.height - 43, ccBody.implicitHeight + 14)
           radius: 12
-          color: look.background
+          color: ccPreview.translucent ? Qt.alpha(look.background, ccPreview.panelAlpha) : look.background
           border.width: 1
-          border.color: look.separator
+          border.color: ccPreview.translucent ? (look.background.hslLightness < 0.5 ? Qt.rgba(1, 1, 1, 0.22) : Qt.rgba(0, 0, 0, 0.14)) : look.separator
           clip: true
 
           Column {
