@@ -24,8 +24,9 @@ menu bar.
 
 - **Left:** the Omarchy menu button and the focused app's name.
 - **Right:** your status widgets, third-party ones too, and the date and time.
-- **Look:** white text on a translucent, unblurred background in your theme
-  colors. It uses SF Pro when it is installed, or Inter.
+- **Look:** text and icons in your theme's bar text color, dark on light themes
+  and light on dark themes, on a translucent, unblurred background. It uses SF
+  Pro when it is installed, or Inter.
 
 ## Control Center
 

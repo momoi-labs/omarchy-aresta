@@ -49,7 +49,12 @@ Item {
     return "sans-serif"
   }
   readonly property string clockFormat: settings.clock_format
-  readonly property color foreground: "#ffffff"
+  readonly property color foreground: Commons.Color.bar.text
+  readonly property color accentForeground: {
+    function channel(v) { return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4) }
+    var accent = Commons.Color.accent
+    return 0.2126 * channel(accent.r) + 0.7152 * channel(accent.g) + 0.0722 * channel(accent.b) > 0.3 ? "#000000" : "#ffffff"
+  }
   readonly property color background: Commons.Color.bar.background
   readonly property color urgent: Commons.Color.bar.active
 
@@ -365,7 +370,7 @@ Item {
           visible: !desktops.dots
           anchors.centerIn: parent
           text: desktop.modelData.slot === 10 ? "0" : desktop.modelData.slot
-          color: desktop.modelData.current || desktop.modelData.occupied ? root.foreground : Qt.alpha(root.foreground, 0.45)
+          color: desktop.modelData.current ? root.accentForeground : desktop.modelData.occupied ? root.foreground : Qt.alpha(root.foreground, 0.45)
           font.family: root.fontFamily
           font.pixelSize: 12
           font.weight: desktop.modelData.current ? Font.Bold : Font.Medium
