@@ -62,7 +62,7 @@ fn defaults() -> Vec<Entry> {
     ];
     let bar = [
         ("bar_height", Number(29.0)),
-        ("bar_opacity", Number(30.0)),
+        ("bar_opacity", Number(50.0)),
         ("clock_format", Text("ddd d MMM  HH:mm".into())),
         ("status_icon_scale", Number(120.0)),
         ("status_item_width", Number(38.0)),
