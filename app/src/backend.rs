@@ -141,6 +141,10 @@ pub mod qobject {
         fn short_path(&self, path: &QString) -> QString;
 
         #[qinvokable]
+        #[cxx_name = "hasBattery"]
+        fn has_battery(&self) -> bool;
+
+        #[qinvokable]
         #[cxx_name = "pluginInstalled"]
         fn plugin_installed(&self, id: &QString) -> bool;
 
@@ -709,6 +713,17 @@ impl qobject::Backend {
             .map(|rest| format!("~/{}", rest.display()))
             .unwrap_or_else(|_| path.display().to_string());
         QString::from(&shown)
+    }
+
+    pub fn has_battery(&self) -> bool {
+        let Ok(supplies) = fs::read_dir("/sys/class/power_supply") else {
+            return false;
+        };
+        supplies.flatten().any(|supply| {
+            let read =
+                |name: &str| fs::read_to_string(supply.path().join(name)).unwrap_or_default();
+            read("type").trim() == "Battery" && read("scope").trim() != "Device"
+        })
     }
 
     pub fn plugin_installed(&self, id: &QString) -> bool {

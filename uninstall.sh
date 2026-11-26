@@ -15,6 +15,8 @@ MENU_ID="$(jq -r .id "$REPO/menu/manifest.json")"
 MENU_LINK="$HOME/.config/omarchy/plugins/$MENU_ID"
 SWITCHER_ID="$(jq -r .id "$REPO/switcher/manifest.json")"
 SWITCHER_LINK="$HOME/.config/omarchy/plugins/$SWITCHER_ID"
+CONTROL_CENTER_ID="$(jq -r .id "$REPO/control-center/manifest.json")"
+CONTROL_CENTER_LINK="$HOME/.config/omarchy/plugins/$CONTROL_CENTER_ID"
 SHELL_CONFIG="$HOME/.config/omarchy/shell.json"
 SHELL_BACKUP="$BACKUP_DIR/shell.json.orig"
 THEMES_DIR="$HOME/.config/omarchy/themes"
@@ -46,6 +48,17 @@ fi
 if [[ -L $MENU_LINK && $(readlink -f "$MENU_LINK") == "$REPO/menu" ]]; then
   say "Removing $MENU_LINK"
   rm "$MENU_LINK"
+  omarchy-shell shell rescanPlugins >/dev/null
+fi
+
+if omarchy-plugin-list | grep -qE "^$CONTROL_CENTER_ID +enabled "; then
+  say "Disabling the Control Center"
+  omarchy-plugin-disable "$CONTROL_CENTER_ID" >/dev/null
+fi
+
+if [[ -L $CONTROL_CENTER_LINK && $(readlink -f "$CONTROL_CENTER_LINK") == "$REPO/control-center" ]]; then
+  say "Removing $CONTROL_CENTER_LINK"
+  rm "$CONTROL_CENTER_LINK"
   omarchy-shell shell rescanPlugins >/dev/null
 fi
 

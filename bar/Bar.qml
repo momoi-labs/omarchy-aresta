@@ -24,7 +24,7 @@ Item {
   readonly property string position: "top"
   readonly property bool vertical: false
   readonly property var settings: {
-    var values = { bar_height: 29, bar_opacity: 30, clock_format: "ddd d MMM  HH:mm", status_icon_scale: 120, status_item_width: 38, bar_desktops: false, bar_desktops_position: "menus", bar_desktops_style: "numbers", bar_desktops_occupied_only: false }
+    var values = { bar_height: 29, bar_opacity: 30, clock_format: "ddd d MMM  HH:mm", status_icon_scale: 120, status_item_width: 38, bar_desktops: false, bar_desktops_position: "menus", bar_desktops_style: "numbers", bar_desktops_occupied_only: false, control_center_enabled: true, cc_wifi: true, cc_bluetooth: true, cc_focus: true, cc_display: true, cc_sound: true, cc_media: true, cc_bar_network: false, cc_bar_bluetooth: false, cc_bar_audio: false, cc_bar_monitor: false, cc_bar_power: true }
     var lines = settingsFile.text().split("\n")
     for (var i = 0; i < lines.length; i++) {
       var match = lines[i].match(/^\s*(\w+)\s*=\s*(.*?)\s*$/)
@@ -55,6 +55,10 @@ Item {
 
   readonly property string menuWidgetId: barWidgetRegistry && barWidgetRegistry.widgets && barWidgetRegistry.widgets["dev.momoi-labs.omarchy-cupertino.menu"] ? "dev.momoi-labs.omarchy-cupertino.menu" : "omarchy.menu"
   readonly property var leftOnlyIds: ["omarchy.menu", "dev.momoi-labs.omarchy-cupertino.menu", "omarchy.workspaces", "omarchy.active-window", "omarchy.spacer", "omarchy.clock"]
+  readonly property string controlCenterId: "dev.momoi-labs.omarchy-cupertino.control-center"
+  readonly property bool controlCenter: settings.control_center_enabled && !!barWidgetRegistry && !!barWidgetRegistry.widgets && !!barWidgetRegistry.widgets[controlCenterId]
+  readonly property var controlCenterEntry: ({ id: controlCenterId, wifi: settings.cc_wifi, bluetooth: settings.cc_bluetooth, focus: settings.cc_focus, display: settings.cc_display, sound: settings.cc_sound, media: settings.cc_media })
+  readonly property var controlCenterIcons: ({ "omarchy.network": "cc_bar_network", "omarchy.bluetooth": "cc_bar_bluetooth", "omarchy.audio": "cc_bar_audio", "omarchy.monitor": "cc_bar_monitor", "omarchy.power": "cc_bar_power" })
   readonly property var sectionOrder: ["left", "centerBegin", "center", "centerEnd", "right", "tray"]
 
   readonly property var layout: barConfig && barConfig.layout ? barConfig.layout : ({})
@@ -69,6 +73,7 @@ Item {
         var entry = typeof list[i] === "string" ? { id: list[i] } : list[i]
         if (!entry || !entry.id || entry.type) continue
         if (leftOnlyIds.indexOf(String(entry.id)) !== -1) continue
+        if (String(entry.id) === controlCenterId) continue
         var key = String(entry.id)
         while (out[key]) key += "+"
         out[key] = entry
@@ -404,8 +409,10 @@ Item {
 
     property real itemScale: 1
     property real cellWidth: 0
+    readonly property bool tucked: root.controlCenter && !!root.controlCenterIcons[moduleName] && !root.settings[root.controlCenterIcons[moduleName]]
     readonly property real scaledWidth: activeItem ? activeItem.implicitWidth * itemScale : 0
 
+    visible: !tucked
     implicitWidth: activeItem && activeItem.visible ? Math.max(cellWidth, Math.ceil(scaledWidth)) : 0
     implicitHeight: root.barSize
 
@@ -519,6 +526,13 @@ Item {
               itemScale: root.settings.status_icon_scale / 100
               cellWidth: root.settings.status_item_width
             }
+          }
+
+          WidgetSlot {
+            visible: root.controlCenter
+            entry: root.controlCenter ? root.controlCenterEntry : ({ id: "" })
+            itemScale: root.settings.status_icon_scale / 100
+            cellWidth: root.settings.status_item_width
           }
 
           WidgetSlot {
