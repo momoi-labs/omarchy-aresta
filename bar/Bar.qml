@@ -41,11 +41,30 @@ Item {
     return values
   }
   readonly property int barSize: Math.round(settings.bar_height)
+  readonly property FontMetrics fontProbe: FontMetrics {}
+
+  function doubleEmboldens(family) {
+    fontProbe.font = Qt.font({ family: family, pixelSize: 40, weight: Font.Normal })
+    var normalRect = fontProbe.tightBoundingRect("Appearance")
+    var normalAdvance = fontProbe.advanceWidth("Appearance")
+    fontProbe.font = Qt.font({ family: family, pixelSize: 40, weight: 699 })
+    var boldRect = fontProbe.tightBoundingRect("Appearance")
+    var boldAdvance = fontProbe.advanceWidth("Appearance")
+    fontProbe.font = Qt.font({ family: family, pixelSize: 40, weight: Font.Bold })
+    var heavyRect = fontProbe.tightBoundingRect("Appearance")
+    var heavyAdvance = fontProbe.advanceWidth("Appearance")
+    var hasRealBold = boldRect.width > normalRect.width + 0.5 || boldAdvance > normalAdvance + 0.5
+    return hasRealBold
+      && Math.abs(heavyAdvance - boldAdvance) < 0.5
+      && heavyRect.width > boldRect.width + 0.5
+      && heavyRect.height > boldRect.height + 0.5
+  }
+
   readonly property string fontFamily: {
     var families = Qt.fontFamilies()
-    var preferred = ["SF Pro Text", "SF Pro", "System Font", "Inter"]
+    var preferred = ["SF Pro Text", "SF Pro", "System Font", "Inter", "Noto Sans"]
     for (var i = 0; i < preferred.length; i++)
-      if (families.indexOf(preferred[i]) !== -1) return preferred[i]
+      if (families.indexOf(preferred[i]) !== -1 && !doubleEmboldens(preferred[i])) return preferred[i]
     return "sans-serif"
   }
   readonly property string clockFormat: settings.clock_format
