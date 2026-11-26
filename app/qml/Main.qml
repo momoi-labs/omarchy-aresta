@@ -212,6 +212,7 @@ Window {
       ] },
       { title: qsTr("Panel"), rows: [
         { type: "cc", label: qsTr("Control Center preview") },
+        { type: "toggle", key: "control_center_halo", requires: "control_center_enabled", label: qsTr("Show panel frame"), hint: qsTr("Subtle backdrop frame around the floating controls") },
         { type: "toggle", key: "cc_wifi", requires: "control_center_enabled", label: qsTr("Wi-Fi") },
         { type: "toggle", key: "cc_bluetooth", requires: "control_center_enabled", label: qsTr("Bluetooth") },
         { type: "toggle", key: "cc_focus", requires: "control_center_enabled", label: qsTr("Focus") },
@@ -1759,8 +1760,14 @@ Window {
       id: ccPreview
       readonly property int tick: store.revision
       readonly property bool on: tick >= 0 && store.flag("control_center_enabled")
+      readonly property bool halo: tick >= 0 && store.flag("control_center_halo")
       readonly property bool translucent: tick >= 0 && store.flag("panels_translucent")
       readonly property real panelAlpha: Math.max(0.3, Math.min(1, (tick >= 0 ? store.number("panels_opacity") : 70) / 100))
+      readonly property bool darkBg: look.background.hslLightness < 0.5
+      readonly property color pillBg: translucent
+        ? Qt.alpha(darkBg ? Qt.lighter(look.background, 1.35) : look.background, panelAlpha)
+        : (halo ? (darkBg ? Qt.lighter(look.background, 1.35) : Qt.darker(look.background, 1.04)) : look.background)
+      readonly property color pillBorder: darkBg ? Qt.rgba(1, 1, 1, 0.22) : Qt.rgba(0, 0, 0, 0.12)
       readonly property color ink: look.text
       readonly property var barIcons: {
         var all = [
@@ -1776,7 +1783,7 @@ Window {
         })
       }
       function has(key) { return tick >= 0 && store.flag(key) }
-      implicitHeight: 254
+      implicitHeight: 278
 
       Timer {
         id: ccMinute
@@ -1791,7 +1798,7 @@ Window {
         x: 12
         y: 12
         width: parent.width - 24
-        height: 230
+        height: 254
         radius: 10
         color: look.controlSoft
         border.width: 1
@@ -1888,70 +1895,250 @@ Window {
           anchors.right: parent.right
           anchors.rightMargin: 10
           y: 35
-          width: 190
-          height: Math.min(parent.height - 43, ccBody.implicitHeight + 14)
-          radius: 12
-          color: ccPreview.translucent ? Qt.alpha(look.background, ccPreview.panelAlpha) : look.background
-          border.width: 1
-          border.color: ccPreview.translucent ? (look.background.hslLightness < 0.5 ? Qt.rgba(1, 1, 1, 0.22) : Qt.rgba(0, 0, 0, 0.14)) : look.separator
-          clip: true
+          width: 186 + (ccPreview.halo ? 12 : 0)
+          height: Math.min(parent.height - 43, ccBody.implicitHeight + (ccPreview.halo ? 12 : 0))
+          radius: ccPreview.halo ? 18 : 0
+          color: !ccPreview.halo
+            ? "transparent"
+            : ccPreview.translucent
+              ? Qt.alpha(look.background, Math.max(0.24, Math.min(0.55, ccPreview.panelAlpha * 0.48)))
+              : look.background
+          border.width: ccPreview.halo ? 1 : 0
+          border.color: ccPreview.translucent ? (ccPreview.darkBg ? Qt.rgba(1, 1, 1, 0.16) : Qt.rgba(0, 0, 0, 0.12)) : look.separator
 
           Column {
             id: ccBody
-            x: 7
-            y: 7
-            width: parent.width - 14
+            x: ccPreview.halo ? 6 : 0
+            y: ccPreview.halo ? 6 : 0
+            width: 186
             spacing: 5
 
-            Flow {
-              width: parent.width
+            Row {
+              visible: ccPreview.has("cc_wifi") || ccPreview.has("cc_bluetooth") || ccPreview.has("cc_media")
+              width: ccBody.width
               spacing: 5
 
-              Repeater {
-                model: [
-                  { key: "cc_wifi", name: qsTr("Wi-Fi"), on: true },
-                  { key: "cc_bluetooth", name: qsTr("Bluetooth"), on: true },
-                  { key: "cc_focus", name: qsTr("Focus"), on: false },
-                  { key: "cc_sound", name: qsTr("Output"), on: false }
-                ].filter(function(item) { return ccPreview.has(item.key) })
-                Rectangle {
-                  id: ccTile
-                  required property var modelData
-                  width: (ccBody.width - 5) / 2
-                  height: 26
-                  radius: 8
-                  color: look.controlSoft
+              Column {
+                id: ccLinkStack
+                visible: ccPreview.has("cc_wifi") || ccPreview.has("cc_bluetooth")
+                width: ccPreview.has("cc_media") ? (ccBody.width - 5) / 2 : ccBody.width
+                spacing: 5
 
-                  Rectangle { id: ccDot; x: 5; y: 5; width: 16; height: 16; radius: 8; color: ccTile.modelData.on ? look.accent : look.control }
-                  Text {
-                    anchors.left: ccDot.right
-                    anchors.leftMargin: 5
-                    anchors.right: parent.right
-                    anchors.rightMargin: 4
-                    anchors.verticalCenter: parent.verticalCenter
-                    elide: Text.ElideRight
-                    text: ccTile.modelData.name
-                    color: look.text
-                    font.family: look.fontFamily
-                    font.pixelSize: 9
-                    font.weight: Font.DemiBold
+                Repeater {
+                  model: [
+                    { key: "cc_wifi", name: qsTr("Wi-Fi"), on: true },
+                    { key: "cc_bluetooth", name: qsTr("Bluetooth"), on: true }
+                  ].filter(function(item) { return ccPreview.has(item.key) })
+
+                  Rectangle {
+                    id: ccLinkPill
+                    required property var modelData
+                    width: ccLinkStack.width
+                    height: 28
+                    radius: 14
+                    color: ccPreview.pillBg
+                    border.width: 1
+                    border.color: ccPreview.pillBorder
+
+                    Rectangle {
+                      id: ccLinkDot
+                      x: 5
+                      anchors.verticalCenter: parent.verticalCenter
+                      width: 18
+                      height: 18
+                      radius: 9
+                      color: ccLinkPill.modelData.on ? (ccPreview.darkBg ? "#ffffff" : look.accent) : look.control
+                    }
+
+                    Text {
+                      anchors.left: ccLinkDot.right
+                      anchors.leftMargin: 5
+                      anchors.right: parent.right
+                      anchors.rightMargin: 6
+                      anchors.verticalCenter: parent.verticalCenter
+                      elide: Text.ElideRight
+                      text: ccLinkPill.modelData.name
+                      color: look.text
+                      font.family: look.fontFamily
+                      font.pixelSize: 9
+                      font.weight: Font.DemiBold
+                    }
                   }
+                }
+              }
+
+              Rectangle {
+                visible: ccPreview.has("cc_media")
+                width: ccLinkStack.visible ? (ccBody.width - 5) / 2 : ccBody.width
+                height: Math.max(61, ccLinkStack.implicitHeight)
+                radius: 13
+                color: ccPreview.pillBg
+                border.width: 1
+                border.color: ccPreview.pillBorder
+
+                Rectangle {
+                  x: 7
+                  y: 7
+                  width: 20
+                  height: 20
+                  radius: 5
+                  gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop { position: 0.0; color: look.accent }
+                    GradientStop { position: 0.6; color: "#db34f2" }
+                    GradientStop { position: 1.0; color: "#ff9230" }
+                  }
+                }
+
+                Text {
+                  x: 7
+                  y: 31
+                  width: parent.width - 14
+                  elide: Text.ElideRight
+                  text: qsTr("Now Playing")
+                  color: look.text
+                  font.family: look.fontFamily
+                  font.pixelSize: 9
+                  font.weight: Font.DemiBold
+                }
+
+                Row {
+                  anchors.horizontalCenter: parent.horizontalCenter
+                  anchors.bottom: parent.bottom
+                  anchors.bottomMargin: 7
+                  spacing: 8
+
+                  Repeater {
+                    model: 3
+                    Rectangle {
+                      width: 5
+                      height: 5
+                      radius: 2.5
+                      color: look.text
+                      opacity: 0.72
+                    }
+                  }
+                }
+              }
+            }
+
+            Row {
+              width: ccBody.width
+              spacing: 5
+
+              Rectangle {
+                visible: ccPreview.has("cc_focus")
+                width: ccBody.width - 66
+                height: 28
+                radius: 14
+                color: ccPreview.pillBg
+                border.width: 1
+                border.color: ccPreview.pillBorder
+
+                Rectangle {
+                  id: ccFocusDot
+                  x: 5
+                  anchors.verticalCenter: parent.verticalCenter
+                  width: 18
+                  height: 18
+                  radius: 9
+                  color: look.control
+                }
+
+                Text {
+                  anchors.left: ccFocusDot.right
+                  anchors.leftMargin: 5
+                  anchors.right: parent.right
+                  anchors.rightMargin: 6
+                  anchors.verticalCenter: parent.verticalCenter
+                  elide: Text.ElideRight
+                  text: qsTr("Focus")
+                  color: look.text
+                  font.family: look.fontFamily
+                  font.pixelSize: 9
+                  font.weight: Font.DemiBold
+                }
+              }
+
+              Item {
+                visible: !ccPreview.has("cc_focus")
+                width: ccBody.width - 66
+                height: 28
+              }
+
+              Rectangle {
+                width: 28
+                height: 28
+                radius: 14
+                color: ccPreview.darkBg ? "#ffffff" : ccPreview.pillBg
+                border.width: 1
+                border.color: ccPreview.darkBg ? Qt.rgba(1, 1, 1, 0.95) : ccPreview.pillBorder
+
+                Item {
+                  anchors.centerIn: parent
+                  width: 10
+                  height: 10
+                  Rectangle {
+                    anchors.fill: parent
+                    radius: 5
+                    color: "transparent"
+                    border.width: 1.2
+                    border.color: ccPreview.darkBg ? "#16181c" : look.text
+                  }
+                  Item {
+                    x: 5
+                    width: 5
+                    height: 10
+                    clip: true
+                    Rectangle {
+                      x: -5
+                      width: 10
+                      height: 10
+                      radius: 5
+                      color: ccPreview.darkBg ? "#16181c" : look.text
+                    }
+                  }
+                }
+              }
+
+              Rectangle {
+                width: 28
+                height: 28
+                radius: 14
+                color: ccPreview.pillBg
+                border.width: 1
+                border.color: ccPreview.pillBorder
+
+                Rectangle {
+                  anchors.centerIn: parent
+                  width: 8
+                  height: 8
+                  radius: 4
+                  color: look.text
+                  opacity: 0.78
                 }
               }
             }
 
             Repeater {
               model: [
-                { key: "cc_display", name: qsTr("Display"), level: 0.8 },
-                { key: "cc_sound", name: qsTr("Sound"), level: 0.3 }
+                { key: "cc_display", name: qsTr("Display"), level: 0.72 },
+                { key: "cc_sound", name: qsTr("Sound"), level: 0.56 }
               ].filter(function(item) { return ccPreview.has(item.key) })
-              Column {
+
+              Rectangle {
                 id: ccSlide
                 required property var modelData
                 width: ccBody.width
-                spacing: 2
+                height: 31
+                radius: 14
+                color: ccPreview.pillBg
+                border.width: 1
+                border.color: ccPreview.pillBorder
 
                 Text {
+                  x: 9
+                  y: 5
                   text: ccSlide.modelData.name
                   color: look.text
                   font.family: look.fontFamily
@@ -1960,31 +2147,20 @@ Window {
                 }
 
                 Rectangle {
-                  width: parent.width
-                  height: 12
-                  radius: 6
-                  color: look.control
-                  Rectangle { width: parent.width * ccSlide.modelData.level; height: 12; radius: 6; color: look.text; opacity: 0.75 }
+                  x: 9
+                  y: 20
+                  width: parent.width - 18
+                  height: 4
+                  radius: 2
+                  color: Qt.alpha(look.text, 0.18)
+
+                  Rectangle {
+                    width: parent.width * ccSlide.modelData.level
+                    height: 4
+                    radius: 2
+                    color: ccPreview.darkBg ? "#ffffff" : "#1f2328"
+                  }
                 }
-              }
-            }
-
-            Rectangle {
-              visible: ccPreview.has("cc_media")
-              width: ccBody.width
-              height: 28
-              radius: 8
-              color: look.controlSoft
-
-              Rectangle { x: 5; y: 5; width: 18; height: 18; radius: 4; color: look.control }
-
-              Text {
-                x: 29
-                anchors.verticalCenter: parent.verticalCenter
-                text: qsTr("Now Playing")
-                color: look.text
-                font.family: look.fontFamily
-                font.pixelSize: 9
               }
             }
           }

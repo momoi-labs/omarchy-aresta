@@ -86,6 +86,7 @@ fn defaults() -> Vec<Entry> {
         ("wallpaper_keep", Flag(true)),
         ("wallpaper_folders", List(Vec::new())),
         ("control_center_enabled", Flag(true)),
+        ("control_center_halo", Flag(false)),
         ("cc_wifi", Flag(true)),
         ("cc_bluetooth", Flag(true)),
         ("cc_focus", Flag(true)),
