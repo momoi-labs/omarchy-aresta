@@ -50,14 +50,34 @@ Item {
 
   function ping() { return "ok" }
 
-  property string fontFamily: {
-    if (root.dmenuActive) return Style.font.menuFamily
+  readonly property FontMetrics fontProbe: FontMetrics {}
+
+  function doubleEmboldens(family) {
+    fontProbe.font = Qt.font({ family: family, pixelSize: 40, weight: Font.Normal })
+    var normalRect = fontProbe.tightBoundingRect("Appearance")
+    var normalAdvance = fontProbe.advanceWidth("Appearance")
+    fontProbe.font = Qt.font({ family: family, pixelSize: 40, weight: 699 })
+    var boldRect = fontProbe.tightBoundingRect("Appearance")
+    var boldAdvance = fontProbe.advanceWidth("Appearance")
+    fontProbe.font = Qt.font({ family: family, pixelSize: 40, weight: Font.Bold })
+    var heavyRect = fontProbe.tightBoundingRect("Appearance")
+    var heavyAdvance = fontProbe.advanceWidth("Appearance")
+    var hasRealBold = boldRect.width > normalRect.width + 0.5 || boldAdvance > normalAdvance + 0.5
+    return hasRealBold
+      && Math.abs(heavyAdvance - boldAdvance) < 0.5
+      && heavyRect.width > boldRect.width + 0.5
+      && heavyRect.height > boldRect.height + 0.5
+  }
+
+  readonly property string uiFontFamily: {
     var families = Qt.fontFamilies()
-    var preferred = ["SF Pro Text", "SF Pro", "System Font", "Inter"]
+    var preferred = ["SF Pro Text", "SF Pro", "System Font", "Inter", "Noto Sans"]
     for (var i = 0; i < preferred.length; i++)
-      if (families.indexOf(preferred[i]) !== -1) return preferred[i]
+      if (families.indexOf(preferred[i]) !== -1 && !doubleEmboldens(preferred[i])) return preferred[i]
     return "sans-serif"
   }
+
+  property string fontFamily: root.dmenuActive ? Style.font.menuFamily : root.uiFontFamily
   // JSONC menu definitions. The shell parses both at startup and merges
   // the user file on top of the defaults, so the keybind → IPC → visible
   // path doesn't have to shell out to bash + jq on every open.

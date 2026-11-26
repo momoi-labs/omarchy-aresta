@@ -38,6 +38,32 @@ BarWidget {
   readonly property bool panelsAlignRight: panelSettings.panels_align_right
   readonly property bool controlCenterHalo: panelSettings.control_center_halo
   readonly property bool darkCard: (0.2126 * Commons.Color.popups.background.r + 0.7152 * Commons.Color.popups.background.g + 0.0722 * Commons.Color.popups.background.b) < 0.4
+  readonly property FontMetrics fontProbe: FontMetrics {}
+
+  function doubleEmboldens(family) {
+    fontProbe.font = Qt.font({ family: family, pixelSize: 40, weight: Font.Normal })
+    var normalRect = fontProbe.tightBoundingRect("Appearance")
+    var normalAdvance = fontProbe.advanceWidth("Appearance")
+    fontProbe.font = Qt.font({ family: family, pixelSize: 40, weight: 699 })
+    var boldRect = fontProbe.tightBoundingRect("Appearance")
+    var boldAdvance = fontProbe.advanceWidth("Appearance")
+    fontProbe.font = Qt.font({ family: family, pixelSize: 40, weight: Font.Bold })
+    var heavyRect = fontProbe.tightBoundingRect("Appearance")
+    var heavyAdvance = fontProbe.advanceWidth("Appearance")
+    var hasRealBold = boldRect.width > normalRect.width + 0.5 || boldAdvance > normalAdvance + 0.5
+    return hasRealBold
+      && Math.abs(heavyAdvance - boldAdvance) < 0.5
+      && heavyRect.width > boldRect.width + 0.5
+      && heavyRect.height > boldRect.height + 0.5
+  }
+
+  readonly property string fallbackFontFamily: {
+    var families = Qt.fontFamilies()
+    var preferred = ["SF Pro Text", "SF Pro", "System Font", "Inter", "Noto Sans"]
+    for (var i = 0; i < preferred.length; i++)
+      if (families.indexOf(preferred[i]) !== -1 && !doubleEmboldens(preferred[i])) return preferred[i]
+    return "sans-serif"
+  }
 
   FileView {
     id: settingsFile
@@ -222,7 +248,7 @@ BarWidget {
         translucent: root.panelsTranslucent
         panelAlpha: root.panelsAlpha
         halo: root.controlCenterHalo
-        fontFamily: root.bar ? root.bar.fontFamily : "sans-serif"
+        fontFamily: root.bar && root.bar.fontFamily ? root.bar.fontFamily : root.fallbackFontFamily
         onAct: function(command) { root.act(command) }
       }
     }
