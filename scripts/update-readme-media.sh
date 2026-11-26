@@ -82,6 +82,7 @@ cat <<'JSON'
 JSON
 EOF
   printf '#!/bin/bash\nexit 0\n' >"$plugins/$PLUGIN.control-center/act.sh"
+  chmod +x "$plugins/$PLUGIN.control-center/data.sh" "$plugins/$PLUGIN.control-center/act.sh"
 
   cp -r "$REPO/themes" "$home/.config/omarchy/themes"
   write_theme osx-light
@@ -180,17 +181,23 @@ write_theme() {
 }
 
 write_sandbox() {
-  local path
+  local path wayland_socket=$WAYLAND_DISPLAY
 
+  [[ $wayland_socket == /* ]] || wayland_socket="$HOST_RUNTIME/$WAYLAND_DISPLAY"
   SANDBOX=(
-    bwrap --die-with-parent --unshare-pid --unshare-net --dev-bind / / --proc /proc
+    bwrap --die-with-parent --unshare-pid --unshare-net --clearenv --dev-bind / / --proc /proc
     --tmpfs /dev/snd
     --tmpfs /run/dbus
     --bind "$WORK/runtime" "$HOST_RUNTIME"
     --bind "$WORK/home" "$HOME"
     --ro-bind "$REPO" "$WORK/repo"
     --ro-bind "$WORK/apps" /usr/share/applications
+    --setenv HOME "$HOME"
+    --setenv USER "${USER:-$(id -un)}"
+    --setenv LOGNAME "${LOGNAME:-${USER:-$(id -un)}}"
+    --setenv LANG "${LANG:-C.UTF-8}"
     --setenv XDG_RUNTIME_DIR "$HOST_RUNTIME"
+    --setenv XDG_DATA_DIRS /usr/share
     --setenv OMARCHY_PATH "$OMARCHY_PATH"
     --setenv PATH "$OMARCHY_PATH/bin:/usr/local/bin:/usr/bin"
     --setenv PULSE_SERVER /dev/null
@@ -199,12 +206,8 @@ write_sandbox() {
     --setenv QS_DISABLE_FILE_WATCHER 1
     --setenv QS_NO_RELOAD_POPUP 1
     --setenv NO_AT_BRIDGE 1
-    --unsetenv DISPLAY
-    --unsetenv XDG_CONFIG_HOME
-    --unsetenv XDG_DATA_HOME
-    --unsetenv XDG_STATE_HOME
-    --unsetenv XDG_CACHE_HOME
   )
+  [[ -n ${LC_ALL:-} ]] && SANDBOX+=(--setenv LC_ALL "$LC_ALL")
   for path in /dev/v4l /dev/media "$OMARCHY_PATH/applications" /usr/local/share/applications; do
     [[ -d $path ]] && SANDBOX+=(--tmpfs "$path")
   done
@@ -217,7 +220,7 @@ write_sandbox() {
   for path in .local/share/fonts .config/fontconfig; do
     [[ -d $HOME/$path ]] && SANDBOX+=(--ro-bind "$HOME/$path" "$HOME/$path")
   done
-  SANDBOX+=(--ro-bind "$HOST_RUNTIME/$WAYLAND_DISPLAY" "$HOST_RUNTIME/host-wayland")
+  SANDBOX+=(--ro-bind "$wayland_socket" "$HOST_RUNTIME/host-wayland")
 
   {
     printf '#!/bin/bash\necho $$ >%q\nexec ' "$WORK/pid"
@@ -230,7 +233,7 @@ write_sandbox() {
 }
 
 launch() {
-  local rules="{ workspace = '3 silent', float = true, size = { $WIDTH, $HEIGHT }, render_unfocused = true }"
+  local rules="{ workspace = 'name:cupertino-media silent', float = true, size = { $WIDTH, $HEIGHT }, render_unfocused = true }"
 
   if [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]] &&
     hyprctl eval "hl.exec_cmd('$WORK/launch.sh', $rules)" >/dev/null 2>&1; then
@@ -259,7 +262,7 @@ wait_for_session() {
 start_session() {
   local mode=${1:-tiled} cursor=${2:-hidden}
 
-  WORK="$(mktemp -d "${TMPDIR:-/tmp}/cupertino-media.XXXXXX")"
+  WORK="$(mktemp -d /tmp/cupertino-media.XXXXXX)"
   write_home "$mode" "$cursor"
   write_sandbox
   launch
@@ -275,8 +278,12 @@ stop_session() {
   [[ -n $WORK ]] || return 0
   if [[ -n $RECORDER ]]; then
     touch "$WORK/stop"
-    wait "$RECORDER" 2>/dev/null || true
-    RECORDER=""
+  fi
+  if [[ ! -s $WORK/pid && -x $WORK/launch.sh ]]; then
+    for _ in $(seq 1 10); do
+      [[ -s $WORK/pid ]] && break
+      sleep 0.05
+    done
   fi
   if [[ -s $WORK/pid ]]; then
     pid=$(<"$WORK/pid")
@@ -286,6 +293,15 @@ stop_session() {
       sleep 0.1
     done
     kill -KILL "$pid" 2>/dev/null || true
+  fi
+  if [[ -n $RECORDER ]]; then
+    for _ in $(seq 1 30); do
+      kill -0 "$RECORDER" 2>/dev/null || break
+      sleep 0.1
+    done
+    kill "$RECORDER" 2>/dev/null || true
+    wait "$RECORDER" 2>/dev/null || true
+    RECORDER=""
   fi
   rm -rf "$WORK"
   WORK=""
@@ -536,7 +552,7 @@ target_settings() {
 }
 
 main() {
-  local targets=() argument target known
+  local targets=() argument target
 
   for argument in "$@"; do
     case $argument in
@@ -550,18 +566,20 @@ main() {
         usage
         exit 0
         ;;
-      *)
-        known=" ${GIFS[*]} ${PNGS[*]} "
-        [[ $known == *" $argument "* ]] || fail "unknown target: $argument (see --list)"
+      menu-bar | control-center | spotlight | title-bars | themes | switcher | settings)
         targets+=("$argument")
+        ;;
+      *)
+        fail "unknown target: $argument (see --list)"
         ;;
     esac
   done
   (( ${#targets[@]} )) || targets=("${GIFS[@]}" "${PNGS[@]}")
 
-  for target in bwrap Hyprland hyprctl quickshell dbus-daemon gsettings grim wtype ffmpeg magick jq cargo; do
+  for target in bwrap Hyprland hyprctl quickshell dbus-daemon gsettings grim wtype ffmpeg magick jq cargo nautilus omacalc; do
     command -v "$target" >/dev/null || fail "$target not found"
   done
+  [[ -x $OMARCHY_PATH/bin/omarchy-shell ]] || command -v omarchy-shell >/dev/null || fail "omarchy-shell not found"
   [[ -n ${WAYLAND_DISPLAY:-} ]] || fail "no Wayland session to host the nested Hyprland"
   [[ -d $OMARCHY_PATH/shell ]] || fail "$OMARCHY_PATH/shell not found"
 

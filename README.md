@@ -5,7 +5,7 @@ A macOS look for [Omarchy](https://omarchy.org) 4.5 or newer.
 | Part | What you get |
 | --- | --- |
 | [Menu bar](#menu-bar) | A Mac-style top bar in place of the Omarchy bar |
-| [Control Center](#control-center) | One panel for Wi-Fi, Bluetooth, Focus, display, sound and media |
+| [Control Center](#control-center) | Floating controls for Wi-Fi, Bluetooth, Focus, theme, Night Light, display, sound and media |
 | [Spotlight](#spotlight) | The Omarchy menu drawn as macOS Spotlight |
 | [Title bars](#title-bars-and-windows) | Traffic lights on floating workspaces, rounded corners everywhere |
 | [Themes](#themes) | OSX Light and OSX Dark |
