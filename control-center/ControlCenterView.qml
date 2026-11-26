@@ -20,7 +20,8 @@ Column {
 
   function luminance(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
 
-  readonly property int w: 332
+  readonly property int w: 334
+  readonly property int topSize: (w - 10) / 2
   readonly property bool dark: luminance(background) < 0.4
   readonly property color pillBase: dark
     ? Qt.rgba(Math.min(1, background.r + 0.045), Math.min(1, background.g + 0.045), Math.min(1, background.b + 0.045), 1)
@@ -181,7 +182,7 @@ Column {
     Column {
       id: linkColumn
       visible: view.links.length > 0
-      width: view.show.media ? (view.w - 10) / 2 : view.w
+      width: view.show.media ? view.topSize : view.w
       spacing: 10
 
       Repeater {
@@ -191,8 +192,8 @@ Column {
           id: linkPill
           required property var modelData
           width: linkColumn.width
-          height: view.links.length === 1 && view.show.media ? 142 : 66
-          radius: height === 66 ? 33 : 26
+          height: view.show.media ? (view.links.length === 1 ? view.topSize : (view.topSize - 10) / 2) : 66
+          radius: height <= 76 ? height / 2 : 26
           hovered: linkBodyArea.containsMouse || linkDotArea.containsMouse
 
           MouseArea {
@@ -251,8 +252,8 @@ Column {
 
     Pill {
       visible: view.show.media
-      width: view.links.length > 0 ? (view.w - 10) / 2 : view.w
-      height: Math.max(142, linkColumn.implicitHeight)
+      width: view.links.length > 0 ? view.topSize : view.w
+      height: view.topSize
       radius: 26
 
       Item {

@@ -1895,7 +1895,7 @@ Window {
           anchors.right: parent.right
           anchors.rightMargin: 10
           y: 35
-          width: 186 + (ccPreview.halo ? 12 : 0)
+          width: 166 + (ccPreview.halo ? 12 : 0)
           height: Math.min(parent.height - 43, ccBody.implicitHeight + (ccPreview.halo ? 12 : 0))
           radius: ccPreview.halo ? 18 : 0
           color: !ccPreview.halo
@@ -1910,19 +1910,20 @@ Window {
             id: ccBody
             x: ccPreview.halo ? 6 : 0
             y: ccPreview.halo ? 6 : 0
-            width: 186
+            width: 166
             spacing: 5
 
             Row {
               visible: ccPreview.has("cc_wifi") || ccPreview.has("cc_bluetooth") || ccPreview.has("cc_media")
               width: ccBody.width
-              spacing: 5
+              spacing: 6
 
               Column {
                 id: ccLinkStack
-                visible: ccPreview.has("cc_wifi") || ccPreview.has("cc_bluetooth")
-                width: ccPreview.has("cc_media") ? (ccBody.width - 5) / 2 : ccBody.width
-                spacing: 5
+                readonly property int linkCount: (ccPreview.has("cc_wifi") ? 1 : 0) + (ccPreview.has("cc_bluetooth") ? 1 : 0)
+                visible: linkCount > 0
+                width: ccPreview.has("cc_media") ? 80 : ccBody.width
+                spacing: 6
 
                 Repeater {
                   model: [
@@ -1934,8 +1935,8 @@ Window {
                     id: ccLinkPill
                     required property var modelData
                     width: ccLinkStack.width
-                    height: 28
-                    radius: 14
+                    height: ccPreview.has("cc_media") ? (ccLinkStack.linkCount === 1 ? 80 : 37) : 28
+                    radius: Math.min(height / 2, 18)
                     color: ccPreview.pillBg
                     border.width: 1
                     border.color: ccPreview.pillBorder
@@ -1969,8 +1970,8 @@ Window {
 
               Rectangle {
                 visible: ccPreview.has("cc_media")
-                width: ccLinkStack.visible ? (ccBody.width - 5) / 2 : ccBody.width
-                height: Math.max(61, ccLinkStack.implicitHeight)
+                width: ccLinkStack.visible ? 80 : ccBody.width
+                height: 80
                 radius: 13
                 color: ccPreview.pillBg
                 border.width: 1
