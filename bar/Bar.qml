@@ -24,7 +24,7 @@ Item {
   readonly property string position: "top"
   readonly property bool vertical: false
   readonly property var settings: {
-    var values = { bar_height: 29, bar_opacity: 30, clock_format: "ddd d MMM  HH:mm", status_icon_scale: 120, status_item_width: 38, bar_desktops: false, bar_desktops_position: "menus", bar_desktops_style: "numbers", bar_desktops_occupied_only: false, panels_align_right: true, control_center_enabled: true, cc_wifi: true, cc_bluetooth: true, cc_focus: true, cc_display: true, cc_sound: true, cc_media: true, cc_bar_network: false, cc_bar_bluetooth: false, cc_bar_audio: false, cc_bar_monitor: false, cc_bar_power: true }
+    var values = { bar_height: 29, bar_opacity: 50, clock_format: "ddd d MMM  HH:mm", status_icon_scale: 120, status_item_width: 38, bar_desktops: false, bar_desktops_position: "menus", bar_desktops_style: "numbers", bar_desktops_occupied_only: false, panels_align_right: true, control_center_enabled: true, cc_wifi: true, cc_bluetooth: true, cc_focus: true, cc_display: true, cc_sound: true, cc_media: true, cc_bar_network: false, cc_bar_bluetooth: false, cc_bar_audio: false, cc_bar_monitor: false, cc_bar_power: true }
     var lines = settingsFile.text().split("\n")
     for (var i = 0; i < lines.length; i++) {
       var match = lines[i].match(/^\s*(\w+)\s*=\s*(.*?)\s*$/)
@@ -359,7 +359,8 @@ Item {
 
         Rectangle {
           visible: !desktops.dots && desktop.modelData.current
-          anchors.centerIn: parent
+          anchors.horizontalCenter: parent.horizontalCenter
+          y: (parent.height - height) / 2
           width: parent.width
           height: 18
           radius: 5
@@ -368,7 +369,8 @@ Item {
 
         Text {
           visible: !desktops.dots
-          anchors.centerIn: parent
+          anchors.horizontalCenter: parent.horizontalCenter
+          y: (parent.height - height) / 2
           text: desktop.modelData.slot === 10 ? "0" : desktop.modelData.slot
           color: desktop.modelData.current ? root.accentForeground : desktop.modelData.occupied ? root.foreground : Qt.alpha(root.foreground, 0.45)
           font.family: root.fontFamily
@@ -378,7 +380,8 @@ Item {
 
         Rectangle {
           visible: desktops.dots
-          anchors.centerIn: parent
+          anchors.horizontalCenter: parent.horizontalCenter
+          y: (parent.height - height) / 2
           width: parent.width
           height: 7
           radius: 3.5
@@ -417,6 +420,9 @@ Item {
     readonly property bool tucked: root.controlCenter && !!root.controlCenterIcons[moduleName] && !root.settings[root.controlCenterIcons[moduleName]]
     readonly property bool alignRight: tucked && root.settings.panels_align_right
     readonly property real scaledWidth: activeItem ? activeItem.implicitWidth * itemScale : 0
+    property var labelButton: null
+    readonly property bool paddedFigures: labelMetrics.tightBoundingRect("0").height > labelMetrics.capitalHeight
+    readonly property bool textLabel: !!labelButton && paddedFigures && labelButton.labelVisible && !labelButton.iconLabel && labelButton.text.indexOf("\n") === -1
 
     opacity: tucked ? 0 : 1
     enabled: !tucked
@@ -430,22 +436,41 @@ Item {
       if ("bar" in target) target.bar = root.barApiFor(slot.moduleName, slot.firstParty)
       if ("moduleName" in target) target.moduleName = slot.moduleName
       if ("settings" in target) target.settings = slot.settings
+      var items = target.children
+      for (var i = 0; i < items.length; i++)
+        if (items[i].centerFigures) labelButton = items[i]
     }
 
     onSettingsChanged: inject()
     Component.onCompleted: root.widgetSlots = root.widgetSlots.concat([slot])
     Component.onDestruction: root.widgetSlots = root.widgetSlots.filter(function(item) { return item !== slot })
 
+    FontMetrics {
+      id: labelMetrics
+
+      font.family: slot.labelButton ? slot.labelButton.fontFamily : root.fontFamily
+      font.pixelSize: slot.labelButton ? slot.labelButton.fontSize : Style.font.body
+    }
+
+    Binding {
+      target: slot.labelButton
+      property: "centerFigures"
+      value: false
+      when: slot.textLabel
+    }
+
     Loader {
       id: loader
 
       anchors.verticalCenter: parent.verticalCenter
+      anchors.verticalCenterOffset: slot.textLabel ? (Math.ceil(labelMetrics.height) / 2 - labelMetrics.ascent + labelMetrics.capitalHeight / 2) * scale : 0
       x: slot.alignRight ? 100000 : Math.round((slot.width - slot.scaledWidth) / 2)
       width: item ? item.implicitWidth : 0
       scale: slot.tucked ? 1 : slot.itemScale
       transformOrigin: Item.Left
       height: item ? item.implicitHeight : 0
       sourceComponent: slot.registered ? slot.registered.component : null
+      onItemChanged: slot.labelButton = null
       onLoaded: {
         slot.inject()
         Qt.callLater(slot.inject)
@@ -496,8 +521,8 @@ Item {
             color: root.foreground
             font.family: root.fontFamily
             font.pixelSize: 13
-            font.letterSpacing: 0.4
-            font.weight: Font.Bold
+            font.letterSpacing: 0.15
+            font.weight: Font.DemiBold
           }
 
           Desktops {

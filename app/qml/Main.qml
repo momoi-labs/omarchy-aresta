@@ -109,7 +109,8 @@ Window {
 
         Text {
           visible: desktops.style === "numbers"
-          anchors.centerIn: parent
+          anchors.horizontalCenter: parent.horizontalCenter
+          y: Math.round((parent.height - height) / 2)
           text: desktop.modelData.id
           color: desktop.modelData.current ? desktops.ui.accentText : desktop.modelData.occupied ? desktops.ink : Qt.alpha(desktops.ink, 0.4)
           font.family: desktops.ui.fontFamily
@@ -119,7 +120,8 @@ Window {
 
         Rectangle {
           visible: desktops.style === "dots"
-          anchors.centerIn: parent
+          anchors.horizontalCenter: parent.horizontalCenter
+          y: Math.round((parent.height - height) / 2)
           width: parent.width
           height: 7
           radius: 3.5
@@ -1078,10 +1080,10 @@ Window {
           x: 1
           y: 1
           width: parent.width - 2
-          height: 28
+          height: 29
           topLeftRadius: 9
           topRightRadius: 9
-          color: Qt.alpha(look.background, (store.revision >= 0 ? store.number("bar_opacity") : 80) / 100)
+          color: Qt.alpha(look.background, (store.revision >= 0 ? store.number("bar_opacity") : 50) / 100)
 
           Row {
             x: 12
@@ -1108,7 +1110,8 @@ Window {
                 color: preview.ink
                 font.family: look.fontFamily
                 font.pixelSize: 12
-                font.weight: index === 0 ? Font.Bold : Font.Normal
+                font.letterSpacing: index === 0 ? 0.15 : 0
+                font.weight: index === 0 ? Font.DemiBold : Font.Normal
               }
             }
 
@@ -1842,8 +1845,8 @@ Window {
           x: 1
           y: 1
           width: parent.width - 2
-          height: 28
-          color: Qt.alpha(look.background, (ccPreview.tick >= 0 ? store.number("bar_opacity") : 80) / 100)
+          height: 29
+          color: Qt.alpha(look.background, (ccPreview.tick >= 0 ? store.number("bar_opacity") : 50) / 100)
 
           Text {
             x: 12
@@ -1852,7 +1855,8 @@ Window {
             color: ccPreview.ink
             font.family: look.fontFamily
             font.pixelSize: 12
-            font.weight: Font.Bold
+            font.letterSpacing: 0.15
+            font.weight: Font.DemiBold
           }
 
           Row {
