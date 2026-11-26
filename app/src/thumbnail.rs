@@ -160,7 +160,7 @@ fn generate(path: &Path, size: u32) -> Result<(), String> {
 #[derive(Default)]
 pub struct Queue {
     jobs: Mutex<Option<Sender<Job>>>,
-    asked: Mutex<HashSet<Job>>,
+    asked: Arc<Mutex<HashSet<Job>>>,
 }
 
 impl Queue {
@@ -176,14 +176,17 @@ impl Queue {
             return;
         }
         let Ok(mut jobs) = self.jobs.lock() else {
+            asked.remove(&job);
             return;
         };
-        let sender = jobs.get_or_insert_with(|| start(done));
-        let _ = sender.send(job);
+        let sender = jobs.get_or_insert_with(|| start(Arc::clone(&self.asked), done));
+        if sender.send(job.clone()).is_err() {
+            asked.remove(&job);
+        }
     }
 }
 
-fn start<F>(done: F) -> Sender<Job>
+fn start<F>(asked: Arc<Mutex<HashSet<Job>>>, done: F) -> Sender<Job>
 where
     F: Fn() + Clone + Send + 'static,
 {
@@ -192,16 +195,21 @@ where
     for _ in 0..WORKERS {
         let receiver: Arc<Mutex<Receiver<Job>>> = Arc::clone(&receiver);
         let done = done.clone();
+        let asked = Arc::clone(&asked);
         std::thread::spawn(move || {
             loop {
                 let job = match receiver.lock() {
                     Ok(receiver) => receiver.recv(),
                     Err(_) => return,
                 };
-                let Ok((path, size, _)) = job else {
+                let Ok(job) = job else {
                     return;
                 };
-                if generate(&path, size).is_ok() {
+                let made = generate(&job.0, job.1).is_ok();
+                if let Ok(mut asked) = asked.lock() {
+                    asked.remove(&job);
+                }
+                if made {
                     done();
                 }
             }
@@ -213,6 +221,10 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::time::{Duration, Instant};
+
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn escapes_like_glib() {
@@ -224,7 +236,9 @@ mod tests {
 
     #[test]
     fn writes_a_thumbnail_that_passes_the_checks() {
+        let _guard = ENV_LOCK.lock().unwrap();
         let base = std::env::temp_dir().join(format!("cupertino-thumb-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&base);
         fs::create_dir_all(&base).unwrap();
         let source = base.join("wide picture.png");
         image::RgbaImage::new(1200, 600).save(&source).unwrap();
@@ -242,9 +256,67 @@ mod tests {
             .append(true)
             .open(&source)
             .unwrap()
-            .set_modified(UNIX_EPOCH + std::time::Duration::from_secs(1_000_000))
+            .set_modified(UNIX_EPOCH + Duration::from_secs(1_000_000))
             .unwrap();
         assert!(cached(&source, 256).is_err());
+
+        fs::remove_dir_all(&base).unwrap();
+    }
+
+    #[test]
+    fn retries_failed_and_deleted_thumbnails() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let base =
+            std::env::temp_dir().join(format!("cupertino-thumb-queue-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&base);
+        fs::create_dir_all(&base).unwrap();
+        let source = base.join("retry.png");
+        fs::write(&source, b"not a png").unwrap();
+        unsafe { std::env::set_var("XDG_CACHE_HOME", base.join("cache")) };
+
+        let queue = Queue::default();
+        let hits = Arc::new(AtomicUsize::new(0));
+        let (mtime, _) = stamp(&source).unwrap();
+        let hits_clone = Arc::clone(&hits);
+        queue.request(&source, 256, mtime, move || {
+            hits_clone.fetch_add(1, Ordering::SeqCst);
+        });
+
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while !queue.asked.lock().unwrap().is_empty() && Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        assert!(queue.asked.lock().unwrap().is_empty());
+        assert_eq!(hits.load(Ordering::SeqCst), 0);
+
+        image::RgbaImage::new(400, 200).save(&source).unwrap();
+        let (mtime, _) = stamp(&source).unwrap();
+        let hits_clone = Arc::clone(&hits);
+        queue.request(&source, 256, mtime, move || {
+            hits_clone.fetch_add(1, Ordering::SeqCst);
+        });
+
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while hits.load(Ordering::SeqCst) < 1 && Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        assert_eq!(hits.load(Ordering::SeqCst), 1);
+        assert!(cached(&source, 256).is_ok());
+
+        fs::remove_file(file(&source, 256)).unwrap();
+        assert!(cached(&source, 256).is_err());
+
+        let hits_clone = Arc::clone(&hits);
+        queue.request(&source, 256, mtime, move || {
+            hits_clone.fetch_add(1, Ordering::SeqCst);
+        });
+
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while hits.load(Ordering::SeqCst) < 2 && Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        assert_eq!(hits.load(Ordering::SeqCst), 2);
+        assert!(cached(&source, 256).is_ok());
 
         fs::remove_dir_all(&base).unwrap();
     }
