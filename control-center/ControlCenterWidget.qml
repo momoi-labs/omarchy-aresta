@@ -20,7 +20,7 @@ BarWidget {
 
   readonly property var options: settings || ({})
   readonly property var panelSettings: {
-    var values = { panels_translucent: true, panels_opacity: 70, control_center_halo: false }
+    var values = { panels_translucent: true, panels_opacity: 70, panels_align_right: true, control_center_halo: false }
     var lines = settingsFile.text().split("\n")
     for (var i = 0; i < lines.length; i++) {
       var match = lines[i].match(/^\s*(\w+)\s*=\s*(.*?)\s*$/)
@@ -35,6 +35,7 @@ BarWidget {
   }
   readonly property bool panelsTranslucent: panelSettings.panels_translucent
   readonly property real panelsAlpha: Math.max(0.3, Math.min(1, panelSettings.panels_opacity / 100))
+  readonly property bool panelsAlignRight: panelSettings.panels_align_right
   readonly property bool controlCenterHalo: panelSettings.control_center_halo
   readonly property bool darkCard: (0.2126 * Commons.Color.popups.background.r + 0.7152 * Commons.Color.popups.background.g + 0.0722 * Commons.Color.popups.background.b) < 0.4
 
@@ -150,16 +151,29 @@ BarWidget {
 
     visible: root.open
     color: "transparent"
-    implicitWidth: card.width + 16
-    implicitHeight: card.height + 16
+    implicitWidth: card.width
+    implicitHeight: card.height
 
     anchor {
-      item: button
-      edges: Edges.Bottom | Edges.Right
-      gravity: Edges.Bottom | Edges.Left
+      id: popupAnchor
+      window: button.QsWindow.window
       adjustment: PopupAdjustment.Slide
-      margins.top: 4
-      margins.right: -8
+      edges: Edges.Top | Edges.Left
+      gravity: Edges.Bottom | Edges.Right
+      rect.width: 1
+      rect.height: 1
+      onAnchoring: {
+        var win = button.QsWindow.window
+        if (!win) return
+        var margin = 10
+        var targetX = win.width - popup.implicitWidth - margin
+        if (!root.panelsAlignRight) {
+          var point = win.contentItem.mapFromItem(button, button.width / 2 - popup.implicitWidth / 2, 0)
+          targetX = Math.max(margin, Math.min(point.x, win.width - popup.implicitWidth - margin))
+        }
+        popupAnchor.rect.x = Math.round(Math.max(margin, targetX))
+        popupAnchor.rect.y = Math.round(win.height + 6)
+      }
     }
 
     HyprlandFocusGrab {
@@ -170,8 +184,8 @@ BarWidget {
 
     Rectangle {
       id: card
-      x: 8
-      y: 8
+      x: 0
+      y: 0
       width: view.implicitWidth + (root.controlCenterHalo ? 24 : 0)
       height: view.implicitHeight + (root.controlCenterHalo ? 24 : 0)
       radius: root.controlCenterHalo ? 34 : 0

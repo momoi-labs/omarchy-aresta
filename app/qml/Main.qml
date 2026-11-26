@@ -151,7 +151,8 @@ Window {
       { title: qsTr("Windows"), rows: [{ type: "toggle", key: "shadow_enabled", label: qsTr("Show window shadows"), hint: qsTr("Floating workspaces always show shadows") }] },
       { title: qsTr("Panels"), rows: [
         { type: "toggle", key: "panels_translucent", label: qsTr("Translucent panels"), hint: qsTr("Translucent background for Control Center, Spotlight and the app switcher") },
-        { type: "slider", key: "panels_opacity", requires: "panels_translucent", label: qsTr("Panel background opacity"), min: 30, max: 100, step: 5, unit: "%" }
+        { type: "slider", key: "panels_opacity", requires: "panels_translucent", label: qsTr("Panel background opacity"), min: 30, max: 100, step: 5, unit: "%" },
+        { type: "toggle", key: "panels_align_right", label: qsTr("Align panels to right corner"), hint: qsTr("Open Control Center and hidden status panels in the top-right corner") }
       ] }
     ] },
     { id: "wallpaper", name: qsTr("Wallpaper"), block: 1, groups: [
@@ -1764,8 +1765,12 @@ Window {
       readonly property bool translucent: tick >= 0 && store.flag("panels_translucent")
       readonly property real panelAlpha: Math.max(0.3, Math.min(1, (tick >= 0 ? store.number("panels_opacity") : 70) / 100))
       readonly property bool darkBg: look.background.hslLightness < 0.5
+      readonly property real effectiveAlpha: {
+        var t = Math.max(0, Math.min(1, (panelAlpha - 0.3) / 0.7))
+        return 0.84 + t * 0.15
+      }
       readonly property color pillBg: translucent
-        ? Qt.alpha(darkBg ? Qt.lighter(look.background, 1.35) : look.background, panelAlpha)
+        ? Qt.alpha(darkBg ? Qt.lighter(look.background, 1.35) : look.background, effectiveAlpha)
         : (halo ? (darkBg ? Qt.lighter(look.background, 1.35) : Qt.darker(look.background, 1.04)) : look.background)
       readonly property color pillBorder: darkBg ? Qt.rgba(1, 1, 1, 0.22) : Qt.rgba(0, 0, 0, 0.12)
       readonly property color ink: look.text

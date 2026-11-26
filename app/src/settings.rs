@@ -83,6 +83,7 @@ fn defaults() -> Vec<Entry> {
         ("appearance_auto", Flag(false)),
         ("panels_translucent", Flag(true)),
         ("panels_opacity", Number(70.0)),
+        ("panels_align_right", Flag(true)),
         ("wallpaper_keep", Flag(true)),
         ("wallpaper_folders", List(Vec::new())),
         ("control_center_enabled", Flag(true)),

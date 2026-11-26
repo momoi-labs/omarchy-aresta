@@ -23,28 +23,31 @@ Column {
   readonly property int w: 334
   readonly property int topSize: (w - 10) / 2
   readonly property bool dark: luminance(background) < 0.4
+  readonly property real alphaT: Math.max(0, Math.min(1, (panelAlpha - 0.3) / 0.7))
+  readonly property real effectiveAlpha: 0.84 + alphaT * 0.15
   readonly property color pillBase: dark
-    ? Qt.rgba(Math.min(1, background.r + 0.045), Math.min(1, background.g + 0.045), Math.min(1, background.b + 0.045), 1)
+    ? Qt.rgba(Math.min(1, background.r + 0.055), Math.min(1, background.g + 0.055), Math.min(1, background.b + 0.055), 1)
     : background
   readonly property color pillBaseHover: dark
-    ? Qt.rgba(Math.min(1, background.r + 0.085), Math.min(1, background.g + 0.085), Math.min(1, background.b + 0.085), 1)
+    ? Qt.rgba(Math.min(1, background.r + 0.095), Math.min(1, background.g + 0.095), Math.min(1, background.b + 0.095), 1)
     : Qt.rgba(Math.min(1, background.r + 0.02), Math.min(1, background.g + 0.02), Math.min(1, background.b + 0.02), 1)
   readonly property color pillBg: translucent
-    ? Qt.rgba(pillBase.r, pillBase.g, pillBase.b, panelAlpha)
+    ? Qt.rgba(pillBase.r, pillBase.g, pillBase.b, effectiveAlpha)
     : (halo ? (dark ? Qt.rgba(Math.min(1, background.r + 0.07), Math.min(1, background.g + 0.07), Math.min(1, background.b + 0.07), 1) : Qt.darker(background, 1.04)) : pillBase)
   readonly property color pillBgHover: translucent
-    ? Qt.rgba(pillBaseHover.r, pillBaseHover.g, pillBaseHover.b, Math.min(1, panelAlpha + (dark ? 0.08 : 0.1)))
+    ? Qt.rgba(pillBaseHover.r, pillBaseHover.g, pillBaseHover.b, Math.min(1, effectiveAlpha + 0.05))
     : (dark ? Qt.rgba(Math.min(1, background.r + 0.11), Math.min(1, background.g + 0.11), Math.min(1, background.b + 0.11), 1) : Qt.darker(background, 1.07))
-  readonly property color pillRim: dark ? Qt.rgba(1, 1, 1, translucent ? 0.20 : 0.14) : Qt.rgba(0, 0, 0, translucent ? 0.11 : 0.12)
-  readonly property color pillRimHover: dark ? Qt.rgba(1, 1, 1, 0.34) : Qt.rgba(0, 0, 0, 0.20)
+  readonly property color pillRim: dark ? Qt.rgba(1, 1, 1, translucent ? 0.24 : 0.16) : Qt.rgba(0, 0, 0, translucent ? 0.14 : 0.12)
+  readonly property color pillRimHover: dark ? Qt.rgba(1, 1, 1, 0.38) : Qt.rgba(0, 0, 0, 0.22)
+  readonly property color pillShadowRim: dark ? Qt.rgba(0, 0, 0, 0.52) : Qt.rgba(0, 0, 0, 0.10)
   readonly property color dotOffBg: Qt.alpha(foreground, dark ? 0.14 : 0.09)
   readonly property color dotOnBg: dark ? "#ffffff" : accent
   readonly property color dotOnInk: dark ? accent : "#ffffff"
   readonly property color focusAccent: "#db34f2"
   readonly property color focusOnBg: dark ? "#ffffff" : focusAccent
   readonly property color focusOnInk: dark ? focusAccent : "#ffffff"
-  readonly property color dim: Qt.alpha(foreground, 0.58)
-  readonly property color trackBg: Qt.alpha(foreground, dark ? 0.20 : 0.14)
+  readonly property color dim: Qt.alpha(foreground, dark ? 0.68 : 0.60)
+  readonly property color trackBg: Qt.alpha(foreground, dark ? 0.22 : 0.14)
   readonly property color trackFill: dark ? "#ffffff" : "#1f2328"
 
   readonly property var wifi: info.wifi || ({})
@@ -81,13 +84,47 @@ Column {
   width: w
   spacing: 10
 
-  component Glyph: Text {
+  component Glyph: Item {
+    id: glyphRoot
+
     property int code: 0
-    text: String.fromCodePoint(code)
-    font.family: view.iconFamily
-    font.pixelSize: 15
-    horizontalAlignment: Text.AlignHCenter
-    verticalAlignment: Text.AlignVCenter
+    property real iconSize: 15
+    property color color: view.foreground
+
+    readonly property string text: code > 0 ? String.fromCodePoint(code) : ""
+    readonly property int renderedFontSize: Math.max(1, Math.round(iconSize))
+    readonly property int metricsScale: 100
+    readonly property rect ink: Qt.rect(
+      glyphMetrics.tightBoundingRect.x / metricsScale,
+      glyphMetrics.tightBoundingRect.y / metricsScale,
+      glyphMetrics.tightBoundingRect.width / metricsScale,
+      glyphMetrics.tightBoundingRect.height / metricsScale
+    )
+    readonly property real tightWidth: Math.max(1, ink.width)
+    readonly property real tightHeight: Math.max(1, ink.height)
+    readonly property real paintedScale: width > 0 && height > 0
+      ? Math.min(iconSize, width, height) / Math.max(tightWidth, tightHeight)
+      : 1
+
+    TextMetrics {
+      id: glyphMetrics
+      font.family: view.iconFamily
+      font.pixelSize: glyphRoot.renderedFontSize * glyphRoot.metricsScale
+      text: glyphRoot.text
+    }
+
+    Text {
+      textFormat: Text.PlainText
+      x: glyphRoot.width / 2 - (glyphRoot.ink.x + glyphRoot.tightWidth / 2) * glyphRoot.paintedScale
+      y: glyphRoot.height / 2 - (baselineOffset + glyphRoot.ink.y + glyphRoot.tightHeight / 2) * glyphRoot.paintedScale
+      text: glyphRoot.text
+      color: glyphRoot.color
+      font.family: view.iconFamily
+      font.pixelSize: glyphRoot.renderedFontSize
+      transformOrigin: Item.TopLeft
+      scale: glyphRoot.paintedScale
+      renderType: Text.QtRendering
+    }
   }
 
   component Label: Text {
@@ -112,18 +149,27 @@ Column {
   component Pill: Rectangle {
     id: pill
     property bool hovered: false
-    color: hovered ? view.pillBgHover : view.pillBg
-    border.width: 1
-    border.color: hovered ? view.pillRimHover : view.pillRim
+    color: "transparent"
+    border.width: view.translucent ? 1 : 0
+    border.color: view.pillShadowRim
 
     Rectangle {
       anchors.fill: parent
-      anchors.margins: 1
-      radius: Math.max(0, pill.radius - 1)
-      visible: view.translucent
-      gradient: Gradient {
-        GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, view.dark ? 0.09 : 0.42) }
-        GradientStop { position: 0.45; color: "transparent" }
+      anchors.margins: view.translucent ? 1 : 0
+      radius: Math.max(0, pill.radius - (view.translucent ? 1 : 0))
+      color: pill.hovered ? view.pillBgHover : view.pillBg
+      border.width: 1
+      border.color: pill.hovered ? view.pillRimHover : view.pillRim
+
+      Rectangle {
+        anchors.fill: parent
+        anchors.margins: 1
+        radius: Math.max(0, parent.radius - 1)
+        visible: view.translucent
+        gradient: Gradient {
+          GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, view.dark ? 0.11 : 0.44) }
+          GradientStop { position: 0.45; color: "transparent" }
+        }
       }
     }
   }
@@ -140,10 +186,10 @@ Column {
     radius: size / 2
     color: on ? onBg : view.dotOffBg
     Glyph {
-      anchors.centerIn: parent
+      anchors.fill: parent
       code: dot.code
       color: dot.on ? dot.onInk : view.foreground
-      font.pixelSize: Math.round(dot.size * 0.46)
+      iconSize: Math.round(dot.size * 0.46)
     }
   }
 
@@ -161,9 +207,9 @@ Column {
       color: stepArea.containsMouse && step.live ? Qt.alpha(view.foreground, 0.14) : "transparent"
     }
     Glyph {
-      anchors.centerIn: parent
+      anchors.fill: parent
       code: step.code
-      font.pixelSize: step.iconSize
+      iconSize: step.iconSize
       color: step.live ? view.foreground : view.dim
     }
     MouseArea {
@@ -280,11 +326,11 @@ Column {
           }
 
           Glyph {
-            anchors.centerIn: parent
+            anchors.fill: parent
             visible: picture.status !== Image.Ready
             code: 0xF075A
             color: view.hasPlayer ? "#ffffff" : view.dim
-            font.pixelSize: 21
+            iconSize: 21
           }
 
           Image {
@@ -476,9 +522,9 @@ Column {
         : (nightArea.containsMouse ? view.pillRimHover : view.pillRim)
 
       Glyph {
-        anchors.centerIn: parent
+        anchors.fill: parent
         code: 0xF05A8
-        font.pixelSize: 22
+        iconSize: 22
         color: nightCircle.active ? "#1c1205" : view.foreground
       }
 
@@ -551,10 +597,11 @@ Column {
           anchors.left: parent.left
           anchors.verticalCenter: parent.verticalCenter
           width: 18
+          height: parent.height
           code: slide.modelData.screen ? 0xF05A8 : view.soundLowCode
           color: view.foreground
-          opacity: 0.85
-          font.pixelSize: slide.modelData.screen ? 13 : 14
+          opacity: 0.88
+          iconSize: slide.modelData.screen ? 13 : 14
         }
 
         Glyph {
@@ -562,10 +609,11 @@ Column {
           anchors.right: parent.right
           anchors.verticalCenter: parent.verticalCenter
           width: 20
+          height: parent.height
           code: slide.modelData.screen ? 0xF05A8 : 0xF028
           color: view.foreground
-          opacity: 0.88
-          font.pixelSize: slide.modelData.screen ? 18 : 16
+          opacity: 0.90
+          iconSize: slide.modelData.screen ? 18 : 16
         }
 
         Item {

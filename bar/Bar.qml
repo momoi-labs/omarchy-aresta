@@ -24,7 +24,7 @@ Item {
   readonly property string position: "top"
   readonly property bool vertical: false
   readonly property var settings: {
-    var values = { bar_height: 29, bar_opacity: 30, clock_format: "ddd d MMM  HH:mm", status_icon_scale: 120, status_item_width: 38, bar_desktops: false, bar_desktops_position: "menus", bar_desktops_style: "numbers", bar_desktops_occupied_only: false, control_center_enabled: true, cc_wifi: true, cc_bluetooth: true, cc_focus: true, cc_display: true, cc_sound: true, cc_media: true, cc_bar_network: false, cc_bar_bluetooth: false, cc_bar_audio: false, cc_bar_monitor: false, cc_bar_power: true }
+    var values = { bar_height: 29, bar_opacity: 30, clock_format: "ddd d MMM  HH:mm", status_icon_scale: 120, status_item_width: 38, bar_desktops: false, bar_desktops_position: "menus", bar_desktops_style: "numbers", bar_desktops_occupied_only: false, panels_align_right: true, control_center_enabled: true, cc_wifi: true, cc_bluetooth: true, cc_focus: true, cc_display: true, cc_sound: true, cc_media: true, cc_bar_network: false, cc_bar_bluetooth: false, cc_bar_audio: false, cc_bar_monitor: false, cc_bar_power: true }
     var lines = settingsFile.text().split("\n")
     for (var i = 0; i < lines.length; i++) {
       var match = lines[i].match(/^\s*(\w+)\s*=\s*(.*?)\s*$/)
@@ -81,6 +81,33 @@ Item {
       }
     }
     return { keys: keys, entries: out }
+  }
+
+  function isTuckedRight(id) {
+    return root.settings.panels_align_right && root.controlCenter && !!root.controlCenterIcons[id] && !root.settings[root.controlCenterIcons[id]]
+  }
+
+  readonly property var visibleStatusEntries: {
+    var keys = []
+    var entries = statusEntries.entries
+    for (var i = 0; i < statusEntries.keys.length; i++) {
+      var key = statusEntries.keys[i]
+      var entry = entries[key]
+      if (entry && isTuckedRight(String(entry.id || ""))) continue
+      keys.push(key)
+    }
+    return { keys: keys, entries: entries }
+  }
+
+  readonly property var tuckedStatusEntries: {
+    var keys = []
+    var entries = statusEntries.entries
+    for (var i = 0; i < statusEntries.keys.length; i++) {
+      var key = statusEntries.keys[i]
+      var entry = entries[key]
+      if (entry && isTuckedRight(String(entry.id || ""))) keys.push(key)
+    }
+    return { keys: keys, entries: entries }
   }
 
   readonly property var clockEntry: {
@@ -519,10 +546,10 @@ Item {
           }
 
           Repeater {
-            model: ScriptModel { values: root.statusEntries.keys }
+            model: ScriptModel { values: root.visibleStatusEntries.keys }
             delegate: WidgetSlot {
               required property string modelData
-              entry: root.statusEntries.entries[modelData] || ({ id: "" })
+              entry: root.visibleStatusEntries.entries[modelData] || ({ id: "" })
               itemScale: root.settings.status_icon_scale / 100
               cellWidth: root.settings.status_item_width
             }
@@ -538,6 +565,24 @@ Item {
           WidgetSlot {
             Layout.leftMargin: 3
             entry: root.clockEntry
+          }
+        }
+
+        Item {
+          anchors.right: parent.right
+          anchors.top: parent.top
+          width: 0
+          height: root.barSize
+          opacity: 0
+
+          Repeater {
+            model: ScriptModel { values: root.tuckedStatusEntries.keys }
+            delegate: WidgetSlot {
+              required property string modelData
+              entry: root.tuckedStatusEntries.entries[modelData] || ({ id: "" })
+              width: 0
+              height: root.barSize
+            }
           }
         }
 
