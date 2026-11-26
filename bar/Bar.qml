@@ -496,8 +496,8 @@ Item {
             color: root.foreground
             font.family: root.fontFamily
             font.pixelSize: 13
-            font.letterSpacing: 0.4
-            font.weight: Font.Bold
+            font.letterSpacing: 0.15
+            font.weight: Font.DemiBold
           }
 
           Desktops {
