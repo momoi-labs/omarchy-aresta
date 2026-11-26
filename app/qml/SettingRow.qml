@@ -24,11 +24,13 @@ Item {
     }
     if (auto) {
       if (backend.autoError !== "") return qsTr("No location. Auto changes nothing until weather.json or the network gives one.")
-      if (backend.autoNext <= 0) return qsTr("Finding sunrise and sunset...")
+      if (backend.autoNext <= 0) return backend.text("appearance_auto_schedule") === "custom" ? qsTr("Finding the next switch...") : qsTr("Finding sunrise and sunset...")
       let next = new Date(backend.autoNext)
       let day = next.toDateString() === new Date().toDateString() ? qsTr("today") : Qt.formatDate(next, "ddd")
-      return (backend.autoNextDark ? qsTr("Switches to Dark %1 at %2, at sunset") : qsTr("Switches to Light %1 at %2, at sunrise"))
-        .arg(day).arg(Qt.formatTime(next, "HH:mm"))
+      let text = backend.autoSolar
+        ? (backend.autoNextDark ? qsTr("Switches to Dark %1 at %2, at sunset") : qsTr("Switches to Light %1 at %2, at sunrise"))
+        : (backend.autoNextDark ? qsTr("Switches to Dark %1 at %2") : qsTr("Switches to Light %1 at %2"))
+      return text.arg(day).arg(Qt.formatTime(next, "HH:mm"))
     }
     return setting.hint || ""
   }
@@ -88,6 +90,7 @@ Item {
       case "stepper": return stepperControl
       case "select": return selectControl
       case "text": return textControl
+      case "time": return timeControl
       case "shortcut": return shortcutControl
       case "omarchy": return omarchyControl
       case "segment": return segmentControl
@@ -179,6 +182,46 @@ Item {
         font.family: "monospace"
         font.pixelSize: 12
         onEditingFinished: row.backend.setText(row.setting.key, text)
+      }
+    }
+  }
+
+  Component {
+    id: timeControl
+    Rectangle {
+      implicitWidth: 64
+      implicitHeight: 26
+      radius: 7
+      color: row.ui.controlSoft
+      border.width: 1
+      border.color: !time.valid ? row.ui.record : time.activeFocus ? row.ui.accent : row.ui.controlBorder
+
+      TextInput {
+        id: time
+        readonly property string stored: row.revision >= 0 ? row.backend.text(row.setting.key) : ""
+        readonly property bool valid: /^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(text)
+
+        function commit() {
+          if (valid && text !== stored) row.backend.setText(row.setting.key, text)
+          else text = stored
+        }
+
+        anchors.fill: parent
+        horizontalAlignment: TextInput.AlignHCenter
+        verticalAlignment: TextInput.AlignVCenter
+        activeFocusOnTab: true
+        inputMask: "99:99"
+        inputMethodHints: Qt.ImhTime
+        text: stored
+        color: row.ui.text
+        selectionColor: row.ui.accent
+        selectedTextColor: row.ui.accentText
+        font.family: row.ui.fontFamily
+        font.pixelSize: 13
+        font.features: { "tnum": 1 }
+        onStoredChanged: text = stored
+        onAccepted: commit()
+        onActiveFocusChanged: activeFocus ? selectAll() : commit()
       }
     }
   }

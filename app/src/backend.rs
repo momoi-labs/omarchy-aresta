@@ -21,6 +21,7 @@ pub mod qobject {
         #[qproperty(QString, current_wallpaper, cxx_name = "currentWallpaper")]
         #[qproperty(f64, auto_next, cxx_name = "autoNext")]
         #[qproperty(bool, auto_next_dark, cxx_name = "autoNextDark")]
+        #[qproperty(bool, auto_solar, cxx_name = "autoSolar")]
         #[qproperty(QString, auto_error, cxx_name = "autoError")]
         #[qproperty(i32, wallpapers)]
         #[qproperty(i32, thumbnails)]
@@ -195,6 +196,7 @@ pub struct BackendRust {
     current_wallpaper: QString,
     auto_next: f64,
     auto_next_dark: bool,
+    auto_solar: bool,
     auto_error: QString,
     wallpapers: i32,
     thumbnails: i32,
@@ -224,6 +226,7 @@ impl Default for BackendRust {
             current_wallpaper: QString::default(),
             auto_next: 0.0,
             auto_next_dark: false,
+            auto_solar: true,
             auto_error: QString::default(),
             wallpapers: 0,
             thumbnails: 0,
@@ -347,6 +350,7 @@ impl qobject::Backend {
         self.as_mut().set_auto_next(next);
         self.as_mut()
             .set_auto_next_dark(field("next_dark") == "true");
+        self.as_mut().set_auto_solar(field("schedule") != "custom");
         self.as_mut().set_auto_error(QString::from(&field("error")));
     }
 
@@ -511,8 +515,11 @@ impl qobject::Backend {
         self.store(key, Value::Flag(value));
     }
 
-    pub fn set_text(self: Pin<&mut Self>, key: &QString, value: &QString) {
-        self.store(key, Value::Text(value.to_string()));
+    pub fn set_text(mut self: Pin<&mut Self>, key: &QString, value: &QString) {
+        self.as_mut().store(key, Value::Text(value.to_string()));
+        if key.to_string().starts_with("appearance_auto_") {
+            self.run_auto();
+        }
     }
 
     pub fn clear_list(self: Pin<&mut Self>, key: &QString) {

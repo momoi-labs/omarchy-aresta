@@ -114,7 +114,7 @@ Open it from the app launcher.
 
 | Section | What you set |
 | --- | --- |
-| Appearance | Light, Dark or Auto; the light and the dark theme from the installed Omarchy themes, in lists that follow the themes you add or remove while the window is open; window shadows; translucent panel backgrounds and opacity for Control Center, Spotlight and the app switcher. It also shows the colors of the current theme. Auto picks the light theme at sunrise and the dark theme at sunset. |
+| Appearance | Light, Dark or Auto; the light and the dark theme from the installed Omarchy themes, in lists that follow the themes you add or remove while the window is open; window shadows; translucent panel backgrounds and opacity for Control Center, Spotlight and the app switcher. It also shows the colors of the current theme. Auto picks the light theme at sunrise and the dark theme at sunset, or at the two times you set under Schedule, Custom. |
 | Wallpaper | The current wallpaper and a switch that keeps it when the theme changes. It lists the pictures of the theme, of `~/.config/omarchy/backgrounds/<theme>` and of folders you add. Add Photo copies a picture into `~/.config/omarchy/backgrounds/<theme>`. |
 | Menu Bar | The menu bar itself; desktops in the bar (after the menus, in the center or before the status icons, as numbers or dots); the bar background opacity; the clock format. |
 | Spotlight | Spotlight itself (off gives back the Omarchy menu); size from 80% to 150%; a gray or theme accent selected row; the filter buttons; open with only the search field until you type; keyboard hints at the bottom of the card; lock the card's place and size; put it back at its default place and height. |
@@ -166,6 +166,7 @@ It also installs the `cupertino-auto` systemd user timer, which runs
 `cupertino-settings --auto` every minute for Auto appearance. Auto reads your
 location from `~/.local/state/omarchy/settings/weather.json`, else from
 `https://geo.omarchy.org/`, and computes sunrise and sunset on your computer.
+With a Custom schedule, Auto uses your local time and needs no location.
 Running the script again changes nothing.
 
 ## Uninstall
