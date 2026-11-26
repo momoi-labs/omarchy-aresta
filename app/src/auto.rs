@@ -149,20 +149,30 @@ fn instant<Zone: TimeZone>(zone: &Zone, local: NaiveDateTime) -> Option<i64> {
 pub fn custom_plan<Zone: TimeZone>(zone: &Zone, light: &str, dark: &str, now: i64) -> Option<Plan> {
     let (light, dark) = clocks(light, dark);
     let today = zone.timestamp_opt(now, 0).single()?.date_naive();
-    let switches = [
+    let mut locals: Vec<(NaiveDateTime, bool)> = [
         today.checked_sub_days(Days::new(1))?,
         today,
         today.checked_add_days(Days::new(1))?,
     ]
     .into_iter()
-    .flat_map(|date| {
-        [(light, false), (dark, true)]
-            .into_iter()
-            .filter_map(move |(time, dark)| {
-                instant(zone, date.and_time(time)).map(|at| Switch { at, dark })
-            })
-    })
+    .flat_map(|date| [(date.and_time(light), false), (date.and_time(dark), true)])
     .collect();
+    locals.sort_by_key(|(local, _)| *local);
+    let mut floor = i64::MIN;
+    let mut switches: Vec<Switch> = locals
+        .into_iter()
+        .filter_map(|(local, dark)| {
+            floor = instant(zone, local)?.max(floor);
+            Some(Switch { at: floor, dark })
+        })
+        .collect();
+    switches.dedup_by(|later, kept| {
+        let same = later.at == kept.at;
+        if same {
+            kept.dark = later.dark;
+        }
+        same
+    });
     around(switches, now)
 }
 
@@ -191,7 +201,13 @@ fn write_status(status: &Status) {
     let _ = fs::write(status_path(), text);
 }
 
-pub fn run() -> Result<(), String> {
+pub fn run(force: bool) -> Result<(), String> {
+    let _ = fs::create_dir_all(state());
+    let _lock =
+        fs::File::create(state().join("auto-lock")).and_then(|file| file.lock().map(|()| file));
+    if force {
+        let _ = fs::remove_file(transition_path());
+    }
     let settings = Settings::load();
     if !matches!(settings.get("appearance_auto"), Some(Value::Flag(true))) {
         write_status(&Status::Off);
@@ -250,7 +266,72 @@ pub fn run() -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::{FixedOffset, NaiveDate};
+    use chrono::{FixedOffset, MappedLocalTime, NaiveDate};
+
+    #[derive(Clone, Copy)]
+    struct Spring;
+
+    fn winter() -> FixedOffset {
+        FixedOffset::west_opt(5 * 3600).unwrap()
+    }
+
+    fn summer() -> FixedOffset {
+        FixedOffset::west_opt(4 * 3600).unwrap()
+    }
+
+    fn gap() -> NaiveDateTime {
+        NaiveDate::from_ymd_opt(2026, 3, 8)
+            .unwrap()
+            .and_hms_opt(2, 0, 0)
+            .unwrap()
+    }
+
+    impl TimeZone for Spring {
+        type Offset = FixedOffset;
+
+        fn from_offset(_: &FixedOffset) -> Self {
+            Spring
+        }
+
+        fn offset_from_local_date(&self, local: &NaiveDate) -> MappedLocalTime<FixedOffset> {
+            self.offset_from_local_datetime(&local.and_time(NaiveTime::MIN))
+        }
+
+        fn offset_from_local_datetime(
+            &self,
+            local: &NaiveDateTime,
+        ) -> MappedLocalTime<FixedOffset> {
+            if *local < gap() {
+                MappedLocalTime::Single(winter())
+            } else if *local < gap() + TimeDelta::hours(1) {
+                MappedLocalTime::None
+            } else {
+                MappedLocalTime::Single(summer())
+            }
+        }
+
+        fn offset_from_utc_date(&self, utc: &NaiveDate) -> FixedOffset {
+            self.offset_from_utc_datetime(&utc.and_time(NaiveTime::MIN))
+        }
+
+        fn offset_from_utc_datetime(&self, utc: &NaiveDateTime) -> FixedOffset {
+            if *utc < gap() + TimeDelta::hours(5) {
+                winter()
+            } else {
+                summer()
+            }
+        }
+    }
+
+    fn spring(day: u32, hour: u32, minute: u32, dark: bool) -> Switch {
+        Switch {
+            at: summer()
+                .with_ymd_and_hms(2026, 3, day, hour, minute, 0)
+                .unwrap()
+                .timestamp(),
+            dark,
+        }
+    }
 
     fn zone() -> FixedOffset {
         FixedOffset::west_opt(3 * 3600).unwrap()
@@ -401,6 +482,41 @@ mod tests {
             Plan {
                 current: switch(26, 6, 45, false),
                 next: switch(26, 21, 30, true),
+            }
+        );
+    }
+
+    #[test]
+    fn custom_time_in_a_skipped_hour_moves_past_the_gap() {
+        assert_eq!(
+            custom_plan(&Spring, "02:30", "19:00", spring(8, 12, 0, false).at).unwrap(),
+            Plan {
+                current: spring(8, 3, 30, false),
+                next: spring(8, 19, 0, true),
+            }
+        );
+    }
+
+    #[test]
+    fn custom_skipped_hour_keeps_the_order_of_the_switches() {
+        assert_eq!(
+            custom_plan(&Spring, "02:30", "03:00", spring(8, 3, 15, false).at).unwrap(),
+            Plan {
+                current: Switch {
+                    at: winter()
+                        .with_ymd_and_hms(2026, 3, 7, 3, 0, 0)
+                        .unwrap()
+                        .timestamp(),
+                    dark: true,
+                },
+                next: spring(8, 3, 30, true),
+            }
+        );
+        assert_eq!(
+            custom_plan(&Spring, "02:30", "03:00", spring(8, 12, 0, false).at).unwrap(),
+            Plan {
+                current: spring(8, 3, 30, true),
+                next: spring(9, 2, 30, false),
             }
         );
     }

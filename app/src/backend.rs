@@ -379,12 +379,11 @@ impl qobject::Backend {
     }
 
     fn run_auto(mut self: Pin<&mut Self>) {
-        let _ = fs::remove_file(auto::transition_path());
         let result = std::env::current_exe()
             .map_err(|error| error.to_string())
             .and_then(|exe| {
                 let mut command = Command::new(exe);
-                command.arg("--auto");
+                command.args(["--auto", "--force"]);
                 run_detached(command, "cupertino-settings --auto")
             });
         self.as_mut().report(result);
@@ -517,7 +516,7 @@ impl qobject::Backend {
 
     pub fn set_text(mut self: Pin<&mut Self>, key: &QString, value: &QString) {
         self.as_mut().store(key, Value::Text(value.to_string()));
-        if key.to_string().starts_with("appearance_auto_") {
+        if key.to_string().starts_with("appearance_auto_") && self.error().is_empty() {
             self.run_auto();
         }
     }

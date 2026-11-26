@@ -10,7 +10,8 @@ use cxx_qt_lib::{QGuiApplication, QQmlApplicationEngine, QString, QUrl};
 
 fn main() {
     if std::env::args().nth(1).as_deref() == Some("--auto") {
-        if let Err(error) = auto::run() {
+        let force = std::env::args().nth(2).as_deref() == Some("--force");
+        if let Err(error) = auto::run(force) {
             eprintln!("cupertino-settings: {error}");
             std::process::exit(1);
         }

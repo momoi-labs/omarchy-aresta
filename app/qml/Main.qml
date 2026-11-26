@@ -154,7 +154,7 @@ Window {
       { title: qsTr("Appearance"), rows: [
         { type: "appearance_preview", label: qsTr("Appearance preview") },
         { type: "appearance", label: qsTr("Appearance"), hint: qsTr("Auto follows sunrise and sunset, or your own times") },
-        { type: "segment", key: "appearance_auto_schedule", shown: () => store.flag("appearance_auto"), label: qsTr("Schedule"), options: scheduleOptions },
+        { type: "segment", key: "appearance_auto_schedule", shown: () => store.flag("appearance_auto"), label: qsTr("Schedule"), options: scheduleOptions, otherwise: "solar" },
         { type: "time", key: "appearance_auto_light", shown: customSchedule, label: qsTr("Light at") },
         { type: "time", key: "appearance_auto_dark", shown: customSchedule, label: qsTr("Dark at") },
         { type: "theme", key: "light_theme", dark: false, label: qsTr("Light theme") },

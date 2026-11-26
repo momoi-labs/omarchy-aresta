@@ -152,8 +152,9 @@ Item {
     id: selectControl
     MacSelect {
       ui: row.ui
+      readonly property string stored: row.revision >= 0 ? row.backend.text(row.setting.key) : ""
       options: row.setting.options
-      value: row.revision >= 0 ? row.backend.text(row.setting.key) : ""
+      value: row.setting.otherwise && !options.some(option => option.value === stored) ? row.setting.otherwise : stored
       onPicked: value => row.backend.setText(row.setting.key, value)
     }
   }
@@ -250,8 +251,9 @@ Item {
     id: segmentControl
     MacSegmented {
       ui: row.ui
+      readonly property string stored: row.revision >= 0 ? row.backend.text(row.setting.key) : ""
       options: row.setting.options
-      value: row.revision >= 0 ? row.backend.text(row.setting.key) : ""
+      value: row.setting.otherwise && !options.some(option => option.value === stored) ? row.setting.otherwise : stored
       onPicked: value => row.backend.setText(row.setting.key, value)
     }
   }
