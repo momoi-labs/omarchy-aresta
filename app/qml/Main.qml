@@ -50,6 +50,15 @@ Window {
     { value: "accent", label: qsTr("Theme accent") }
   ]
 
+  readonly property var scheduleOptions: [
+    { value: "solar", label: qsTr("Sunset to Sunrise") },
+    { value: "custom", label: qsTr("Custom") }
+  ]
+
+  function customSchedule() {
+    return store.flag("appearance_auto") && store.text("appearance_auto_schedule") === "custom"
+  }
+
   readonly property string spotlightPlugin: "dev.momoi-labs.omarchy-cupertino.menu"
 
   readonly property var previewMenu: [
@@ -144,7 +153,10 @@ Window {
     { id: "appearance", name: qsTr("Appearance"), block: 1, groups: [
       { title: qsTr("Appearance"), rows: [
         { type: "appearance_preview", label: qsTr("Appearance preview") },
-        { type: "appearance", label: qsTr("Appearance"), hint: qsTr("Auto follows sunrise and sunset") },
+        { type: "appearance", label: qsTr("Appearance"), hint: qsTr("Auto follows sunrise and sunset, or your own times") },
+        { type: "segment", key: "appearance_auto_schedule", shown: () => store.flag("appearance_auto"), label: qsTr("Schedule"), options: scheduleOptions, otherwise: "solar" },
+        { type: "time", key: "appearance_auto_light", shown: customSchedule, label: qsTr("Light at") },
+        { type: "time", key: "appearance_auto_dark", shown: customSchedule, label: qsTr("Dark at") },
         { type: "theme", key: "light_theme", dark: false, label: qsTr("Light theme") },
         { type: "theme", key: "dark_theme", dark: true, label: qsTr("Dark theme") }
       ], note: qsTr("Each list shows only themes of its mode. \"osx light\" and \"osx dark\" are the defaults.") },
@@ -286,13 +298,14 @@ Window {
   readonly property var results: {
     var needle = query.trim().toLowerCase()
     var hits = []
-    if (!needle) return hits
+    if (!needle || store.revision < 0) return hits
     for (var s = 0; s < sections.length; s++) {
       var section = sections[s]
       for (var g = 0; g < section.groups.length; g++) {
         var group = section.groups[g]
         for (var r = 0; r < group.rows.length; r++) {
           var item = group.rows[r]
+          if (item.shown && !item.shown()) continue
           var haystack = [item.label, item.hint || "", group.title || "", section.name].join(" ").toLowerCase()
           if (haystack.indexOf(needle) !== -1) hits.push({ section: section.id, sectionName: section.name, label: item.label })
         }
@@ -695,6 +708,7 @@ Window {
                     required property int index
                     readonly property bool targeted: window.target !== "" && window.target === modelData.label
                     width: rows.width
+                    visible: !modelData.shown || (store.revision >= 0 && modelData.shown())
                     onTargetedChanged: if (targeted) Qt.callLater(window.reveal, rowLoader)
                     sourceComponent: group.sources ? null
                       : modelData.type === "appearance_preview" ? appearancePreviewRow
