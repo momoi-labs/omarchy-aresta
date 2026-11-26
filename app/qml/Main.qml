@@ -744,7 +744,7 @@ Window {
         RoundedImage {
           radius: 8
           anchors.fill: parent
-          source: window.fileUrl(store.currentWallpaper)
+          source: store.thumbnails >= 0 ? store.thumbnail(store.currentWallpaper, 512) : ""
           sourceSize.width: 416
           fillMode: Image.PreserveAspectCrop
           asynchronous: true
@@ -798,13 +798,13 @@ Window {
       readonly property int perRow: Math.max(1, Math.floor((width - 20 + 10) / 138))
 
       Repeater {
-        model: store.revision >= 0 && store.themeName !== "-" ? store.wallpaperSources() : []
+        model: store.wallpapers >= 0 && store.themeName !== "-" ? store.wallpaperSources() : []
 
         Column {
           id: source
           required property string modelData
           readonly property var parts: modelData.split("\t")
-          readonly property var images: store.revision >= 0 ? store.wallpaperImages(parts[2]) : []
+          readonly property var images: store.wallpapers >= 0 ? store.wallpaperImages(parts[2]) : []
           property bool expanded: false
           width: sources.width
           spacing: 8
@@ -913,7 +913,7 @@ Window {
                       radius: 6
                       anchors.fill: parent
                       anchors.margins: 1
-                      source: window.fileUrl(thumb.modelData)
+                      source: store.thumbnails >= 0 ? store.thumbnail(thumb.modelData, 256) : ""
                       sourceSize.width: 256
                       fillMode: Image.PreserveAspectCrop
                       asynchronous: true
@@ -1020,8 +1020,7 @@ Window {
           radius: 9
           anchors.fill: parent
           anchors.margins: 1
-          source: window.fileUrl(store.currentWallpaper)
-          sourceSize.width: 1400
+          source: store.thumbnails >= 0 ? store.thumbnail(store.currentWallpaper, 512) : ""
           fillMode: Image.PreserveAspectCrop
           asynchronous: true
         }

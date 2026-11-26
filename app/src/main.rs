@@ -3,6 +3,7 @@ mod backend;
 mod keys;
 mod settings;
 mod theme;
+mod thumbnail;
 mod wallpaper;
 
 use cxx_qt_lib::{QGuiApplication, QQmlApplicationEngine, QString, QUrl};

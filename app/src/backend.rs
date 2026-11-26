@@ -22,6 +22,8 @@ pub mod qobject {
         #[qproperty(f64, auto_next, cxx_name = "autoNext")]
         #[qproperty(bool, auto_next_dark, cxx_name = "autoNextDark")]
         #[qproperty(QString, auto_error, cxx_name = "autoError")]
+        #[qproperty(i32, wallpapers)]
+        #[qproperty(i32, thumbnails)]
         type Backend = super::BackendRust;
 
         #[qinvokable]
@@ -120,6 +122,9 @@ pub mod qobject {
         fn wallpaper_images(&self, path: &QString) -> QStringList;
 
         #[qinvokable]
+        fn thumbnail(&self, path: &QString, size: i32) -> QString;
+
+        #[qinvokable]
         #[cxx_name = "setWallpaper"]
         fn set_wallpaper(self: Pin<&mut Self>, path: &QString);
 
@@ -149,15 +154,17 @@ pub mod qobject {
     }
 
     impl cxx_qt::Initialize for Backend {}
+    impl cxx_qt::Threading for Backend {}
 }
 
 use crate::auto;
 use crate::keys;
 use crate::settings::{Settings, Value};
 use crate::theme;
+use crate::thumbnail;
 use crate::wallpaper;
 use core::pin::Pin;
-use cxx_qt::CxxQtType;
+use cxx_qt::{CxxQtType, Threading};
 use cxx_qt_lib::{QString, QStringList};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -180,6 +187,9 @@ pub struct BackendRust {
     auto_next: f64,
     auto_next_dark: bool,
     auto_error: QString,
+    wallpapers: i32,
+    thumbnails: i32,
+    thumbnail_queue: thumbnail::Queue,
     modes: Vec<(String, bool)>,
     plugins: Vec<String>,
     settings: Settings,
@@ -204,6 +214,9 @@ impl Default for BackendRust {
             auto_next: 0.0,
             auto_next_dark: false,
             auto_error: QString::default(),
+            wallpapers: 0,
+            thumbnails: 0,
+            thumbnail_queue: thumbnail::Queue::default(),
             modes: Vec::new(),
             plugins: Vec::new(),
             settings: Settings::load(),
@@ -367,7 +380,20 @@ impl qobject::Backend {
         self.as_mut().set_revision(next);
     }
 
+    fn folders(&self) -> Vec<String> {
+        match self.settings.get("wallpaper_folders") {
+            Some(Value::List(folders)) => folders.clone(),
+            _ => Vec::new(),
+        }
+    }
+
+    fn bump_wallpapers(mut self: Pin<&mut Self>) {
+        let next = self.wallpapers().wrapping_add(1);
+        self.as_mut().set_wallpapers(next);
+    }
+
     fn store(mut self: Pin<&mut Self>, key: &QString, value: Value) {
+        let folders = self.folders();
         let Some(hyprland) = self
             .as_mut()
             .rust_mut()
@@ -388,6 +414,9 @@ impl qobject::Backend {
             }
         }
         self.as_mut().report(saved);
+        if self.folders() != folders {
+            self.as_mut().bump_wallpapers();
+        }
         self.bump();
     }
 
@@ -399,7 +428,11 @@ impl qobject::Backend {
         let stamp = modified(&Settings::path());
         if stamp != self.settings_stamp {
             self.as_mut().rust_mut().settings_stamp = stamp;
+            let folders = self.folders();
             self.as_mut().rust_mut().settings.reload();
+            if self.folders() != folders {
+                self.as_mut().bump_wallpapers();
+            }
             self.as_mut().bump();
         }
 
@@ -624,6 +657,25 @@ impl qobject::Backend {
             .collect()
     }
 
+    pub fn thumbnail(&self, path: &QString, size: i32) -> QString {
+        let path = PathBuf::from(path.to_string());
+        let size = size.max(1) as u32;
+        match thumbnail::cached(&path, size) {
+            Ok(url) => QString::from(&url),
+            Err(None) => QString::default(),
+            Err(Some(mtime)) => {
+                let thread = self.qt_thread();
+                self.thumbnail_queue.request(&path, size, mtime, move || {
+                    let _ = thread.queue(|mut backend| {
+                        let next = backend.thumbnails().wrapping_add(1);
+                        backend.as_mut().set_thumbnails(next);
+                    });
+                });
+                QString::default()
+            }
+        }
+    }
+
     pub fn set_wallpaper(mut self: Pin<&mut Self>, path: &QString) {
         let result = spawn("omarchy-theme-bg-set", &[&path.to_string()]);
         self.as_mut().report(result);
@@ -634,7 +686,7 @@ impl qobject::Backend {
             .map(|_| ())
             .map_err(|error| format!("Could not add the photo: {error}"));
         self.as_mut().report(result);
-        self.bump();
+        self.bump_wallpapers();
     }
 
     pub fn add_folder(self: Pin<&mut Self>, path: &QString) {
