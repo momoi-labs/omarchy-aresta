@@ -421,8 +421,8 @@ Item {
     readonly property bool alignRight: tucked && root.settings.panels_align_right
     readonly property real scaledWidth: activeItem ? activeItem.implicitWidth * itemScale : 0
     property var labelButton: null
-    readonly property bool textLabel: !!labelButton && labelButton.labelVisible && !labelButton.iconLabel
-    readonly property real figureHeight: Math.min(labelMetrics.capitalHeight, labelMetrics.tightBoundingRect("0").height)
+    readonly property bool paddedFigures: labelMetrics.tightBoundingRect("0").height > labelMetrics.capitalHeight
+    readonly property bool textLabel: !!labelButton && paddedFigures && labelButton.labelVisible && !labelButton.iconLabel && labelButton.text.indexOf("\n") === -1
 
     opacity: tucked ? 0 : 1
     enabled: !tucked
@@ -437,11 +437,8 @@ Item {
       if ("moduleName" in target) target.moduleName = slot.moduleName
       if ("settings" in target) target.settings = slot.settings
       var items = target.children
-      for (var i = 0; i < items.length; i++) {
-        if (!("centerFigures" in items[i])) continue
-        items[i].centerFigures = false
-        labelButton = items[i]
-      }
+      for (var i = 0; i < items.length; i++)
+        if (items[i].centerFigures) labelButton = items[i]
     }
 
     onSettingsChanged: inject()
@@ -455,17 +452,25 @@ Item {
       font.pixelSize: slot.labelButton ? slot.labelButton.fontSize : Style.font.body
     }
 
+    Binding {
+      target: slot.labelButton
+      property: "centerFigures"
+      value: false
+      when: slot.textLabel
+    }
+
     Loader {
       id: loader
 
       anchors.verticalCenter: parent.verticalCenter
-      anchors.verticalCenterOffset: slot.textLabel ? (Math.ceil(labelMetrics.height) / 2 - labelMetrics.ascent + slot.figureHeight / 2) * scale : 0
+      anchors.verticalCenterOffset: slot.textLabel ? (Math.ceil(labelMetrics.height) / 2 - labelMetrics.ascent + labelMetrics.capitalHeight / 2) * scale : 0
       x: slot.alignRight ? 100000 : Math.round((slot.width - slot.scaledWidth) / 2)
       width: item ? item.implicitWidth : 0
       scale: slot.tucked ? 1 : slot.itemScale
       transformOrigin: Item.Left
       height: item ? item.implicitHeight : 0
       sourceComponent: slot.registered ? slot.registered.component : null
+      onItemChanged: slot.labelButton = null
       onLoaded: {
         slot.inject()
         Qt.callLater(slot.inject)
