@@ -14,7 +14,7 @@ Rectangle {
   property string value: ""
   signal picked(string name)
 
-  readonly property string title: backend.themeTitle(value)
+  readonly property string title: backend.revision >= 0 ? backend.themeTitle(value) : ""
 
   component ThemeWindow: Rectangle {
     id: mini
@@ -72,9 +72,21 @@ Rectangle {
   activeFocusOnTab: true
 
   function openPopup() {
+    backend.refreshThemes()
     grid.currentIndex = Math.max(0, names.indexOf(title))
     popup.open()
   }
+
+  function fill() {
+    var name = grid.currentIndex >= 0 && grid.currentIndex < grid.count ? grid.model[grid.currentIndex] : ""
+    var index = names.indexOf(name)
+    grid.model = names
+    grid.currentIndex = index >= 0 ? index : names.indexOf(title)
+    grid.positionViewAtIndex(grid.currentIndex, GridView.Contain)
+  }
+
+  onNamesChanged: fill()
+  Component.onCompleted: fill()
 
   Keys.onSpacePressed: openPopup()
   Keys.onReturnPressed: openPopup()
@@ -91,7 +103,7 @@ Rectangle {
       width: 36
       height: 24
       anchors.verticalCenter: parent.verticalCenter
-      colors: picker.backend.themeColors(picker.value)
+      colors: picker.backend.revision >= 0 ? picker.backend.themeColors(picker.value) : []
     }
 
     Text {
@@ -168,7 +180,6 @@ Rectangle {
         clip: true
         cellWidth: popup.cellWidth
         cellHeight: popup.cellHeight
-        model: picker.names
         keyNavigationEnabled: true
         boundsBehavior: Flickable.StopAtBounds
         highlightFollowsCurrentItem: false
@@ -231,7 +242,7 @@ Rectangle {
               anchors.centerIn: parent
               width: 90
               height: 56
-              colors: picker.backend.themeColors(cell.modelData)
+              colors: picker.backend.revision >= 0 ? picker.backend.themeColors(cell.modelData) : []
             }
           }
 
@@ -275,7 +286,7 @@ Rectangle {
           elide: Text.ElideRight
           textFormat: Text.StyledText
           readonly property string name: grid.currentIndex >= 0 && grid.currentIndex < picker.names.length ? picker.names[grid.currentIndex] : ""
-          text: "<b>" + name + "</b>  " + String(picker.backend.themeFile(name)).replace(/\/colors\.toml$/, "")
+          text: "<b>" + name + "</b>  " + String(picker.backend.revision >= 0 ? picker.backend.themeFile(name) : "").replace(/\/colors\.toml$/, "")
           color: picker.ui.textSecondary
           font.family: picker.ui.fontFamily
           font.pixelSize: 12

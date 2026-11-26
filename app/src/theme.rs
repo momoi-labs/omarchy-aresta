@@ -1,6 +1,9 @@
 use std::fs;
+use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+
+pub type Stamp = Vec<(PathBuf, Option<(u64, u64, i64, i64)>)>;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Colors {
@@ -107,17 +110,46 @@ pub fn slug(name: &str) -> String {
     name.trim().to_lowercase().replace(' ', "-")
 }
 
-pub fn directory(name: &str) -> Option<PathBuf> {
-    let slug = slug(name);
+fn roots() -> [PathBuf; 2] {
     [
-        home().join(".config/omarchy/themes").join(&slug),
-        omarchy_path().join("themes").join(&slug),
+        home().join(".config/omarchy/themes"),
+        omarchy_path().join("themes"),
     ]
-    .into_iter()
-    .find(|path| path.is_dir())
 }
 
-pub fn installed() -> Vec<String> {
+fn directory_in(roots: &[PathBuf], name: &str) -> Option<PathBuf> {
+    let slug = slug(name);
+    roots
+        .iter()
+        .map(|root| root.join(&slug))
+        .find(|path| path.is_dir())
+}
+
+pub fn directory(name: &str) -> Option<PathBuf> {
+    directory_in(&roots(), name)
+}
+
+fn stamp_in(roots: &[PathBuf]) -> Stamp {
+    let mut stamp: Stamp = roots
+        .iter()
+        .filter_map(|root| fs::read_dir(root).ok())
+        .flat_map(|entries| entries.flatten())
+        .map(|entry| {
+            let colors = fs::metadata(entry.path().join("colors.toml"))
+                .map(|meta| (meta.dev(), meta.ino(), meta.ctime(), meta.ctime_nsec()))
+                .ok();
+            (entry.path(), colors)
+        })
+        .collect();
+    stamp.sort();
+    stamp
+}
+
+pub fn stamp() -> Stamp {
+    stamp_in(&roots())
+}
+
+pub fn installed() -> Option<Vec<String>> {
     Command::new("omarchy-theme-list")
         .output()
         .ok()
@@ -130,21 +162,106 @@ pub fn installed() -> Vec<String> {
                 .map(String::from)
                 .collect()
         })
-        .unwrap_or_default()
 }
 
-pub fn with_mode() -> Vec<(String, bool)> {
-    installed()
+fn modes_in(roots: &[PathBuf], names: Vec<String>) -> Vec<(String, bool)> {
+    names
         .into_iter()
         .filter_map(|name| {
-            let dark = is_dark(&directory(&name)?)?;
+            let dark = is_dark(&directory_in(roots, &name)?)?;
             Some((name, dark))
         })
         .collect()
+}
+
+pub fn with_mode() -> Option<Vec<(String, bool)>> {
+    Some(modes_in(&roots(), installed()?))
 }
 
 pub fn set_command(slug: &str) -> Command {
     let mut command = Command::new("omarchy-theme-set");
     command.arg(slug);
     command
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn scratch(name: &str) -> PathBuf {
+        let base =
+            std::env::temp_dir().join(format!("cupertino-theme-{name}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&base);
+        fs::create_dir_all(&base).unwrap();
+        base
+    }
+
+    fn names(list: &[&str]) -> Vec<String> {
+        list.iter().map(|name| name.to_string()).collect()
+    }
+
+    #[test]
+    fn lists_a_theme_only_once_its_colors_exist() {
+        let base = scratch("modes");
+        let roots = [base.join("user"), base.join("system")];
+        fs::create_dir_all(roots[1].join("day")).unwrap();
+        fs::write(roots[1].join("day/colors.toml"), "mode = \"light\"\n").unwrap();
+        fs::create_dir_all(roots[0].join("tokyo-night")).unwrap();
+
+        let listed = names(&["Day", "Tokyo Night"]);
+        assert_eq!(
+            modes_in(&roots, listed.clone()),
+            [("Day".to_string(), false)]
+        );
+
+        fs::write(
+            roots[0].join("tokyo-night/colors.toml"),
+            "background = \"#1a1b26\"\n",
+        )
+        .unwrap();
+        assert_eq!(
+            modes_in(&roots, listed.clone()),
+            [
+                ("Day".to_string(), false),
+                ("Tokyo Night".to_string(), true)
+            ]
+        );
+
+        fs::remove_dir_all(roots[0].join("tokyo-night")).unwrap();
+        assert_eq!(modes_in(&roots, listed), [("Day".to_string(), false)]);
+        fs::remove_dir_all(&base).unwrap();
+    }
+
+    #[test]
+    fn stamp_changes_when_a_theme_is_added_filled_or_removed() {
+        let base = scratch("stamp");
+        let roots = [base.join("user"), base.join("system")];
+        let empty = stamp_in(&roots);
+        assert!(empty.is_empty());
+
+        fs::create_dir_all(roots[0].join("night")).unwrap();
+        let added = stamp_in(&roots);
+        assert_eq!(added, [(roots[0].join("night"), None)]);
+        assert_eq!(stamp_in(&roots), added);
+
+        fs::write(roots[0].join("night/colors.toml"), "mode = \"dark\"\n").unwrap();
+        let filled = stamp_in(&roots);
+        assert_ne!(filled, added);
+
+        fs::rename(roots[0].join("night"), base.join("spare")).unwrap();
+        std::os::unix::fs::symlink(base.join("spare"), roots[0].join("night")).unwrap();
+        let linked = stamp_in(&roots);
+        assert_eq!(linked[0].0, roots[0].join("night"));
+        assert_eq!(linked[0].1, filled[0].1);
+
+        fs::create_dir_all(base.join("other")).unwrap();
+        fs::write(base.join("other/colors.toml"), "mode = \"light\"\n").unwrap();
+        fs::remove_file(roots[0].join("night")).unwrap();
+        std::os::unix::fs::symlink(base.join("other"), roots[0].join("night")).unwrap();
+        assert_ne!(stamp_in(&roots)[0].1, linked[0].1);
+
+        fs::remove_file(roots[0].join("night")).unwrap();
+        assert_eq!(stamp_in(&roots), empty);
+        fs::remove_dir_all(&base).unwrap();
+    }
 }

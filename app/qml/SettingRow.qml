@@ -19,7 +19,7 @@ Item {
     if (missing) return qsTr("Not installed. Run install.sh to add it to ~/.config/omarchy/plugins.")
     if (recording) return qsTr("Esc cancels. Backspace removes the shortcut.")
     if (setting.type === "theme") {
-      let count = Array.from(backend.themeNames(setting.dark)).length
+      let count = revision >= 0 ? Array.from(backend.themeNames(setting.dark)).length : 0
       return setting.dark ? qsTr("%n dark theme(s) installed", "", count) : qsTr("%n light theme(s) installed", "", count)
     }
     if (auto) {

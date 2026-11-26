@@ -122,7 +122,7 @@ Window {
     }
   }
 
-  readonly property string themeTitle: store.themeTitle(store.themeName)
+  readonly property string themeTitle: store.revision >= 0 ? store.themeTitle(store.themeName) : ""
 
   function fileUrl(path) {
     return path === "" ? "" : "file://" + path.split("/").map(encodeURIComponent).join("/")
@@ -351,7 +351,10 @@ Window {
     onTriggered: store.tick()
   }
 
-  onActiveChanged: if (!active) store.stopRecording()
+  onActiveChanged: {
+    if (active) store.refreshThemes()
+    else store.stopRecording()
+  }
   Component.onDestruction: store.stopRecording()
 
   Shortcut { enabled: store.recording === ""; sequences: [StandardKey.Find]; onActivated: search.forceActiveFocus() }

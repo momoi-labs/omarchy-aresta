@@ -74,6 +74,10 @@ pub mod qobject {
         fn clear_shortcut(self: Pin<&mut Self>);
 
         #[qinvokable]
+        #[cxx_name = "refreshThemes"]
+        fn refresh_themes(self: Pin<&mut Self>);
+
+        #[qinvokable]
         #[cxx_name = "themeSlug"]
         fn theme_slug(&self, name: &QString) -> QString;
 
@@ -176,6 +180,7 @@ use std::process::{Command, Stdio};
 use std::time::{Duration, Instant, SystemTime};
 
 const RELOAD_DELAY: Duration = Duration::from_millis(250);
+const THEMES_DELAY: Duration = Duration::from_millis(300);
 const RECORD_SUBMAP: &str = "omarchy-cupertino-record";
 
 pub struct BackendRust {
@@ -195,6 +200,8 @@ pub struct BackendRust {
     thumbnails: i32,
     thumbnail_queue: thumbnail::Queue,
     modes: Vec<(String, bool)>,
+    themes_stamp: theme::Stamp,
+    themes_at: Option<Instant>,
     plugins: Vec<String>,
     settings: Settings,
     settings_stamp: Option<SystemTime>,
@@ -222,6 +229,8 @@ impl Default for BackendRust {
             thumbnails: 0,
             thumbnail_queue: thumbnail::Queue::default(),
             modes: Vec::new(),
+            themes_stamp: theme::Stamp::new(),
+            themes_at: None,
             plugins: Vec::new(),
             settings: Settings::load(),
             settings_stamp: modified(&Settings::path()),
@@ -277,10 +286,8 @@ fn hyprctl_dispatch(expression: &str) -> Result<(), String> {
 
 impl cxx_qt::Initialize for qobject::Backend {
     fn initialize(mut self: Pin<&mut Self>) {
-        let modes = theme::with_mode();
-        let themes: QStringList = modes.iter().map(|(name, _)| QString::from(name)).collect();
-        self.as_mut().rust_mut().modes = modes;
-        self.as_mut().set_themes(themes);
+        self.as_mut().rust_mut().themes_stamp = theme::stamp();
+        self.as_mut().refresh_themes();
         self.as_mut().refresh_theme();
         self.as_mut().refresh_wallpaper();
         self.as_mut().refresh_auto();
@@ -424,7 +431,37 @@ impl qobject::Backend {
         self.bump();
     }
 
+    fn reload_themes(mut self: Pin<&mut Self>) -> bool {
+        let Some(modes) = theme::with_mode() else {
+            return false;
+        };
+        if modes == self.modes {
+            return false;
+        }
+        let themes: QStringList = modes.iter().map(|(name, _)| QString::from(name)).collect();
+        self.as_mut().rust_mut().modes = modes;
+        self.as_mut().set_themes(themes);
+        true
+    }
+
+    pub fn refresh_themes(mut self: Pin<&mut Self>) {
+        if self.as_mut().reload_themes() {
+            self.bump();
+        }
+    }
+
     pub fn tick(mut self: Pin<&mut Self>) {
+        let stamp = theme::stamp();
+        if stamp != self.themes_stamp {
+            self.as_mut().rust_mut().themes_stamp = stamp;
+            self.as_mut().rust_mut().themes_at = Some(Instant::now() + THEMES_DELAY);
+        }
+        if self.themes_at.is_some_and(|at| Instant::now() >= at) {
+            self.as_mut().rust_mut().themes_at = None;
+            self.as_mut().reload_themes();
+            self.as_mut().bump();
+        }
+
         self.as_mut().refresh_theme();
         self.as_mut().refresh_wallpaper();
         self.as_mut().refresh_auto();
