@@ -252,7 +252,7 @@ Column {
 
     Pill {
       visible: view.show.media
-      width: view.links.length > 0 ? view.topSize : view.w
+      width: view.topSize
       height: view.topSize
       radius: 26
 

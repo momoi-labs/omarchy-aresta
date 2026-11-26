@@ -1970,7 +1970,7 @@ Window {
 
               Rectangle {
                 visible: ccPreview.has("cc_media")
-                width: ccLinkStack.visible ? 80 : ccBody.width
+                width: 80
                 height: 80
                 radius: 13
                 color: ccPreview.pillBg
