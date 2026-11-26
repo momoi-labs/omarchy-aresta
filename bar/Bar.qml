@@ -83,33 +83,6 @@ Item {
     return { keys: keys, entries: out }
   }
 
-  function isTuckedRight(id) {
-    return root.settings.panels_align_right && root.controlCenter && !!root.controlCenterIcons[id] && !root.settings[root.controlCenterIcons[id]]
-  }
-
-  readonly property var visibleStatusEntries: {
-    var keys = []
-    var entries = statusEntries.entries
-    for (var i = 0; i < statusEntries.keys.length; i++) {
-      var key = statusEntries.keys[i]
-      var entry = entries[key]
-      if (entry && isTuckedRight(String(entry.id || ""))) continue
-      keys.push(key)
-    }
-    return { keys: keys, entries: entries }
-  }
-
-  readonly property var tuckedStatusEntries: {
-    var keys = []
-    var entries = statusEntries.entries
-    for (var i = 0; i < statusEntries.keys.length; i++) {
-      var key = statusEntries.keys[i]
-      var entry = entries[key]
-      if (entry && isTuckedRight(String(entry.id || ""))) keys.push(key)
-    }
-    return { keys: keys, entries: entries }
-  }
-
   readonly property var clockEntry: {
     for (var s = 0; s < sectionOrder.length; s++) {
       var list = layout[sectionOrder[s]]
@@ -437,10 +410,12 @@ Item {
     property real itemScale: 1
     property real cellWidth: 0
     readonly property bool tucked: root.controlCenter && !!root.controlCenterIcons[moduleName] && !root.settings[root.controlCenterIcons[moduleName]]
+    readonly property bool alignRight: tucked && root.settings.panels_align_right
     readonly property real scaledWidth: activeItem ? activeItem.implicitWidth * itemScale : 0
 
-    visible: !tucked
-    implicitWidth: activeItem && activeItem.visible ? Math.max(cellWidth, Math.ceil(scaledWidth)) : 0
+    opacity: tucked ? 0 : 1
+    enabled: !tucked
+    implicitWidth: !tucked && activeItem && activeItem.visible ? Math.max(cellWidth, Math.ceil(scaledWidth)) : 0
     implicitHeight: root.barSize
 
     function inject() {
@@ -460,9 +435,9 @@ Item {
       id: loader
 
       anchors.verticalCenter: parent.verticalCenter
-      x: Math.round((slot.width - slot.scaledWidth) / 2)
+      x: slot.alignRight ? 100000 : Math.round((slot.width - slot.scaledWidth) / 2)
       width: item ? item.implicitWidth : 0
-      scale: slot.itemScale
+      scale: slot.tucked ? 1 : slot.itemScale
       transformOrigin: Item.Left
       height: item ? item.implicitHeight : 0
       sourceComponent: slot.registered ? slot.registered.component : null
@@ -546,10 +521,10 @@ Item {
           }
 
           Repeater {
-            model: ScriptModel { values: root.visibleStatusEntries.keys }
+            model: ScriptModel { values: root.statusEntries.keys }
             delegate: WidgetSlot {
               required property string modelData
-              entry: root.visibleStatusEntries.entries[modelData] || ({ id: "" })
+              entry: root.statusEntries.entries[modelData] || ({ id: "" })
               itemScale: root.settings.status_icon_scale / 100
               cellWidth: root.settings.status_item_width
             }
@@ -565,24 +540,6 @@ Item {
           WidgetSlot {
             Layout.leftMargin: 3
             entry: root.clockEntry
-          }
-        }
-
-        Item {
-          anchors.right: parent.right
-          anchors.top: parent.top
-          width: 0
-          height: root.barSize
-          opacity: 0
-
-          Repeater {
-            model: ScriptModel { values: root.tuckedStatusEntries.keys }
-            delegate: WidgetSlot {
-              required property string modelData
-              entry: root.tuckedStatusEntries.entries[modelData] || ({ id: "" })
-              width: 0
-              height: root.barSize
-            }
           }
         }
 

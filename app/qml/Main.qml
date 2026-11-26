@@ -501,9 +501,10 @@ Window {
             anchors.fill: parent
             hoverEnabled: true
             onClicked: {
+              var label = entry.modelData ? (entry.modelData.label || "") : ""
               window.open(entry.sectionId)
               search.text = ""
-              window.target = entry.modelData.label
+              window.target = label
             }
           }
         }
