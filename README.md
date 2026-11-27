@@ -5,10 +5,10 @@ A macOS look for [Omarchy](https://omarchy.org) 4.5 or newer.
 | Part | What you get |
 | --- | --- |
 | [Menu bar](#menu-bar) | A Mac-style top bar in place of the Omarchy bar |
-| [Control Center](#control-center) | One panel for Wi-Fi, Bluetooth, Focus, display, sound and media |
+| [Control Center](#control-center) | Floating controls for Wi-Fi, Bluetooth, Focus, theme, Night Light, display, sound and media |
 | [Spotlight](#spotlight) | The Omarchy menu drawn as macOS Spotlight |
 | [Title bars](#title-bars-and-windows) | Traffic lights on floating workspaces, rounded corners everywhere |
-| [Themes](#themes) | OSX Light and OSX Dark |
+| [Themes](#themes) | Works with every Omarchy theme, plus OSX Light and OSX Dark |
 | [Shortcuts](#keyboard-shortcuts) | Super+Tab, Super+Q and other macOS keys on Super |
 | [Cupertino Settings](#cupertino-settings) | One app that turns each part on or off |
 
@@ -17,7 +17,7 @@ See [Install](#install) to get started.
 
 ## Menu bar
 
-![Turning the Cupertino menu bar on in Cupertino Settings](docs/media/menu-bar.gif)
+![Turning on the Cupertino menu bar in Cupertino Settings to replace the default Omarchy bar](docs/media/menu-bar.gif)
 
 The menu bar replaces the Omarchy bar. It is sized and spaced like the macOS
 menu bar.
@@ -30,21 +30,27 @@ menu bar.
 
 ## Control Center
 
-![Opening the Control Center, its Wi-Fi details and its sound details](docs/media/control-center.gif)
+![Opening the Control Center pills, then the Wi-Fi and the sound panels, in the top-right corner](docs/media/control-center.gif)
 
-The Control Center sits next to the clock. One panel:
+The Control Center button sits next to the clock. It opens a group of
+floating pills in the top-right corner, in the style of macOS Tahoe. The
+pills:
 
-- turns Wi-Fi, Bluetooth and Focus on or off;
-- picks the sound output;
-- sets the display brightness and the volume;
-- controls the media that plays.
+- turn Wi-Fi, Bluetooth and Focus on or off;
+- switch between the light and the dark theme, and turn the night light on
+  or off;
+- set the display brightness and the volume;
+- control the media that plays.
+
+A chevron shows when you point at a pill. It opens Omarchy's own panel, such
+as the Wi-Fi or the sound panel, in the same corner.
 
 While it is on, the bar hides Omarchy's network, Bluetooth, sound, system
 monitor and battery icons, unless you keep one in the bar.
 
 ## Spotlight
 
-![Turning Spotlight on, then searching for an app and doing math](docs/media/spotlight.gif)
+![Opening Spotlight, then searching for an app and doing math](docs/media/spotlight.gif)
 
 Super+Space, the bar's menu button and `omarchy-menu` open one search field
 with a blinking cursor. Results show apps first, then menu rows with their
@@ -68,7 +74,7 @@ path.
 
 ## Title bars and windows
 
-![Turning title bars on for a floating workspace](docs/media/title-bars.gif)
+![Turning a workspace floating, then opening and focusing windows with title bars](docs/media/title-bars.gif)
 
 - **Windows on floating workspaces** get a title bar with traffic lights:
   close, minimize and maximize on the left, grey when the window is
@@ -82,11 +88,21 @@ title bars.
 
 ## Themes
 
-Two Omarchy themes in macOS system colors: OSX Light and OSX Dark. Each has
-the Yaru blue icons and an original gradient background. Pick them in the
-Omarchy theme menu or with `omarchy-theme-set "osx light"`.
+![OSX Light on the left and OSX Dark on the right](docs/media/themes.png)
+
+Every installed Omarchy theme is supported. The menu bar, Control Center,
+Spotlight, title bars, app switcher and Cupertino Settings follow your active
+theme's colors. In Cupertino Settings under Appearance, pick any installed
+Omarchy theme as your light theme or dark theme, and switch manually or on Auto
+(sunrise/sunset or a custom schedule).
+
+Two macOS-style themes are included: **OSX Light** and **OSX Dark**, each with
+Yaru blue icons and an original gradient background. Pick them in Cupertino
+Settings, the Omarchy theme menu or with `omarchy-theme-set "osx light"`.
 
 ## Keyboard shortcuts
+
+![The app switcher strip in the middle of the screen, over three windows](docs/media/switcher.png)
 
 | Shortcut | Action |
 | --- | --- |
@@ -109,12 +125,14 @@ working when you switch back to the Omarchy bar.
 
 ## Cupertino Settings
 
+![The Appearance section of Cupertino Settings, with the theme preview and the Auto schedule](docs/media/settings.png)
+
 Cupertino Settings is a small app in the style of macOS System Settings.
 Open it from the app launcher.
 
 | Section | What you set |
 | --- | --- |
-| Appearance | Light, Dark or Auto; the light and the dark theme from the installed Omarchy themes, in lists that follow the themes you add or remove while the window is open; window shadows; translucent panel backgrounds and opacity for Control Center, Spotlight and the app switcher. It also shows the colors of the current theme. Auto picks the light theme at sunrise and the dark theme at sunset, or at the two times you set under Schedule, Custom. |
+| Appearance | Light, Dark or Auto; the light and the dark theme from the installed Omarchy themes, in lists that follow the themes you add or remove while the window is open; window shadows; translucent panel backgrounds and opacity for Control Center, Spotlight and the app switcher; the Control Center and the status panels in the top-right corner. It also shows the colors of the current theme. Auto picks the light theme at sunrise and the dark theme at sunset, or at the two times you set under Schedule, Custom. |
 | Wallpaper | The current wallpaper and a switch that keeps it when the theme changes. It lists the pictures of the theme, of `~/.config/omarchy/backgrounds/<theme>` and of folders you add. Add Photo copies a picture into `~/.config/omarchy/backgrounds/<theme>`. |
 | Menu Bar | The menu bar itself; desktops in the bar (after the menus, in the center or before the status icons, as numbers or dots); the bar background opacity; the clock format. |
 | Spotlight | Spotlight itself (off gives back the Omarchy menu); size from 80% to 150%; a gray or theme accent selected row; the filter buttons; open with only the search field until you type; keyboard hints at the bottom of the card; lock the card's place and size; put it back at its default place and height. |
