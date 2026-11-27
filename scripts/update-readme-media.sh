@@ -60,7 +60,7 @@ keys() {
 }
 
 write_home() {
-  local mode=$1 cursor=$2
+  local mode=$1 cursor=$2 bar=$3
   local home="$WORK/home" repo="$WORK/repo"
   local plugins="$home/.config/omarchy/plugins" state="$home/.local/state/omarchy"
   local next next_dark=false invisible=true app
@@ -110,7 +110,7 @@ EOF
   "version": 1,
   "idle": { "screensaver": 0, "lock": 0 },
   "bar": {
-    "id": "$PLUGIN",
+    "id": "$bar",
     "position": "top",
     "background": "opaque",
     "layout": {
@@ -157,15 +157,15 @@ package.loaded["default.hypr.autostart"] = true
 require("default.hypr.omarchy")
 require("hypr.omarchy-cupertino")
 require("default.hypr.toggles")
+hl.env("XCURSOR_THEME", "Adwaita")
+hl.env("XCURSOR_SIZE", "48")
+hl.env("HYPRCURSOR_SIZE", "48")
 hl.config({
   misc = { disable_hyprland_logo = true, disable_splash_rendering = true, disable_watchdog_warning = true },
   debug = { suppress_errors = true },
   ecosystem = { no_update_news = true, no_donation_nag = true },
   cursor = { no_hardware_cursors = 1, invisible = $invisible },
 })
-hl.on("hyprland.start", function()
-  hl.exec_cmd("quickshell -n -p " .. os.getenv("OMARCHY_PATH") .. "/shell")
-end)
 hl.monitor({ output = "", mode = "${WIDTH}x${HEIGHT}@60", position = "0x0", scale = $SCALE })
 EOF
 }
@@ -198,6 +198,14 @@ write_sandbox() {
     --setenv LANG "${LANG:-C.UTF-8}"
     --setenv XDG_RUNTIME_DIR "$HOST_RUNTIME"
     --setenv XDG_DATA_DIRS /usr/share
+    --setenv XDG_CURRENT_DESKTOP Hyprland
+    --setenv XDG_SESSION_DESKTOP Hyprland
+    --setenv XDG_SESSION_TYPE wayland
+    --setenv QT_QPA_PLATFORM wayland
+    --setenv GDK_BACKEND wayland
+    --setenv XCURSOR_THEME Adwaita
+    --setenv XCURSOR_SIZE 48
+    --setenv HYPRCURSOR_SIZE 48
     --setenv OMARCHY_PATH "$OMARCHY_PATH"
     --setenv PATH "$OMARCHY_PATH/bin:/usr/local/bin:/usr/bin"
     --setenv PULSE_SERVER /dev/null
@@ -242,34 +250,110 @@ launch() {
   "$WORK/launch.sh" &
 }
 
-wait_for_session() {
-  local _
+is_descendant() {
+  local pid=$1 ancestor=$2 ppid
 
-  for _ in $(seq 1 80); do
+  while [[ $pid =~ ^[0-9]+$ ]] && (( pid > 1 )); do
+    [[ $pid == "$ancestor" ]] && return 0
+    ppid=$(awk '/^PPid:/ { print $2 }' "/proc/$pid/status" 2>/dev/null) || return 1
+    [[ -n $ppid && $ppid != "$pid" ]] || return 1
+    pid=$ppid
+  done
+  return 1
+}
+
+place_host_window() {
+  local bpid candidate pid addr ws floating w h
+
+  [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]] || return 0
+  [[ -s $WORK/pid ]] || return 1
+  bpid=$(<"$WORK/pid")
+  addr=""
+  while IFS=$'\t' read -r candidate pid ws floating w h; do
+    if [[ -n $candidate ]] && is_descendant "$pid" "$bpid"; then
+      addr=$candidate
+      break
+    fi
+  done < <(hyprctl clients -j 2>/dev/null | jq -r '.[] | select(.class == "aquamarine") | [.address, (.pid|tostring), .workspace.name, (.floating|tostring), (.size[0]|tostring), (.size[1]|tostring)] | @tsv' 2>/dev/null)
+  [[ -n $addr ]] || return 1
+  hyprctl dispatch "hl.dsp.window.set_prop({ prop = 'render_unfocused', value = '1', window = 'address:$addr' })" >/dev/null 2>&1 || true
+  if [[ $ws == cupertino-media && $floating == true && $w == "$WIDTH" && $h == "$HEIGHT" ]]; then
+    return 0
+  fi
+  [[ $ws == cupertino-media ]] || hyprctl dispatch "hl.dsp.window.move({ workspace = 'name:cupertino-media', follow = false, window = 'address:$addr' })" >/dev/null 2>&1 || true
+  [[ $floating == true ]] || hyprctl dispatch "hl.dsp.window.float({ action = 'on', window = 'address:$addr' })" >/dev/null 2>&1 || true
+  [[ $w == "$WIDTH" && $h == "$HEIGHT" ]] || hyprctl dispatch "hl.dsp.window.resize({ x = $WIDTH, y = $HEIGHT, relative = false, window = 'address:$addr' })" >/dev/null 2>&1 || true
+  return 1
+}
+
+wait_for_session() {
+  local _ stable=0
+
+  for _ in $(seq 1 120); do
     NESTED_DISPLAY="$(find "$WORK/runtime" -maxdepth 1 -name 'wayland-[0-9]*' ! -name '*.lock' -printf '%f\n' | head -n1)"
     NESTED_SIGNATURE="$(find "$WORK/runtime/hypr" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | head -n1 || true)"
-    if [[ -n $NESTED_DISPLAY && -n $NESTED_SIGNATURE ]] &&
-      [[ $(in_session omarchy-shell shell ping 2>/dev/null) == ok ]]; then
+    if place_host_window &&
+      [[ -n $NESTED_DISPLAY && -n $NESTED_SIGNATURE ]] &&
+      in_session hyprctl monitors -j 2>/dev/null | jq -e --argjson w "$WIDTH" --argjson h "$HEIGHT" 'any(.[]; .width == $w and .height == $h)' >/dev/null 2>&1; then
+      stable=$((stable + 1))
+      (( stable >= 2 )) && break
+    else
+      stable=0
+    fi
+    sleep 0.25
+  done
+  if (( stable < 2 )); then
+    tail -n 20 "$WORK/hyprland.log" >&2 || true
+    fail "the nested session did not start"
+  fi
+
+  in_session hyprctl eval 'hl.exec_cmd("quickshell -n -p " .. os.getenv("OMARCHY_PATH") .. "/shell")' >/dev/null
+  for _ in $(seq 1 80); do
+    if [[ $(in_session omarchy-shell shell ping 2>/dev/null) == ok ]]; then
       sleep 2
       return
     fi
     sleep 0.25
   done
   tail -n 20 "$WORK/hyprland.log" >&2 || true
-  fail "the nested session did not start"
+  fail "omarchy-shell did not start"
 }
 
 start_session() {
-  local mode=${1:-tiled} cursor=${2:-hidden}
+  local mode=${1:-tiled} cursor=${2:-hidden} bar=${3:-$PLUGIN}
 
   WORK="$(mktemp -d /tmp/cupertino-media.XXXXXX)"
-  write_home "$mode" "$cursor"
+  write_home "$mode" "$cursor" "$bar"
   write_sandbox
   launch
   wait_for_session
   in_session gsettings set org.gnome.desktop.interface color-scheme prefer-light
   in_session gsettings set org.gnome.desktop.interface icon-theme "$(<"$REPO/themes/osx-light/icons.theme")"
+  if [[ $cursor == shown ]]; then
+    in_session gsettings set org.gnome.desktop.interface cursor-theme Adwaita
+    in_session gsettings set org.gnome.desktop.interface cursor-size 48
+    in_session hyprctl setcursor Adwaita 48 >/dev/null 2>&1 || true
+  fi
   hypr "hl.dsp.cursor.move({ x = 620, y = 540 })"
+}
+
+restart_shell() {
+  local _
+
+  in_session quickshell kill -p "$OMARCHY_PATH/shell" --any-display >/dev/null 2>&1 || true
+  for _ in $(seq 1 40); do
+    [[ $(in_session omarchy-shell shell ping 2>/dev/null) != ok ]] && break
+    sleep 0.1
+  done
+  in_session hyprctl eval 'hl.exec_cmd("quickshell -n -p " .. os.getenv("OMARCHY_PATH") .. "/shell")' >/dev/null
+  for _ in $(seq 1 80); do
+    if [[ $(in_session omarchy-shell shell ping 2>/dev/null) == ok ]]; then
+      sleep 0.6
+      return
+    fi
+    sleep 0.2
+  done
+  fail "omarchy-shell did not restart"
 }
 
 stop_session() {
@@ -326,7 +410,10 @@ open_app() {
 
   hypr "hl.dsp.exec_cmd('$command'${rules:+, $rules})"
   for _ in $(seq 1 60); do
-    in_session hyprctl clients -j | jq -e --arg class "$class" 'any(.[]; .class == $class)' >/dev/null && return
+    if in_session hyprctl clients -j | jq -e --arg class "$class" 'any(.[]; .class == $class)' >/dev/null; then
+      sleep 0.3
+      return
+    fi
     sleep 0.25
   done
   fail "$class did not open"
@@ -356,9 +443,20 @@ focus() {
   hypr "hl.dsp.window.alter_zorder({ mode = 'top', window = 'class:$1' })"
 }
 
+glide() {
+  local x1=$1 y1=$2 x2=$3 y2=$4 steps=8 i x y
+
+  for (( i = 1; i <= steps; i++ )); do
+    x=$((x1 + (x2 - x1) * i / steps))
+    y=$((y1 + (y2 - y1) * i / steps))
+    hypr "hl.dsp.cursor.move({ x = $x, y = $y })"
+    sleep 0.04
+  done
+}
+
 click() {
   hypr "hl.dsp.cursor.move({ x = $1, y = $2 })"
-  sleep 0.5
+  sleep 0.4
   hypr "hl.dsp.send_shortcut({ mods = '', key = 'mouse:272' })"
   hypr "hl.dsp.cursor.move({ x = $(($1 + 1)), y = $2 })"
 }
@@ -424,46 +522,63 @@ write_png() {
 }
 
 target_menu_bar() {
-  start_session floating shown
+  start_session floating shown omarchy.bar
   open_files
   open_settings
   place "$FILES" 60 80 600 420
   place "$SETTINGS" 232 68 760 480
   focus "$SETTINGS"
   click 316 215
+  hypr "hl.dsp.cursor.move({ x = 620, y = 290 })"
   sleep 1
   record
-  sleep 1.2
-  click 939 410
-  sleep 2.2
+  sleep 1.4
+  glide 620 290 935 148
+  click 935 148
+  restart_shell
+  sleep 1.8
+  glide 935 148 120 440
+  sleep 0.25
   focus "$FILES"
   sleep 1.6
+  glide 360 290 760 115
+  sleep 0.25
   focus "$SETTINGS"
-  sleep 1
-  set_theme osx-dark
-  sleep 3
+  sleep 1.8
   write_gif menu-bar
 }
 
 target_control_center() {
-  start_session floating
+  start_session floating shown
   open_files
   place "$FILES" 60 90 600 420
+  hypr "hl.dsp.cursor.move({ x = 680, y = 260 })"
   sleep 1
   record
-  sleep 1
+  sleep 0.9
+  glide 680 260 877 14
+  sleep 0.35
   shell cupertino-control-center reveal
-  sleep 2.8
-  shell cupertino-control-center dismiss
+  sleep 1.4
+  glide 877 14 832 72
   sleep 0.6
+  shell cupertino-control-center dismiss
   shell shell toggle omarchy.network
-  sleep 2.4
+  sleep 2
+  glide 832 72 877 14
+  sleep 0.35
   shell shell toggle omarchy.network
-  sleep 0.5
+  shell cupertino-control-center reveal
+  sleep 0.8
+  glide 877 14 995 390
+  sleep 0.6
+  shell cupertino-control-center dismiss
   shell shell toggle omarchy.audio
-  sleep 2.4
+  sleep 2
+  glide 995 390 680 260
+  sleep 0.3
   shell shell toggle omarchy.audio
-  sleep 1
+  sleep 0.8
   write_gif control-center
 }
 
@@ -522,8 +637,11 @@ target_themes() {
   set_theme osx-dark
   sleep 2.5
   shot "$WORK/dark.ppm"
-  magick "$WORK/light.ppm" \( "$WORK/dark.ppm" -gravity east -crop 50%x100%+0+0 +repage \) \
-    -gravity east -composite "$WORK/themes.ppm"
+  magick "$WORK/light.ppm" \
+    \( "$WORK/dark.ppm" \( -size "${WIDTH}x${HEIGHT}" xc:black -fill white \
+      -draw "polygon $((WIDTH * 65 / 100)),0 $WIDTH,0 $WIDTH,$HEIGHT $((WIDTH * 35 / 100)),$HEIGHT" \) \
+      -alpha off -compose CopyOpacity -composite \) \
+    -compose Over -composite "$WORK/themes.ppm"
   write_png "$WORK/themes.ppm" themes
 }
 
@@ -546,6 +664,7 @@ target_settings() {
   start_session floating
   open_settings
   place "$SETTINGS" 82 68 860 488
+  focus "$SETTINGS"
   sleep 1
   shot "$WORK/settings.ppm"
   write_png "$WORK/settings.ppm" settings
