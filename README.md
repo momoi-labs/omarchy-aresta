@@ -8,7 +8,7 @@ A macOS look for [Omarchy](https://omarchy.org) 4.5 or newer.
 | [Control Center](#control-center) | Floating controls for Wi-Fi, Bluetooth, Focus, theme, Night Light, display, sound and media |
 | [Spotlight](#spotlight) | The Omarchy menu drawn as macOS Spotlight |
 | [Title bars](#title-bars-and-windows) | Traffic lights on floating workspaces, rounded corners everywhere |
-| [Themes](#themes) | OSX Light and OSX Dark |
+| [Themes](#themes) | Works with every Omarchy theme, plus OSX Light and OSX Dark |
 | [Shortcuts](#keyboard-shortcuts) | Super+Tab, Super+Q and other macOS keys on Super |
 | [Cupertino Settings](#cupertino-settings) | One app that turns each part on or off |
 
@@ -17,7 +17,7 @@ See [Install](#install) to get started.
 
 ## Menu bar
 
-![Showing desktops in the menu bar, then switching from OSX Light to OSX Dark](docs/media/menu-bar.gif)
+![Turning on the Cupertino menu bar in Cupertino Settings to replace the default Omarchy bar](docs/media/menu-bar.gif)
 
 The menu bar replaces the Omarchy bar. It is sized and spaced like the macOS
 menu bar.
@@ -90,9 +90,15 @@ title bars.
 
 ![OSX Light on the left and OSX Dark on the right](docs/media/themes.png)
 
-Two Omarchy themes in macOS system colors: OSX Light and OSX Dark. Each has
-the Yaru blue icons and an original gradient background. Pick them in the
-Omarchy theme menu or with `omarchy-theme-set "osx light"`.
+Every installed Omarchy theme is supported. The menu bar, Control Center,
+Spotlight, title bars, app switcher and Cupertino Settings follow your active
+theme's colors. In Cupertino Settings under Appearance, pick any installed
+Omarchy theme as your light theme or dark theme, and switch manually or on Auto
+(sunrise/sunset or a custom schedule).
+
+Two macOS-style themes are included: **OSX Light** and **OSX Dark**, each with
+Yaru blue icons and an original gradient background. Pick them in Cupertino
+Settings, the Omarchy theme menu or with `omarchy-theme-set "osx light"`.
 
 ## Keyboard shortcuts
 
