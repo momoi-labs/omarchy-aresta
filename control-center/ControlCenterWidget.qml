@@ -9,7 +9,7 @@ import qs.Ui
 
 BarWidget {
   id: root
-  moduleName: "dev.momoi-labs.omarchy-cupertino.control-center"
+  moduleName: "dev.momoi-labs.aresta.control-center"
 
   property var info: ({})
   property bool open: false
@@ -67,7 +67,7 @@ BarWidget {
 
   FileView {
     id: settingsFile
-    path: Quickshell.env("HOME") + "/.config/omarchy-cupertino/settings.toml"
+    path: Quickshell.env("HOME") + "/.config/aresta/settings.toml"
     watchChanges: true
     printErrors: false
     onFileChanged: reload()
@@ -166,7 +166,7 @@ BarWidget {
   }
 
   IpcHandler {
-    target: "cupertino-control-center"
+    target: "aresta-control-center"
     function reveal(): void { root.pinned = true; root.open = true }
     function dismiss(): void { root.close() }
     function toggle(): void { root.pinned = false; root.open = !root.open }

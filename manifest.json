@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "id": "dev.momoi-labs.omarchy-cupertino",
-  "name": "Cupertino",
+  "id": "dev.momoi-labs.aresta",
+  "name": "Aresta",
   "version": "0.1.0",
   "author": "Sebastian Webber",
-  "description": "macOS look for Omarchy: a Mac-style top bar, traffic-light title bars on floating workspaces, rounded corners and soft shadows on every window",
+  "description": "A crafted desktop, with rounded edges: a slim top bar, traffic-light title bars on floating workspaces, rounded corners and soft shadows on every window",
   "kinds": [
     "bar"
   ],

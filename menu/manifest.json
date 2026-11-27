@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "id": "dev.momoi-labs.omarchy-cupertino.menu",
-  "name": "Cupertino Spotlight",
+  "id": "dev.momoi-labs.aresta.menu",
+  "name": "Aresta Search",
   "version": "0.1.0",
   "author": "Sebastian Webber",
-  "description": "The Omarchy menu drawn as macOS Spotlight",
+  "description": "The Omarchy menu as one search field",
   "kinds": [
     "menu",
     "bar-widget"
@@ -15,7 +15,7 @@
     "barWidget": "BarWidget.qml"
   },
   "barWidget": {
-    "displayName": "Cupertino Spotlight",
+    "displayName": "Aresta Search",
     "description": "Launches the Omarchy menu",
     "category": "Compositor",
     "allowMultiple": false

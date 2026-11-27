@@ -146,8 +146,8 @@ Item {
   property color scrim: "transparent"
   property color selectedBackground: Commons.Color.menu.selectedText
   property color selectedText: selectedBackground.hslLightness > 0.6 ? "#000000" : "#ffffff"
-  readonly property var spotlightSettings: {
-    var values = { spotlight_size: 100, spotlight_selection: "gray", spotlight_shortcuts: false, spotlight_movable: true, spotlight_position: [], spotlight_height: [], spotlight_filters: false, spotlight_menu_on_open: true, panels_translucent: true, panels_opacity: 70 }
+  readonly property var searchSettings: {
+    var values = { search_size: 100, search_selection: "gray", search_shortcuts: false, search_movable: true, search_position: [], search_height: [], search_filters: false, search_menu_on_open: true, panels_translucent: true, panels_opacity: 70 }
     var lines = settingsFile.text().split("\n")
     for (var i = 0; i < lines.length; i++) {
       var match = lines[i].match(/^\s*(\w+)\s*=\s*(.*?)\s*$/)
@@ -166,18 +166,18 @@ Item {
     }
     return values
   }
-  readonly property bool panelsTranslucent: root.spotlightSettings.panels_translucent
-  readonly property real panelsAlpha: Math.max(0.3, Math.min(1, root.spotlightSettings.panels_opacity / 100))
+  readonly property bool panelsTranslucent: root.searchSettings.panels_translucent
+  readonly property real panelsAlpha: Math.max(0.3, Math.min(1, root.searchSettings.panels_opacity / 100))
   readonly property color cardBackground: root.panelsTranslucent ? Qt.rgba(root.background.r, root.background.g, root.background.b, root.panelsAlpha) : root.background
   readonly property color cardBorder: root.panelsTranslucent ? (root.lightCard ? Qt.rgba(0, 0, 0, 0.14) : Qt.rgba(1, 1, 1, 0.22)) : root.border
-  readonly property bool movable: root.spotlightSettings.spotlight_movable
-  readonly property bool showFilters: !root.dmenuActive && root.spotlightSettings.spotlight_filters
-  readonly property bool emptyRoot: !root.dmenuActive && !root.spotlightSettings.spotlight_menu_on_open && root.activeMenu === "root" && root.filterText.trim() === ""
+  readonly property bool movable: root.searchSettings.search_movable
+  readonly property bool showFilters: !root.dmenuActive && root.searchSettings.search_filters
+  readonly property bool emptyRoot: !root.dmenuActive && !root.searchSettings.search_menu_on_open && root.activeMenu === "root" && root.filterText.trim() === ""
   readonly property bool listShown: root.mode !== "input" && !root.emptyRoot
   readonly property bool headerDivider: root.dmenuActive || root.showFilters || root.listShown
-  readonly property real sizeScale: Math.max(80, Math.min(150, root.spotlightSettings.spotlight_size)) / 100
-  readonly property bool showFooter: root.dmenuActive || root.spotlightSettings.spotlight_shortcuts
-  readonly property bool grayRows: !root.dmenuActive && root.spotlightSettings.spotlight_selection !== "accent"
+  readonly property real sizeScale: Math.max(80, Math.min(150, root.searchSettings.search_size)) / 100
+  readonly property bool showFooter: root.dmenuActive || root.searchSettings.search_shortcuts
+  readonly property bool grayRows: !root.dmenuActive && root.searchSettings.search_selection !== "accent"
   readonly property color rowFill: root.grayRows ? Util.alpha(root.lightCard ? "#000000" : "#ffffff", root.lightCard ? 0.12 : 0.15) : root.selectedBackground
   readonly property color rowInk: root.grayRows ? root.foreground : root.selectedText
   readonly property int cornerRadius: root.dmenuActive ? 16 : root.px(25)
@@ -210,7 +210,7 @@ Item {
 
   FileView {
     id: settingsFile
-    path: Quickshell.env("HOME") + "/.config/omarchy-cupertino/settings.toml"
+    path: Quickshell.env("HOME") + "/.config/aresta/settings.toml"
     watchChanges: true
     printErrors: false
     onFileChanged: reload()
@@ -224,7 +224,7 @@ Item {
   }
 
   function savedEntry(key, name) {
-    var saved = root.spotlightSettings[key]
+    var saved = root.searchSettings[key]
     for (var i = 0; i < saved.length; i++) {
       var at = saved[i].lastIndexOf(":")
       if (at > 0 && saved[i].substring(0, at) === name) {
@@ -238,7 +238,7 @@ Item {
   function saveEntries(name, entries) {
     var text = settingsFile.text()
     for (var key in entries) {
-      var saved = root.spotlightSettings[key].filter(function(entry) { return entry.indexOf(name + ":") !== 0 })
+      var saved = root.searchSettings[key].filter(function(entry) { return entry.indexOf(name + ":") !== 0 })
       saved.push(name + ":" + entries[key].join(","))
       var line = key + " = [" + saved.map(function(entry) { return '"' + entry + '"' }).join(", ") + "]"
       var pattern = new RegExp("^\\s*" + key + "\\s*=.*$", "m")
@@ -1514,7 +1514,7 @@ Item {
       movedTop = Math.round(Math.max(topLimit, Math.min(dragCard.y + dy, bottomLimit - card.height, lowestTop)))
     }
     function releaseDrag() {
-      if (dragging && targetScreen) root.saveEntries(targetScreen.name, { spotlight_position: [movedLeft, movedTop] })
+      if (dragging && targetScreen) root.saveEntries(targetScreen.name, { search_position: [movedLeft, movedTop] })
       dragging = false
     }
     property real resizePress
@@ -1545,8 +1545,8 @@ Item {
     }
     function releaseResize(fromTop) {
       if (resizing && targetScreen) {
-        var entries = { spotlight_height: [movedHeight] }
-        if (fromTop) entries.spotlight_position = [movedLeft, movedTop]
+        var entries = { search_height: [movedHeight] }
+        if (fromTop) entries.search_position = [movedLeft, movedTop]
         root.saveEntries(targetScreen.name, entries)
       }
       resizing = false
@@ -1555,8 +1555,8 @@ Item {
     onTargetScreenChanged: {
       cardTop = -1
       maxRowsHeight = -1
-      var saved = targetScreen ? root.savedEntry("spotlight_position", targetScreen.name) : null
-      var size = targetScreen ? root.savedEntry("spotlight_height", targetScreen.name) : null
+      var saved = targetScreen ? root.savedEntry("search_position", targetScreen.name) : null
+      var size = targetScreen ? root.savedEntry("search_height", targetScreen.name) : null
       movedLeft = saved && saved.length === 2 ? Math.max(0, saved[0]) : -1
       movedTop = saved && saved.length === 2 ? Math.max(0, saved[1]) : -1
       movedHeight = size && size.length === 1 ? Math.max(1, size[0]) : -1

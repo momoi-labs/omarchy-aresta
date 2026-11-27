@@ -4,8 +4,8 @@ set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MEDIA="$REPO/docs/media"
 OMARCHY_PATH="${OMARCHY_PATH:-/usr/share/omarchy}"
-PLUGIN=dev.momoi-labs.omarchy-cupertino
-GIFS=(menu-bar control-center spotlight title-bars)
+PLUGIN=dev.momoi-labs.aresta
+GIFS=(menu-bar control-center search title-bars)
 PNGS=(themes switcher settings)
 WIDTH=1280
 HEIGHT=720
@@ -15,7 +15,7 @@ GIF_LIMIT=$((4 * 1024 * 1024))
 HOST_RUNTIME="${XDG_RUNTIME_DIR:-/run/user/$UID}"
 DEMO_APPS=(org.gnome.Nautilus omacalc omawrite org.gnome.Evince imv mpv libreoffice-calc libreoffice-writer libreoffice-impress)
 FILES=org.gnome.Nautilus
-SETTINGS=cupertino-settings
+SETTINGS=aresta-settings
 CALCULATOR=omacalc
 
 WORK=""
@@ -65,15 +65,15 @@ write_home() {
   local plugins="$home/.config/omarchy/plugins" state="$home/.local/state/omarchy"
   local next next_dark=false invisible=true app
 
-  mkdir -p "$WORK"/{runtime,apps,repo} "$plugins" "$home/.config/omarchy-cupertino" "$home/.config/hypr" \
-    "$state/current" "$state/toggles/hypr" "$state/workspace-layouts" "$home/.local/state/omarchy-cupertino" \
-    "$home/.cache" "$home/.local/share" "$home"/{Documents,Downloads,Music,Pictures,Videos}
+  mkdir -p "$WORK"/{runtime,apps,repo} "$plugins" "$home/.config/aresta" "$home/.config/hypr" \
+    "$state/current" "$state/toggles/hypr" "$state/workspace-layouts" "$home/.local/state/aresta" \
+    "$home/.cache" "$home"/{Documents,Downloads,Music,Pictures,Videos}
   chmod 700 "$WORK/runtime"
 
   ln -s "$repo" "$plugins/$PLUGIN"
   ln -s "$repo/menu" "$plugins/$PLUGIN.menu"
   ln -s "$repo/switcher" "$plugins/$PLUGIN.switcher"
-  ln -s "$repo/hypr/omarchy-cupertino.lua" "$home/.config/hypr/omarchy-cupertino.lua"
+  ln -s "$repo/hypr/aresta.lua" "$home/.config/hypr/aresta.lua"
   cp -r "$REPO/control-center" "$plugins/$PLUGIN.control-center"
   cat >"$plugins/$PLUGIN.control-center/data.sh" <<'EOF'
 #!/bin/bash
@@ -98,8 +98,8 @@ EOF
   cat >"$WORK/apps/$SETTINGS.desktop" <<EOF
 [Desktop Entry]
 Type=Application
-Name=Cupertino Settings
-Exec=$repo/app/target/release/cupertino-settings
+Name=Aresta Settings
+Exec=$repo/app/target/release/aresta-settings
 Icon=preferences-system
 Categories=Settings;
 StartupWMClass=$SETTINGS
@@ -126,7 +126,7 @@ EOF
 }
 EOF
 
-  cat >"$home/.config/omarchy-cupertino/settings.toml" <<'EOF'
+  cat >"$home/.config/aresta/settings.toml" <<'EOF'
 appearance_auto = true
 appearance_auto_schedule = "custom"
 appearance_auto_light = "07:00"
@@ -148,14 +148,14 @@ EOF
     next_dark=false
   fi
   printf 'next=%s\nnext_dark=%s\nschedule=custom\n' "$next" "$next_dark" \
-    >"$home/.local/state/omarchy-cupertino/auto-status"
+    >"$home/.local/state/aresta/auto-status"
 
   [[ $cursor == shown ]] && invisible=false
   cat >"$WORK/hyprland.lua" <<EOF
 dofile(os.getenv("OMARCHY_PATH") .. "/default/hypr/bootstrap.lua")
 package.loaded["default.hypr.autostart"] = true
 require("default.hypr.omarchy")
-require("hypr.omarchy-cupertino")
+require("hypr.aresta")
 require("default.hypr.toggles")
 hl.env("XCURSOR_THEME", "Adwaita")
 hl.env("XCURSOR_SIZE", "48")
@@ -241,7 +241,7 @@ write_sandbox() {
 }
 
 launch() {
-  local rules="{ workspace = 'name:cupertino-media silent', float = true, size = { $WIDTH, $HEIGHT }, render_unfocused = true }"
+  local rules="{ workspace = 'name:aresta-media silent', float = true, size = { $WIDTH, $HEIGHT }, render_unfocused = true }"
 
   if [[ -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]] &&
     hyprctl eval "hl.exec_cmd('$WORK/launch.sh', $rules)" >/dev/null 2>&1; then
@@ -277,10 +277,10 @@ place_host_window() {
   done < <(hyprctl clients -j 2>/dev/null | jq -r '.[] | select(.class == "aquamarine") | [.address, (.pid|tostring), .workspace.name, (.floating|tostring), (.size[0]|tostring), (.size[1]|tostring)] | @tsv' 2>/dev/null)
   [[ -n $addr ]] || return 1
   hyprctl dispatch "hl.dsp.window.set_prop({ prop = 'render_unfocused', value = '1', window = 'address:$addr' })" >/dev/null 2>&1 || true
-  if [[ $ws == cupertino-media && $floating == true && $w == "$WIDTH" && $h == "$HEIGHT" ]]; then
+  if [[ $ws == aresta-media && $floating == true && $w == "$WIDTH" && $h == "$HEIGHT" ]]; then
     return 0
   fi
-  [[ $ws == cupertino-media ]] || hyprctl dispatch "hl.dsp.window.move({ workspace = 'name:cupertino-media', follow = false, window = 'address:$addr' })" >/dev/null 2>&1 || true
+  [[ $ws == aresta-media ]] || hyprctl dispatch "hl.dsp.window.move({ workspace = 'name:aresta-media', follow = false, window = 'address:$addr' })" >/dev/null 2>&1 || true
   [[ $floating == true ]] || hyprctl dispatch "hl.dsp.window.float({ action = 'on', window = 'address:$addr' })" >/dev/null 2>&1 || true
   [[ $w == "$WIDTH" && $h == "$HEIGHT" ]] || hyprctl dispatch "hl.dsp.window.resize({ x = $WIDTH, y = $HEIGHT, relative = false, window = 'address:$addr' })" >/dev/null 2>&1 || true
   return 1
@@ -322,7 +322,7 @@ wait_for_session() {
 start_session() {
   local mode=${1:-tiled} cursor=${2:-hidden} bar=${3:-$PLUGIN}
 
-  WORK="$(mktemp -d /tmp/cupertino-media.XXXXXX)"
+  WORK="$(mktemp -d /tmp/aresta-media.XXXXXX)"
   write_home "$mode" "$cursor" "$bar"
   write_sandbox
   launch
@@ -424,7 +424,7 @@ open_files() {
 }
 
 open_settings() {
-  open_app "$SETTINGS" "$WORK/repo/app/target/release/cupertino-settings"
+  open_app "$SETTINGS" "$WORK/repo/app/target/release/aresta-settings"
 }
 
 open_calculator() {
@@ -558,21 +558,21 @@ target_control_center() {
   sleep 0.9
   glide 680 260 877 14
   sleep 0.35
-  shell cupertino-control-center reveal
+  shell aresta-control-center reveal
   sleep 1.4
   glide 877 14 832 72
   sleep 0.6
-  shell cupertino-control-center dismiss
+  shell aresta-control-center dismiss
   shell shell toggle omarchy.network
   sleep 2
   glide 832 72 877 14
   sleep 0.35
   shell shell toggle omarchy.network
-  shell cupertino-control-center reveal
+  shell aresta-control-center reveal
   sleep 0.8
   glide 877 14 995 390
   sleep 0.6
-  shell cupertino-control-center dismiss
+  shell aresta-control-center dismiss
   shell shell toggle omarchy.audio
   sleep 2
   glide 995 390 680 260
@@ -582,7 +582,7 @@ target_control_center() {
   write_gif control-center
 }
 
-target_spotlight() {
+target_search() {
   start_session
   record
   sleep 1
@@ -598,7 +598,7 @@ target_spotlight() {
   sleep 0.6
   keys -k Escape
   sleep 1
-  write_gif spotlight
+  write_gif search
 }
 
 target_title_bars() {
@@ -653,10 +653,10 @@ target_switcher() {
   place "$SETTINGS" 250 86 760 480
   open_calculator
   sleep 1
-  hypr "hl.dsp.global('omarchy-cupertino:next')"
+  hypr "hl.dsp.global('aresta:next')"
   sleep 1.2
   shot "$WORK/switcher.ppm"
-  hypr "hl.dsp.global('omarchy-cupertino:cancel')"
+  hypr "hl.dsp.global('aresta:cancel')"
   write_png "$WORK/switcher.ppm" switcher
 }
 
@@ -685,7 +685,7 @@ main() {
         usage
         exit 0
         ;;
-      menu-bar | control-center | spotlight | title-bars | themes | switcher | settings)
+      menu-bar | control-center | search | title-bars | themes | switcher | settings)
         targets+=("$argument")
         ;;
       *)

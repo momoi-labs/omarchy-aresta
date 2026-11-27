@@ -1,7 +1,7 @@
 #!/bin/bash
 
-STATE=${XDG_RUNTIME_DIR:-/tmp}/cupertino-control-center
-SETTINGS_FILE=${HOME}/.config/omarchy-cupertino/settings.toml
+STATE=${XDG_RUNTIME_DIR:-/tmp}/aresta-control-center
+SETTINGS_FILE=${HOME}/.config/aresta/settings.toml
 mpris() { busctl --user call "$1" /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player "$2"; }
 
 setting_text() {

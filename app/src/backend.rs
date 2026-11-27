@@ -182,7 +182,7 @@ use std::time::{Duration, Instant, SystemTime};
 
 const RELOAD_DELAY: Duration = Duration::from_millis(250);
 const THEMES_DELAY: Duration = Duration::from_millis(300);
-const RECORD_SUBMAP: &str = "omarchy-cupertino-record";
+const RECORD_SUBMAP: &str = "aresta-record";
 
 pub struct BackendRust {
     background: QString,
@@ -384,7 +384,7 @@ impl qobject::Backend {
             .and_then(|exe| {
                 let mut command = Command::new(exe);
                 command.args(["--auto", "--force"]);
-                run_detached(command, "cupertino-settings --auto")
+                run_detached(command, "aresta-settings --auto")
             });
         self.as_mut().report(result);
     }

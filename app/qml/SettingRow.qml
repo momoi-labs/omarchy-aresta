@@ -1,7 +1,7 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
-import Cupertino as App
+import Aresta as App
 
 Item {
   id: row

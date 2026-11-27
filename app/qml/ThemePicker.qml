@@ -3,7 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Shapes
-import Cupertino as App
+import Aresta as App
 
 Rectangle {
   id: picker

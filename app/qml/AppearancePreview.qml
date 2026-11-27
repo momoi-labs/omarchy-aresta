@@ -2,7 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Effects
-import Cupertino as App
+import Aresta as App
 
 Item {
   id: root
@@ -219,7 +219,7 @@ Item {
           width: parent.width - 68
           horizontalAlignment: Text.AlignHCenter
           elide: Text.ElideRight
-          text: qsTr("seba@omarchy — ~/cupertino")
+          text: qsTr("seba@omarchy — ~/aresta")
           color: Qt.alpha(root.fg, 0.72)
           font.family: root.ui.fontFamily
           font.pixelSize: 10
@@ -239,10 +239,10 @@ Item {
         font.pixelSize: 10
         lineHeight: 1.52
         text:
-          "<font color=\"" + root.termBlue + "\"><b>~/cupertino</b></font> " +
+          "<font color=\"" + root.termBlue + "\"><b>~/aresta</b></font> " +
           "<font color=\"" + root.termMagenta + "\">main</font> " +
           "<font color=\"" + root.termGreen + "\">❯</font> cargo test --quiet<br>" +
-          "<font color=\"" + root.termCyan + "\">&nbsp;&nbsp;&nbsp;Compiling</font> cupertino-settings " +
+          "<font color=\"" + root.termCyan + "\">&nbsp;&nbsp;&nbsp;Compiling</font> aresta-settings " +
           "<font color=\"" + root.mutedInk + "\">v0.4.2</font><br>" +
           "<font color=\"" + root.termYellow + "\"><b>warning</b></font>" +
           "<font color=\"" + root.mutedInk + "\">:</font> " +

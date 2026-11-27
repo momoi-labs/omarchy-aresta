@@ -139,7 +139,7 @@ fn generate(path: &Path, size: u32) -> Result<(), String> {
         ("Thumb::Size", length.to_string()),
         ("Thumb::Image::Width", width.to_string()),
         ("Thumb::Image::Height", height.to_string()),
-        ("Software", "cupertino-settings".to_string()),
+        ("Software", "aresta-settings".to_string()),
     ];
     let written = text
         .into_iter()
@@ -237,7 +237,7 @@ mod tests {
     #[test]
     fn writes_a_thumbnail_that_passes_the_checks() {
         let _guard = ENV_LOCK.lock().unwrap();
-        let base = std::env::temp_dir().join(format!("cupertino-thumb-{}", std::process::id()));
+        let base = std::env::temp_dir().join(format!("aresta-thumb-{}", std::process::id()));
         let _ = fs::remove_dir_all(&base);
         fs::create_dir_all(&base).unwrap();
         let source = base.join("wide picture.png");
@@ -266,8 +266,7 @@ mod tests {
     #[test]
     fn retries_failed_and_deleted_thumbnails() {
         let _guard = ENV_LOCK.lock().unwrap();
-        let base =
-            std::env::temp_dir().join(format!("cupertino-thumb-queue-{}", std::process::id()));
+        let base = std::env::temp_dir().join(format!("aresta-thumb-queue-{}", std::process::id()));
         let _ = fs::remove_dir_all(&base);
         fs::create_dir_all(&base).unwrap();
         let source = base.join("retry.png");

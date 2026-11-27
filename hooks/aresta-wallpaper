@@ -2,8 +2,8 @@
 
 THEME="$1"
 STATE="$HOME/.local/state/omarchy"
-LAST="$STATE/cupertino-last-theme"
-SETTINGS="$HOME/.config/omarchy-cupertino/settings.toml"
+LAST="$STATE/aresta-last-theme"
+SETTINGS="$HOME/.config/aresta/settings.toml"
 PREVIOUS=$(cat "$LAST" 2>/dev/null || true)
 printf '%s\n' "$THEME" >"$LAST"
 

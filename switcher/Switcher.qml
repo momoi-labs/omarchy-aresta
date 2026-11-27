@@ -88,7 +88,7 @@ Item {
 
   FileView {
     id: settingsFile
-    path: Quickshell.env("HOME") + "/.config/omarchy-cupertino/settings.toml"
+    path: Quickshell.env("HOME") + "/.config/aresta/settings.toml"
     watchChanges: true
     printErrors: false
     onFileChanged: reload()
@@ -202,7 +202,7 @@ Item {
     var app = apps[selected]
     close()
     if (!app || !/^0x[0-9a-fA-F]+$/.test(app.address)) return
-    Quickshell.execDetached(["hyprctl", "eval", "package.loaded[\"omarchy-cupertino.switcher\"].activate(\"" + app.address + "\")"])
+    Quickshell.execDetached(["hyprctl", "eval", "package.loaded[\"aresta.switcher\"].activate(\"" + app.address + "\")"])
   }
 
   function slotAt(x, y) {
@@ -221,7 +221,7 @@ Item {
     var index = slotAt(x, y)
     if (!opened || index < 0) return
     selected = index
-    Quickshell.execDetached(["hyprctl", "eval", "package.loaded[\"omarchy-cupertino.switcher\"].finish(\"commit\")"])
+    Quickshell.execDetached(["hyprctl", "eval", "package.loaded[\"aresta.switcher\"].finish(\"commit\")"])
   }
 
   function scoreIcon(path) {
@@ -272,13 +272,13 @@ Item {
     function onValuesChanged() { root.reconcile() }
   }
 
-  GlobalShortcut { appid: "omarchy-cupertino"; name: "next"; description: "App switcher: next app"; onPressed: root.step(1) }
-  GlobalShortcut { appid: "omarchy-cupertino"; name: "previous"; description: "App switcher: previous app"; onPressed: root.step(-1) }
-  GlobalShortcut { appid: "omarchy-cupertino"; name: "commit"; description: "App switcher: switch to the selected app"; onPressed: root.commit() }
-  GlobalShortcut { appid: "omarchy-cupertino"; name: "cancel"; description: "App switcher: cancel"; onPressed: root.close() }
+  GlobalShortcut { appid: "aresta"; name: "next"; description: "App switcher: next app"; onPressed: root.step(1) }
+  GlobalShortcut { appid: "aresta"; name: "previous"; description: "App switcher: previous app"; onPressed: root.step(-1) }
+  GlobalShortcut { appid: "aresta"; name: "commit"; description: "App switcher: switch to the selected app"; onPressed: root.commit() }
+  GlobalShortcut { appid: "aresta"; name: "cancel"; description: "App switcher: cancel"; onPressed: root.close() }
 
   IpcHandler {
-    target: "omarchy-cupertino.switcher"
+    target: "aresta.switcher"
     function state(): string {
       return JSON.stringify({ opened: root.opened, selected: root.selected, apps: root.apps.map(function(app) { return { appId: app.appId, name: app.name, address: app.address, minimized: app.minimized, icon: app.icon } }) })
     }
@@ -293,7 +293,7 @@ Item {
     implicitHeight: Math.ceil(root.stripHeight * root.fit)
     color: "transparent"
     exclusionMode: ExclusionMode.Ignore
-    WlrLayershell.namespace: "omarchy-cupertino-switcher"
+    WlrLayershell.namespace: "aresta-switcher"
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 

@@ -2,13 +2,13 @@ MIT License
 
 Copyright (c) 2026 Sebastian Webber
 
-The window title bars (hypr/omarchy-cupertino.lua) and the install logic are
+The window title bars (hypr/aresta.lua) and the install logic are
 derived from Rafael Bertholdo's macOS Dock plugin for Omarchy:
 
 Copyright (c) 2026 Rafael Bertholdo
 
 The app switcher (switcher/Switcher.qml and its bindings in
-hypr/omarchy-cupertino.lua) is derived from Renan Tonheiro's Switch Magic
+hypr/aresta.lua) is derived from Renan Tonheiro's Switch Magic
 plugin for Omarchy:
 
 Copyright (c) 2026 Renan Tonheiro
