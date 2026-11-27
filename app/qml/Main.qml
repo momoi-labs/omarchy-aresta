@@ -161,7 +161,7 @@ Window {
         { type: "time", key: "appearance_auto_dark", shown: customSchedule, label: qsTr("Dark at") },
         { type: "theme", key: "light_theme", dark: false, label: qsTr("Light theme") },
         { type: "theme", key: "dark_theme", dark: true, label: qsTr("Dark theme") }
-      ], note: qsTr("Each list shows only themes of its mode. \"osx light\" and \"osx dark\" are the defaults.") },
+      ], note: qsTr("Each list shows only themes of its mode. \"Aresta Light\" and \"Aresta Dark\" are the defaults.") },
       { title: qsTr("Windows"), rows: [{ type: "toggle", key: "shadow_enabled", label: qsTr("Show window shadows"), hint: qsTr("Floating workspaces always show shadows") }] },
       { title: qsTr("Panels"), rows: [
         { type: "toggle", key: "panels_translucent", label: qsTr("Translucent panels"), hint: qsTr("Translucent background for Control Center, Aresta Search and the app switcher") },

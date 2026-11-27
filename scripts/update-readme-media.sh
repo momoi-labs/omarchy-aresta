@@ -85,7 +85,7 @@ EOF
   chmod +x "$plugins/$PLUGIN.control-center/data.sh" "$plugins/$PLUGIN.control-center/act.sh"
 
   cp -r "$REPO/themes" "$home/.config/omarchy/themes"
-  write_theme osx-light
+  write_theme aresta-light
 
   echo 'o.workspace_mode({ workspace = "9", mode = "floating" })' >"$state/workspace-layouts/9.lua"
   if [[ $mode == floating ]]; then
@@ -131,8 +131,8 @@ appearance_auto = true
 appearance_auto_schedule = "custom"
 appearance_auto_light = "07:00"
 appearance_auto_dark = "19:00"
-light_theme = "osx-light"
-dark_theme = "osx-dark"
+light_theme = "aresta-light"
+dark_theme = "aresta-dark"
 panels_translucent = true
 panels_align_right = true
 control_center_enabled = true
@@ -328,7 +328,7 @@ start_session() {
   launch
   wait_for_session
   in_session gsettings set org.gnome.desktop.interface color-scheme prefer-light
-  in_session gsettings set org.gnome.desktop.interface icon-theme "$(<"$REPO/themes/osx-light/icons.theme")"
+  in_session gsettings set org.gnome.desktop.interface icon-theme "$(<"$REPO/themes/aresta-light/icons.theme")"
   if [[ $cursor == shown ]]; then
     in_session gsettings set org.gnome.desktop.interface cursor-theme Adwaita
     in_session gsettings set org.gnome.desktop.interface cursor-size 48
@@ -634,7 +634,7 @@ target_themes() {
   focus "$SETTINGS"
   sleep 1
   shot "$WORK/light.ppm"
-  set_theme osx-dark
+  set_theme aresta-dark
   sleep 2.5
   shot "$WORK/dark.ppm"
   magick "$WORK/light.ppm" \

@@ -589,7 +589,7 @@ impl qobject::Backend {
     }
 
     pub fn theme_names(&self, dark: bool) -> QStringList {
-        let default = if dark { "osx-dark" } else { "osx-light" };
+        let default = if dark { "aresta-dark" } else { "aresta-light" };
         let mut names: Vec<&String> = self
             .modes
             .iter()

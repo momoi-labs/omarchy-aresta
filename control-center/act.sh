@@ -18,8 +18,8 @@ case "$1" in
   focus) omarchy-shell notifications toggleDnd ;;
   nightlight) omarchy-toggle-nightlight ;;
   theme)
-    light_theme=$(setting_text light_theme osx-light)
-    dark_theme=$(setting_text dark_theme osx-dark)
+    light_theme=$(setting_text light_theme aresta-light)
+    dark_theme=$(setting_text dark_theme aresta-dark)
     if [[ $2 == light ]]; then
       target=$light_theme
     elif [[ $2 == dark ]]; then

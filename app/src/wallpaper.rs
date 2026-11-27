@@ -40,7 +40,9 @@ pub fn pin(slug: &str) {
         return;
     };
     let path = match bundled(&path) {
-        Some(_) if theme::current_name().starts_with("osx-") && slug.starts_with("osx-") => path,
+        Some(_) if theme::current_name().starts_with("aresta-") && slug.starts_with("aresta-") => {
+            path
+        }
         Some(source) => source,
         None => path,
     };
