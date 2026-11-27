@@ -1,7 +1,7 @@
 #!/bin/bash
 
-STATE=${XDG_RUNTIME_DIR:-/tmp}/cupertino-control-center
-SETTINGS_FILE=${HOME}/.config/omarchy-cupertino/settings.toml
+STATE=${XDG_RUNTIME_DIR:-/tmp}/aresta-control-center
+SETTINGS_FILE=${HOME}/.config/aresta/settings.toml
 mpris() { busctl --user call "$1" /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player "$2"; }
 
 setting_text() {
@@ -18,8 +18,8 @@ case "$1" in
   focus) omarchy-shell notifications toggleDnd ;;
   nightlight) omarchy-toggle-nightlight ;;
   theme)
-    light_theme=$(setting_text light_theme osx-light)
-    dark_theme=$(setting_text dark_theme osx-dark)
+    light_theme=$(setting_text light_theme aresta-light)
+    dark_theme=$(setting_text dark_theme aresta-dark)
     if [[ $2 == light ]]; then
       target=$light_theme
     elif [[ $2 == dark ]]; then

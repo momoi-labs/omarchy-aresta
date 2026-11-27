@@ -39,7 +39,7 @@ pub enum Status {
 }
 
 fn state() -> PathBuf {
-    theme::home().join(".local/state/omarchy-cupertino")
+    theme::home().join(".local/state/aresta")
 }
 
 pub fn status_path() -> PathBuf {

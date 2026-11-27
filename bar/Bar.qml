@@ -77,9 +77,9 @@ Item {
   readonly property color background: Commons.Color.bar.background
   readonly property color urgent: Commons.Color.bar.active
 
-  readonly property string menuWidgetId: barWidgetRegistry && barWidgetRegistry.widgets && barWidgetRegistry.widgets["dev.momoi-labs.omarchy-cupertino.menu"] ? "dev.momoi-labs.omarchy-cupertino.menu" : "omarchy.menu"
-  readonly property var leftOnlyIds: ["omarchy.menu", "dev.momoi-labs.omarchy-cupertino.menu", "omarchy.workspaces", "omarchy.active-window", "omarchy.spacer", "omarchy.clock"]
-  readonly property string controlCenterId: "dev.momoi-labs.omarchy-cupertino.control-center"
+  readonly property string menuWidgetId: barWidgetRegistry && barWidgetRegistry.widgets && barWidgetRegistry.widgets["dev.momoi-labs.aresta.menu"] ? "dev.momoi-labs.aresta.menu" : "omarchy.menu"
+  readonly property var leftOnlyIds: ["omarchy.menu", "dev.momoi-labs.aresta.menu", "omarchy.workspaces", "omarchy.active-window", "omarchy.spacer", "omarchy.clock"]
+  readonly property string controlCenterId: "dev.momoi-labs.aresta.control-center"
   readonly property bool controlCenter: settings.control_center_enabled && !!barWidgetRegistry && !!barWidgetRegistry.widgets && !!barWidgetRegistry.widgets[controlCenterId]
   readonly property var controlCenterEntry: ({ id: controlCenterId, wifi: settings.cc_wifi, bluetooth: settings.cc_bluetooth, focus: settings.cc_focus, display: settings.cc_display, sound: settings.cc_sound, media: settings.cc_media })
   readonly property var controlCenterIcons: ({ "omarchy.network": "cc_bar_network", "omarchy.bluetooth": "cc_bar_bluetooth", "omarchy.audio": "cc_bar_audio", "omarchy.monitor": "cc_bar_monitor", "omarchy.power": "cc_bar_power" })
@@ -119,7 +119,7 @@ Item {
 
   FileView {
     id: settingsFile
-    path: Quickshell.env("HOME") + "/.config/omarchy-cupertino/settings.toml"
+    path: Quickshell.env("HOME") + "/.config/aresta/settings.toml"
     watchChanges: true
     printErrors: false
     onFileChanged: reload()
@@ -511,7 +511,7 @@ Item {
         implicitHeight: root.barSize
         exclusiveZone: root.barSize
         color: "transparent"
-        WlrLayershell.namespace: "omarchy-cupertino-bar"
+        WlrLayershell.namespace: "aresta-bar"
         WlrLayershell.layer: WlrLayer.Top
 
         Rectangle {

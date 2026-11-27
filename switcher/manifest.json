@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "id": "dev.momoi-labs.omarchy-cupertino.switcher",
-  "name": "Cupertino App Switcher",
+  "id": "dev.momoi-labs.aresta.switcher",
+  "name": "Aresta App Switcher",
   "version": "0.1.0",
   "author": "Sebastian Webber",
   "description": "A Cmd+Tab style app switcher",

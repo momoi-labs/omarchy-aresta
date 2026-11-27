@@ -5,10 +5,10 @@ set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HYPR_DIR="$HOME/.config/hypr"
 CONFIG="$HYPR_DIR/hyprland.lua"
-SOURCE="$REPO/hypr/omarchy-cupertino.lua"
-TARGET="$HYPR_DIR/omarchy-cupertino.lua"
-REQUIRE='require("hypr.omarchy-cupertino")'
-BACKUP_DIR="${CUPERTINO_BACKUP_DIR:-${TMPDIR:-/tmp}/omarchy-cupertino}"
+SOURCE="$REPO/hypr/aresta.lua"
+TARGET="$HYPR_DIR/aresta.lua"
+REQUIRE='require("hypr.aresta")'
+BACKUP_DIR="${ARESTA_BACKUP_DIR:-${TMPDIR:-/tmp}/aresta}"
 PLUGIN_ID="$(jq -r .id "$REPO/manifest.json")"
 PLUGIN_LINK="$HOME/.config/omarchy/plugins/$PLUGIN_ID"
 MENU_ID="$(jq -r .id "$REPO/menu/manifest.json")"
@@ -20,11 +20,13 @@ CONTROL_CENTER_LINK="$HOME/.config/omarchy/plugins/$CONTROL_CENTER_ID"
 SHELL_CONFIG="$HOME/.config/omarchy/shell.json"
 SHELL_BACKUP="$BACKUP_DIR/shell.json.orig"
 THEMES_DIR="$HOME/.config/omarchy/themes"
-HOOK_SOURCE="$REPO/hooks/cupertino-wallpaper"
-HOOK_LINK="$HOME/.config/omarchy/hooks/theme-set.d/cupertino-wallpaper"
-LAST_THEME_FILE="$HOME/.local/state/omarchy/cupertino-last-theme"
-APP_BIN="$HOME/.local/bin/cupertino-settings"
-APP_DESKTOP="$HOME/.local/share/applications/cupertino-settings.desktop"
+HOOK_SOURCE="$REPO/hooks/aresta-wallpaper"
+HOOK_LINK="$HOME/.config/omarchy/hooks/theme-set.d/aresta-wallpaper"
+LAST_THEME_FILE="$HOME/.local/state/omarchy/aresta-last-theme"
+APP_BIN="$HOME/.local/bin/aresta-settings"
+APP_DESKTOP="$HOME/.local/share/applications/aresta-settings.desktop"
+ICON_THEME="$HOME/.local/share/icons/hicolor"
+APP_ICON="$ICON_THEME/scalable/apps/$PLUGIN_ID.svg"
 UNIT_DIR="$HOME/.config/systemd/user"
 
 say() { echo -e "\e[32m==>\e[0m $*"; }
@@ -41,7 +43,7 @@ if [[ -f $SHELL_CONFIG && $(jq -r '.bar.id // ""' "$SHELL_CONFIG") == "$PLUGIN_I
 fi
 
 if omarchy-plugin-list | grep -qE "^$MENU_ID +enabled "; then
-  say "Disabling the Spotlight menu"
+  say "Disabling Aresta Search"
   omarchy-plugin-disable "$MENU_ID" >/dev/null
 fi
 
@@ -76,7 +78,7 @@ fi
 
 if [[ -f $CONFIG ]] && grep -qxF "$REQUIRE" "$CONFIG"; then
   say "Removing $REQUIRE from $CONFIG"
-  sed -i '/^require("hypr\.omarchy-cupertino")$/d' "$CONFIG"
+  sed -i '/^require("hypr\.aresta")$/d' "$CONFIG"
 fi
 
 if [[ -L $TARGET && $(readlink -f "$TARGET") == "$(readlink -f "$SOURCE")" ]]; then
@@ -99,17 +101,21 @@ if [[ -L $HOOK_LINK && $(readlink -f "$HOOK_LINK") == "$(readlink -f "$HOOK_SOUR
 fi
 rm -f "$LAST_THEME_FILE"
 
-if [[ -f $UNIT_DIR/cupertino-auto.timer ]]; then
+if [[ -f $UNIT_DIR/aresta-auto.timer ]]; then
   say "Removing the Auto appearance timer"
-  systemctl --user disable --now cupertino-auto.timer >/dev/null 2>&1 || true
+  systemctl --user disable --now aresta-auto.timer >/dev/null 2>&1 || true
 fi
 
-for file in "$APP_BIN" "$APP_DESKTOP" "$UNIT_DIR/cupertino-auto.timer" "$UNIT_DIR/cupertino-auto.service"; do
+for file in "$APP_BIN" "$APP_DESKTOP" "$APP_ICON" "$UNIT_DIR/aresta-auto.timer" "$UNIT_DIR/aresta-auto.service"; do
   if [[ -f $file ]]; then
     say "Removing $file"
     rm "$file"
   fi
 done
+
+if command -v gtk-update-icon-cache >/dev/null && [[ -d $ICON_THEME ]]; then
+  gtk-update-icon-cache -q -t -f "$ICON_THEME" || true
+fi
 
 systemctl --user daemon-reload || true
 

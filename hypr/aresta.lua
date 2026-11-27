@@ -44,7 +44,7 @@ local settings = {
   shortcut_quake_move = "SUPER + SHIFT + code:49",
 }
 
-local settings_file = io.open(os.getenv("HOME") .. "/.config/omarchy-cupertino/settings.toml", "r")
+local settings_file = io.open(os.getenv("HOME") .. "/.config/aresta/settings.toml", "r")
 if settings_file then
   for line in settings_file:lines() do
     local key, raw = line:match("^%s*([%w_]+)%s*=%s*(.-)%s*$")
@@ -121,7 +121,7 @@ local function target(window)
 end
 
 hl.on("window.open", function(window)
-  if window.class == "cupertino-settings" and window.floating then
+  if window.class == "aresta-settings" and window.floating then
     hl.dispatch(hl.dsp.window.resize({ x = 1040, y = 690, relative = false, window = target(window) }))
     hl.dispatch(hl.dsp.window.center({ window = target(window) }))
   end
@@ -172,10 +172,10 @@ function apps.cycle()
   end
 end
 
-package.loaded["omarchy-cupertino.apps"] = apps
+package.loaded["aresta.apps"] = apps
 
-local SWITCHER = "omarchy-cupertino-switcher"
-local RECORDER = "omarchy-cupertino-record"
+local SWITCHER = "aresta-switcher"
+local RECORDER = "aresta-record"
 local MODIFIER_KEYS = {
   SUPER = { codes = { [133] = true, [134] = true }, names = { "Super_L", "Super_R" } },
   ALT = { codes = { [64] = true, [108] = true }, names = { "Alt_L", "Alt_R" } },
@@ -184,7 +184,7 @@ local MODIFIER_KEYS = {
 local switcher = { open = false, hold = MODIFIER_KEYS.SUPER }
 
 local function emit(name)
-  hl.dispatch(hl.dsp.global("omarchy-cupertino:" .. name))
+  hl.dispatch(hl.dsp.global("aresta:" .. name))
 end
 
 local function switcher_step(name, key)
@@ -227,7 +227,7 @@ end
 
 switcher.finish = switcher_finish
 
-package.loaded["omarchy-cupertino.switcher"] = switcher
+package.loaded["aresta.switcher"] = switcher
 
 hl.define_submap(SWITCHER, function()
   if settings.shortcut_switcher_next ~= "" then
@@ -279,7 +279,7 @@ if settings.quake_enabled then
   bind("shortcut_quake_move", "Move window to Quake console", hl.dsp.window.move({ workspace = "special:qconsole", follow = false }))
 end
 
-hl.layer_rule({ match = { namespace = "^omarchy-cupertino-bar$" }, no_anim = true, animation = "none" })
+hl.layer_rule({ match = { namespace = "^aresta-bar$" }, no_anim = true, animation = "none" })
 
 if not settings.traffic_lights_enabled or package.loaded["hypr.titlebars"] then
   return

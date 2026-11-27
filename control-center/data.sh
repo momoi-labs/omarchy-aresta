@@ -1,6 +1,6 @@
 #!/bin/bash
 
-STATE=${XDG_RUNTIME_DIR:-/tmp}/cupertino-control-center
+STATE=${XDG_RUNTIME_DIR:-/tmp}/aresta-control-center
 mkdir -p "$STATE"
 
 wifi_on=false

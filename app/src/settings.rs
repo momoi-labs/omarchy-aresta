@@ -70,16 +70,16 @@ fn defaults() -> Vec<Entry> {
         ("bar_desktops_position", Text("menus".into())),
         ("bar_desktops_style", Text("numbers".into())),
         ("bar_desktops_occupied_only", Flag(false)),
-        ("spotlight_size", Number(100.0)),
-        ("spotlight_selection", Text("gray".into())),
-        ("spotlight_filters", Flag(false)),
-        ("spotlight_menu_on_open", Flag(true)),
-        ("spotlight_shortcuts", Flag(false)),
-        ("spotlight_movable", Flag(true)),
-        ("spotlight_position", List(Vec::new())),
-        ("spotlight_height", List(Vec::new())),
-        ("light_theme", Text("osx-light".into())),
-        ("dark_theme", Text("osx-dark".into())),
+        ("search_size", Number(100.0)),
+        ("search_selection", Text("gray".into())),
+        ("search_filters", Flag(false)),
+        ("search_menu_on_open", Flag(true)),
+        ("search_shortcuts", Flag(false)),
+        ("search_movable", Flag(true)),
+        ("search_position", List(Vec::new())),
+        ("search_height", List(Vec::new())),
+        ("light_theme", Text("aresta-light".into())),
+        ("dark_theme", Text("aresta-dark".into())),
         ("appearance_auto", Flag(false)),
         ("appearance_auto_schedule", Text("solar".into())),
         ("appearance_auto_light", Text("07:00".into())),
@@ -126,7 +126,7 @@ pub struct Settings {
 impl Settings {
     pub fn path() -> PathBuf {
         let home = std::env::var_os("HOME").unwrap_or_default();
-        PathBuf::from(home).join(".config/omarchy-cupertino/settings.toml")
+        PathBuf::from(home).join(".config/aresta/settings.toml")
     }
 
     pub fn load() -> Self {

@@ -4,7 +4,7 @@ import QtQuick
 import QtQuick.Dialogs
 import QtQuick.Shapes
 import QtQuick.Window
-import Cupertino as App
+import Aresta as App
 
 Window {
   id: window
@@ -14,7 +14,7 @@ Window {
   minimumWidth: 760
   minimumHeight: 480
   visible: true
-  title: qsTr("Cupertino Settings")
+  title: qsTr("Aresta Settings")
   color: look.window
 
   property string panel: "appearance"
@@ -59,7 +59,7 @@ Window {
     return store.flag("appearance_auto") && store.text("appearance_auto_schedule") === "custom"
   }
 
-  readonly property string spotlightPlugin: "dev.momoi-labs.omarchy-cupertino.menu"
+  readonly property string searchPlugin: "dev.momoi-labs.aresta.menu"
 
   readonly property var previewMenu: [
     { icon: "\u{f003b}", label: qsTr("Apps"), menu: false, provider: true },
@@ -161,10 +161,10 @@ Window {
         { type: "time", key: "appearance_auto_dark", shown: customSchedule, label: qsTr("Dark at") },
         { type: "theme", key: "light_theme", dark: false, label: qsTr("Light theme") },
         { type: "theme", key: "dark_theme", dark: true, label: qsTr("Dark theme") }
-      ], note: qsTr("Each list shows only themes of its mode. \"osx light\" and \"osx dark\" are the defaults.") },
+      ], note: qsTr("Each list shows only themes of its mode. \"Aresta Light\" and \"Aresta Dark\" are the defaults.") },
       { title: qsTr("Windows"), rows: [{ type: "toggle", key: "shadow_enabled", label: qsTr("Show window shadows"), hint: qsTr("Floating workspaces always show shadows") }] },
       { title: qsTr("Panels"), rows: [
-        { type: "toggle", key: "panels_translucent", label: qsTr("Translucent panels"), hint: qsTr("Translucent background for Control Center, Spotlight and the app switcher") },
+        { type: "toggle", key: "panels_translucent", label: qsTr("Translucent panels"), hint: qsTr("Translucent background for Control Center, Aresta Search and the app switcher") },
         { type: "slider", key: "panels_opacity", requires: "panels_translucent", label: qsTr("Panel background opacity"), min: 30, max: 100, step: 5, unit: "%" },
         { type: "toggle", key: "panels_align_right", label: qsTr("Align panels to right corner"), hint: qsTr("Open Control Center and hidden status panels in the top-right corner") }
       ] }
@@ -178,7 +178,7 @@ Window {
     ] },
     { id: "menubar", name: qsTr("Menu Bar"), block: 1, groups: [
       { rows: [
-        { type: "plugin", plugin: "dev.momoi-labs.omarchy-cupertino", fallback: "omarchy.bar", label: qsTr("Use the Cupertino menu bar"), hint: qsTr("Off brings back the Omarchy bar") }
+        { type: "plugin", plugin: "dev.momoi-labs.aresta", fallback: "omarchy.bar", label: qsTr("Use the Aresta menu bar"), hint: qsTr("Off brings back the Omarchy bar") }
       ] },
       { title: qsTr("Desktops"), rows: [
         { type: "bar", label: qsTr("Menu bar preview") },
@@ -194,22 +194,22 @@ Window {
         { type: "text", key: "clock_format", label: qsTr("Clock format"), hint: qsTr("Qt date format, like ddd d MMM  HH:mm") }
       ] }
     ] },
-    { id: "spotlight", name: qsTr("Spotlight"), block: 1, groups: [
+    { id: "search", name: qsTr("Search"), block: 1, groups: [
       { rows: [
-        { type: "plugin", plugin: spotlightPlugin, label: qsTr("Use Cupertino Spotlight") },
-        { type: "spotlight", label: qsTr("Spotlight preview") },
-        { type: "slider", requires: { plugin: spotlightPlugin }, key: "spotlight_size", label: qsTr("Size"), min: 80, max: 150, step: 10, unit: "%" },
-        { type: "segment", requires: { plugin: spotlightPlugin }, key: "spotlight_selection", label: qsTr("Selection color"), options: selectionColors },
-        { type: "toggle", requires: { plugin: spotlightPlugin }, key: "spotlight_filters", label: qsTr("Show filters"), hint: qsTr("Buttons under the search field. Ctrl+1 to Ctrl+9 work either way.") },
-        { type: "toggle", requires: { plugin: spotlightPlugin }, key: "spotlight_menu_on_open", label: qsTr("Show menu on open"), hint: qsTr("Off opens only the search field until you type") },
-        { type: "toggle", requires: { plugin: spotlightPlugin }, key: "spotlight_shortcuts", label: qsTr("Show shortcuts"), hint: qsTr("Keyboard hints at the bottom of the card") },
-        { type: "toggle", requires: { plugin: spotlightPlugin }, key: "spotlight_movable", label: qsTr("Movable"), hint: qsTr("Drag the card to move it, or its top or bottom edge to change its height. It opens that way next time.") },
-        { type: "clear", requires: { plugin: spotlightPlugin }, keys: ["spotlight_position", "spotlight_height"], label: qsTr("Position"), hint: qsTr("Saved for each display"), button: qsTr("Reset position") }
+        { type: "plugin", plugin: searchPlugin, label: qsTr("Use Aresta Search") },
+        { type: "search", label: qsTr("Search preview") },
+        { type: "slider", requires: { plugin: searchPlugin }, key: "search_size", label: qsTr("Size"), min: 80, max: 150, step: 10, unit: "%" },
+        { type: "segment", requires: { plugin: searchPlugin }, key: "search_selection", label: qsTr("Selection color"), options: selectionColors },
+        { type: "toggle", requires: { plugin: searchPlugin }, key: "search_filters", label: qsTr("Show filters"), hint: qsTr("Buttons under the search field. Ctrl+1 to Ctrl+9 work either way.") },
+        { type: "toggle", requires: { plugin: searchPlugin }, key: "search_menu_on_open", label: qsTr("Show menu on open"), hint: qsTr("Off opens only the search field until you type") },
+        { type: "toggle", requires: { plugin: searchPlugin }, key: "search_shortcuts", label: qsTr("Show shortcuts"), hint: qsTr("Keyboard hints at the bottom of the card") },
+        { type: "toggle", requires: { plugin: searchPlugin }, key: "search_movable", label: qsTr("Movable"), hint: qsTr("Drag the card to move it, or its top or bottom edge to change its height. It opens that way next time.") },
+        { type: "clear", requires: { plugin: searchPlugin }, keys: ["search_position", "search_height"], label: qsTr("Position"), hint: qsTr("Saved for each display"), button: qsTr("Reset position") }
       ] }
     ] },
     { id: "titlebars", name: qsTr("Title Bars"), block: 1, groups: [
       { rows: [
-        { type: "toggle", key: "traffic_lights_enabled", label: qsTr("Use the Cupertino title bars") },
+        { type: "toggle", key: "traffic_lights_enabled", label: qsTr("Use the Aresta title bars") },
         { type: "titlebars", label: qsTr("Title bar preview") }
       ] },
       { title: qsTr("Windows"), rows: [
@@ -251,7 +251,7 @@ Window {
         { type: "shortcut", key: "shortcut_cycle", label: qsTr("Cycle windows of the same app"), hint: qsTr("Skips minimized windows") }
       ] },
       { title: qsTr("App Switcher"), rows: [
-        { type: "toggle", key: "switcher_enabled", label: qsTr("Use the Cupertino app switcher"), hint: qsTr("Off brings back Omarchy's Super+Tab and Super+Shift+Tab, which go to the next and previous workspace") },
+        { type: "toggle", key: "switcher_enabled", label: qsTr("Use the Aresta app switcher"), hint: qsTr("Off brings back Omarchy's Super+Tab and Super+Shift+Tab, which go to the next and previous workspace") },
         { type: "shortcut", key: "shortcut_switcher_next", label: qsTr("Switch apps"), hint: qsTr("Hold the first modifier to keep the switcher open") },
         { type: "shortcut", key: "shortcut_switcher_previous", label: qsTr("Switch apps backwards") }
       ] },
@@ -260,12 +260,12 @@ Window {
         { type: "omarchy", label: qsTr("Minimize to the Dock"), keys: ["Super", "M"] }
       ], note: qsTr("Omarchy owns these two. Change them in the Omarchy keybindings.") },
       { title: qsTr("Quake Console"), rows: [
-        { type: "toggle", key: "quake_enabled", label: qsTr("Use Cupertino Quake console keys"), hint: qsTr("Off brings back Omarchy's Super+Shift+`. Super+` toggles the console while Cycle windows is off.") },
+        { type: "toggle", key: "quake_enabled", label: qsTr("Use Aresta Quake console keys"), hint: qsTr("Off brings back Omarchy's Super+Shift+`. Super+` toggles the console while Cycle windows is off.") },
         { type: "shortcut", key: "shortcut_quake_toggle", label: qsTr("Toggle Quake console") },
         { type: "shortcut", key: "shortcut_quake_move", label: qsTr("Move window to Quake console") }
       ] }
     ] },
-    { id: "cupertino", name: qsTr("Cupertino"), block: 2, lead: qsTr("Options that macOS System Settings does not have."), groups: [
+    { id: "aresta", name: qsTr("Aresta"), block: 2, lead: qsTr("Options for window corners, the border, the shadow and the bar size."), groups: [
       { title: qsTr("Window Corners"), rows: [
         { type: "toggle", key: "corners_enabled", label: qsTr("Rounded corners"), hint: qsTr("Off brings back Omarchy's square corners") },
         { type: "slider", key: "window_rounding", label: qsTr("Window corner radius"), min: 0, max: 24, step: 1, unit: "px" },
@@ -717,7 +717,7 @@ Window {
                       : modelData.type === "wallpaper" ? wallpaperRow
                       : modelData.type === "bar" ? barRow
                       : modelData.type === "titlebars" ? titleBarsRow
-                      : modelData.type === "spotlight" ? spotlightRow
+                      : modelData.type === "search" ? searchRow
                       : modelData.type === "cc" ? ccRow : settingRow
 
                     Component {
@@ -1196,7 +1196,7 @@ Window {
 
     Item {
       id: bars
-      readonly property bool cupertino: store.revision >= 0 && store.flag("traffic_lights_enabled")
+      readonly property bool aresta: store.revision >= 0 && store.flag("traffic_lights_enabled")
       readonly property bool grey: store.revision >= 0 && store.flag("traffic_lights_grey_inactive")
       readonly property bool hoverIcons: store.revision >= 0 && store.flag("traffic_light_icons_on_hover")
       readonly property string align: store.revision >= 0 ? store.text("title_align") : "center"
@@ -1276,10 +1276,10 @@ Window {
             }
 
             Text {
-              readonly property bool centered: bars.cupertino && bars.align === "center"
-              readonly property bool rightAligned: bars.cupertino && bars.align === "right"
-              x: !bars.cupertino ? 10 : centered ? (parent.width - width) / 2 : bars.buttonsRight ? 10 : 26 + frame.lightsWidth
-              width: !bars.cupertino ? parent.width - 36 - frame.omarchyWidth
+              readonly property bool centered: bars.aresta && bars.align === "center"
+              readonly property bool rightAligned: bars.aresta && bars.align === "right"
+              x: !bars.aresta ? 10 : centered ? (parent.width - width) / 2 : bars.buttonsRight ? 10 : 26 + frame.lightsWidth
+              width: !bars.aresta ? parent.width - 36 - frame.omarchyWidth
                 : centered ? parent.width - 52 - 2 * frame.lightsWidth : parent.width - 36 - frame.lightsWidth
               height: 30
               verticalAlignment: Text.AlignVCenter
@@ -1293,7 +1293,7 @@ Window {
 
             Row {
               id: lights
-              visible: bars.cupertino
+              visible: bars.aresta
               x: bars.buttonsRight ? parent.width - width - 10 : 10
               y: (30 - bars.lightSize) / 2
               spacing: 8
@@ -1324,7 +1324,7 @@ Window {
             }
 
             Row {
-              visible: !bars.cupertino
+              visible: !bars.aresta
               anchors.right: parent.right
               anchors.rightMargin: 10
               y: 5
@@ -1357,16 +1357,16 @@ Window {
   }
 
   Component {
-    id: spotlightRow
+    id: searchRow
 
     Item {
       id: spot
-      readonly property bool cupertino: store.revision >= 0 && store.pluginEnabled(window.spotlightPlugin)
-      readonly property real size: store.revision >= 0 ? Math.max(80, Math.min(150, store.number("spotlight_size"))) / 100 : 1
-      readonly property bool accentRows: store.revision >= 0 && store.text("spotlight_selection") === "accent"
-      readonly property bool filters: store.revision >= 0 && store.flag("spotlight_filters")
-      readonly property bool list: store.revision >= 0 && store.flag("spotlight_menu_on_open")
-      readonly property bool footer: store.revision >= 0 && store.flag("spotlight_shortcuts")
+      readonly property bool aresta: store.revision >= 0 && store.pluginEnabled(window.searchPlugin)
+      readonly property real size: store.revision >= 0 ? Math.max(80, Math.min(150, store.number("search_size"))) / 100 : 1
+      readonly property bool accentRows: store.revision >= 0 && store.text("search_selection") === "accent"
+      readonly property bool filters: store.revision >= 0 && store.flag("search_filters")
+      readonly property bool list: store.revision >= 0 && store.flag("search_menu_on_open")
+      readonly property bool footer: store.revision >= 0 && store.flag("search_shortcuts")
       readonly property bool translucent: store.revision >= 0 && store.flag("panels_translucent")
       readonly property real panelAlpha: Math.max(0.3, Math.min(1, (store.revision >= 0 ? store.number("panels_opacity") : 70) / 100))
       readonly property real rounding: store.revision >= 0 && store.flag("corners_enabled") ? store.number("window_rounding") : 0
@@ -1417,7 +1417,7 @@ Window {
 
         Item {
           id: card
-          visible: spot.cupertino
+          visible: spot.aresta
           readonly property real unit: spot.size * spot.zoom
           readonly property bool light: look.background.hslLightness > 0.5
           readonly property color ink: look.foreground
@@ -1669,7 +1669,7 @@ Window {
         }
 
         Rectangle {
-          visible: !spot.cupertino
+          visible: !spot.aresta
           anchors.fill: parent
           anchors.margins: 1
           radius: 9
@@ -1678,7 +1678,7 @@ Window {
 
         Rectangle {
           id: stock
-          visible: !spot.cupertino
+          visible: !spot.aresta
           readonly property real padding: 18
           readonly property real header: 34
           readonly property real row: 50

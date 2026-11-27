@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1528 512" role="img" aria-label="Aresta">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="32 32 1464 448" role="img" aria-label="Aresta">
   <defs>
     <linearGradient id="aresta-lockup-dark-sky" gradientUnits="userSpaceOnUse" x1="290" y1="32" x2="110" y2="470"><stop offset="0.12" stop-color="#FFC772"/><stop offset="0.6" stop-color="#F6A7C8"/><stop offset="1" stop-color="#B799FF"/></linearGradient>
     <linearGradient id="aresta-lockup-dark-mid" gradientUnits="userSpaceOnUse" x1="40" y1="470" x2="440" y2="170"><stop stop-color="#7A6CF6"/><stop offset="1" stop-color="#F6A7C8"/></linearGradient>

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "id": "dev.momoi-labs.omarchy-cupertino.control-center",
-  "name": "Cupertino Control Center",
+  "id": "dev.momoi-labs.aresta.control-center",
+  "name": "Aresta Control Center",
   "version": "0.1.0",
   "author": "Sebastian Webber",
   "description": "One panel for Wi-Fi, Bluetooth, Focus, display, sound and media",
@@ -12,7 +12,7 @@
     "barWidget": "ControlCenterWidget.qml"
   },
   "barWidget": {
-    "displayName": "Cupertino Control Center",
+    "displayName": "Aresta Control Center",
     "description": "Opens the Control Center panel",
     "category": "System",
     "allowMultiple": false

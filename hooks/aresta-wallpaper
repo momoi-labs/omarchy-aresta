@@ -2,8 +2,8 @@
 
 THEME="$1"
 STATE="$HOME/.local/state/omarchy"
-LAST="$STATE/cupertino-last-theme"
-SETTINGS="$HOME/.config/omarchy-cupertino/settings.toml"
+LAST="$STATE/aresta-last-theme"
+SETTINGS="$HOME/.config/aresta/settings.toml"
 PREVIOUS=$(cat "$LAST" 2>/dev/null || true)
 printf '%s\n' "$THEME" >"$LAST"
 
@@ -11,7 +11,7 @@ grep -Eq '^[[:space:]]*wallpaper_keep[[:space:]]*=[[:space:]]*false[[:space:]]*$
 [[ -n $PREVIOUS && ${PREVIOUS##*/} == "$PREVIOUS" && $PREVIOUS != "$THEME" ]] || exit 0
 
 KEPT=$(cat "$STATE/theme-backgrounds/$PREVIOUS" 2>/dev/null || true)
-if [[ ${KEPT%/*} == "$STATE/current/theme/backgrounds" && ($PREVIOUS != osx-* || $THEME != osx-*) ]]; then
+if [[ ${KEPT%/*} == "$STATE/current/theme/backgrounds" && ($PREVIOUS != aresta-* || $THEME != aresta-*) ]]; then
   for DIR in "$HOME/.config/omarchy/themes/$PREVIOUS" "${OMARCHY_PATH:-/usr/share/omarchy}/themes/$PREVIOUS"; do
     [[ -f $DIR/backgrounds/${KEPT##*/} ]] && { KEPT="$DIR/backgrounds/${KEPT##*/}"; break; }
   done

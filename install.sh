@@ -5,11 +5,11 @@ set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HYPR_DIR="$HOME/.config/hypr"
 CONFIG="$HYPR_DIR/hyprland.lua"
-SOURCE="$REPO/hypr/omarchy-cupertino.lua"
-TARGET="$HYPR_DIR/omarchy-cupertino.lua"
-REQUIRE='require("hypr.omarchy-cupertino")'
+SOURCE="$REPO/hypr/aresta.lua"
+TARGET="$HYPR_DIR/aresta.lua"
+REQUIRE='require("hypr.aresta")'
 TOGGLES='require("default.hypr.toggles")'
-BACKUP_DIR="${CUPERTINO_BACKUP_DIR:-${TMPDIR:-/tmp}/omarchy-cupertino}"
+BACKUP_DIR="${ARESTA_BACKUP_DIR:-${TMPDIR:-/tmp}/aresta}"
 PLUGIN_ID="$(jq -r .id "$REPO/manifest.json")"
 PLUGIN_LINK="$HOME/.config/omarchy/plugins/$PLUGIN_ID"
 MENU_ID="$(jq -r .id "$REPO/menu/manifest.json")"
@@ -20,11 +20,13 @@ CONTROL_CENTER_ID="$(jq -r .id "$REPO/control-center/manifest.json")"
 CONTROL_CENTER_LINK="$HOME/.config/omarchy/plugins/$CONTROL_CENTER_ID"
 SHELL_CONFIG="$HOME/.config/omarchy/shell.json"
 THEMES_DIR="$HOME/.config/omarchy/themes"
-HOOK_SOURCE="$REPO/hooks/cupertino-wallpaper"
-HOOK_LINK="$HOME/.config/omarchy/hooks/theme-set.d/cupertino-wallpaper"
-LAST_THEME_FILE="$HOME/.local/state/omarchy/cupertino-last-theme"
-APP_BIN="$HOME/.local/bin/cupertino-settings"
-APP_DESKTOP="$HOME/.local/share/applications/cupertino-settings.desktop"
+HOOK_SOURCE="$REPO/hooks/aresta-wallpaper"
+HOOK_LINK="$HOME/.config/omarchy/hooks/theme-set.d/aresta-wallpaper"
+LAST_THEME_FILE="$HOME/.local/state/omarchy/aresta-last-theme"
+APP_BIN="$HOME/.local/bin/aresta-settings"
+APP_DESKTOP="$HOME/.local/share/applications/aresta-settings.desktop"
+ICON_THEME="$HOME/.local/share/icons/hicolor"
+APP_ICON="$ICON_THEME/scalable/apps/$PLUGIN_ID.svg"
 UNIT_DIR="$HOME/.config/systemd/user"
 
 say() { echo -e "\e[32m==>\e[0m $*"; }
@@ -33,9 +35,9 @@ fail() { echo -e "install.sh: $*" >&2; exit 1; }
 [[ -f $CONFIG ]] || fail "$CONFIG not found"
 grep -qxF "$TOGGLES" "$CONFIG" || grep -qxF "$REQUIRE" "$CONFIG" ||
   fail "can't find $TOGGLES in $CONFIG; add $REQUIRE before it by hand"
-command -v cargo >/dev/null || fail "cargo not found; it builds Cupertino Settings"
+command -v cargo >/dev/null || fail "cargo not found; it builds Aresta Settings"
 
-say "Building Cupertino Settings"
+say "Building Aresta Settings"
 cargo build --release --locked --manifest-path "$REPO/app/Cargo.toml"
 
 if [[ -L $TARGET && $(readlink -f "$TARGET") == "$(readlink -f "$SOURCE")" ]]; then
@@ -52,7 +54,7 @@ if ! grep -qxF "$REQUIRE" "$CONFIG"; then
   cp "$CONFIG" "$BACKUP_DIR/hyprland.lua.orig"
   say "Backed up $CONFIG to $BACKUP_DIR/hyprland.lua.orig"
   say "Adding $REQUIRE to $CONFIG"
-  sed -i "s/^require(\"default\.hypr\.toggles\")\$/require(\"hypr.omarchy-cupertino\")\n&/" "$CONFIG"
+  sed -i "s/^require(\"default\.hypr\.toggles\")\$/require(\"hypr.aresta\")\n&/" "$CONFIG"
 fi
 
 say "Reloading Hyprland"
@@ -83,7 +85,7 @@ else
 fi
 
 if ! omarchy-plugin-list | grep -qE "^$MENU_ID +enabled "; then
-  say "Enabling the Spotlight menu"
+  say "Enabling Aresta Search"
   omarchy-plugin-enable "$MENU_ID" >/dev/null
 fi
 
@@ -123,7 +125,7 @@ if [[ $(jq -r '.bar.id // ""' "$SHELL_CONFIG" 2>/dev/null) != "$PLUGIN_ID" ]]; t
     cp "$SHELL_CONFIG" "$BACKUP_DIR/shell.json.orig"
     say "Backed up $SHELL_CONFIG to $BACKUP_DIR/shell.json.orig"
   fi
-  say "Selecting the Cupertino bar"
+  say "Selecting the Aresta bar"
   omarchy-bar use "$PLUGIN_ID" >/dev/null
 fi
 
@@ -156,33 +158,37 @@ if [[ ! -f $LAST_THEME_FILE && -f $HOME/.local/state/omarchy/current/theme.name 
 fi
 
 say "Installing $APP_BIN"
-install -Dm755 "$REPO/app/target/release/cupertino-settings" "$APP_BIN"
+install -Dm755 "$REPO/app/target/release/aresta-settings" "$APP_BIN"
+install -Dm644 "$REPO/assets/brand/icon.svg" "$APP_ICON"
+if command -v gtk-update-icon-cache >/dev/null; then
+  gtk-update-icon-cache -q -t -f "$ICON_THEME" || true
+fi
 mkdir -p "$(dirname "$APP_DESKTOP")"
 cat >"$APP_DESKTOP" <<EOF
 [Desktop Entry]
 Type=Application
-Name=Cupertino Settings
-Comment=Settings for the Omarchy Cupertino plugin
+Name=Aresta Settings
+Comment=Settings for Aresta
 Exec=$APP_BIN
-Icon=preferences-system
+Icon=$PLUGIN_ID
 Categories=Settings;
-StartupWMClass=cupertino-settings
+StartupWMClass=aresta-settings
 EOF
 
 say "Installing the Auto appearance timer"
 mkdir -p "$UNIT_DIR"
-cat >"$UNIT_DIR/cupertino-auto.service" <<EOF
+cat >"$UNIT_DIR/aresta-auto.service" <<EOF
 [Unit]
-Description=Cupertino Settings Auto appearance
+Description=Aresta Settings Auto appearance
 
 [Service]
 Type=oneshot
 KillMode=process
 ExecStart=$APP_BIN --auto
 EOF
-cat >"$UNIT_DIR/cupertino-auto.timer" <<EOF
+cat >"$UNIT_DIR/aresta-auto.timer" <<EOF
 [Unit]
-Description=Cupertino Settings Auto appearance
+Description=Aresta Settings Auto appearance
 
 [Timer]
 OnCalendar=minutely
@@ -194,6 +200,6 @@ Persistent=true
 WantedBy=timers.target
 EOF
 systemctl --user daemon-reload
-systemctl --user enable --now cupertino-auto.timer >/dev/null 2>&1
+systemctl --user enable --now aresta-auto.timer >/dev/null 2>&1
 
 say "Done."
