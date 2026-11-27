@@ -104,8 +104,10 @@ Omarchy theme as your light theme or dark theme, and switch manually or on Auto
 (sunrise/sunset or a custom schedule).
 
 Two themes are included: **Aresta Light** and **Aresta Dark**, each with Yaru
-blue icons and an original gradient background. Pick them in Aresta Settings,
-the Omarchy theme menu or with `omarchy-theme-set "Aresta Light"`.
+blue icons and an original wallpaper: three layered waves in the colors of the
+Aresta logo, on a pale canvas in the light theme and on deep purple in the dark
+theme. Pick them in Aresta Settings, the Omarchy theme menu or with
+`omarchy-theme-set "Aresta Light"`.
 
 ## Keyboard shortcuts
 
