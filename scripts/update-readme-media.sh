@@ -67,7 +67,7 @@ write_home() {
 
   mkdir -p "$WORK"/{runtime,apps,repo} "$plugins" "$home/.config/aresta" "$home/.config/hypr" \
     "$state/current" "$state/toggles/hypr" "$state/workspace-layouts" "$home/.local/state/aresta" \
-    "$home/.cache" "$home"/{Documents,Downloads,Music,Pictures,Videos}
+    "$home/.cache" "$home/.local/share/icons/hicolor/scalable/apps" "$home"/{Documents,Downloads,Music,Pictures,Videos}
   chmod 700 "$WORK/runtime"
 
   ln -s "$repo" "$plugins/$PLUGIN"
@@ -84,6 +84,7 @@ EOF
   printf '#!/bin/bash\nexit 0\n' >"$plugins/$PLUGIN.control-center/act.sh"
   chmod +x "$plugins/$PLUGIN.control-center/data.sh" "$plugins/$PLUGIN.control-center/act.sh"
 
+  cp "$REPO/assets/brand/icon.svg" "$home/.local/share/icons/hicolor/scalable/apps/$PLUGIN.svg"
   cp -r "$REPO/themes" "$home/.config/omarchy/themes"
   write_theme aresta-light
 
@@ -100,7 +101,7 @@ EOF
 Type=Application
 Name=Aresta Settings
 Exec=$repo/app/target/release/aresta-settings
-Icon=preferences-system
+Icon=$PLUGIN
 Categories=Settings;
 StartupWMClass=$SETTINGS
 EOF

@@ -25,6 +25,8 @@ HOOK_LINK="$HOME/.config/omarchy/hooks/theme-set.d/aresta-wallpaper"
 LAST_THEME_FILE="$HOME/.local/state/omarchy/aresta-last-theme"
 APP_BIN="$HOME/.local/bin/aresta-settings"
 APP_DESKTOP="$HOME/.local/share/applications/aresta-settings.desktop"
+ICON_THEME="$HOME/.local/share/icons/hicolor"
+APP_ICON="$ICON_THEME/scalable/apps/$PLUGIN_ID.svg"
 UNIT_DIR="$HOME/.config/systemd/user"
 
 say() { echo -e "\e[32m==>\e[0m $*"; }
@@ -157,6 +159,10 @@ fi
 
 say "Installing $APP_BIN"
 install -Dm755 "$REPO/app/target/release/aresta-settings" "$APP_BIN"
+install -Dm644 "$REPO/assets/brand/icon.svg" "$APP_ICON"
+if command -v gtk-update-icon-cache >/dev/null; then
+  gtk-update-icon-cache -q -t -f "$ICON_THEME" || true
+fi
 mkdir -p "$(dirname "$APP_DESKTOP")"
 cat >"$APP_DESKTOP" <<EOF
 [Desktop Entry]
@@ -164,7 +170,7 @@ Type=Application
 Name=Aresta Settings
 Comment=Settings for Aresta
 Exec=$APP_BIN
-Icon=preferences-system
+Icon=$PLUGIN_ID
 Categories=Settings;
 StartupWMClass=aresta-settings
 EOF

@@ -25,6 +25,8 @@ HOOK_LINK="$HOME/.config/omarchy/hooks/theme-set.d/aresta-wallpaper"
 LAST_THEME_FILE="$HOME/.local/state/omarchy/aresta-last-theme"
 APP_BIN="$HOME/.local/bin/aresta-settings"
 APP_DESKTOP="$HOME/.local/share/applications/aresta-settings.desktop"
+ICON_THEME="$HOME/.local/share/icons/hicolor"
+APP_ICON="$ICON_THEME/scalable/apps/$PLUGIN_ID.svg"
 UNIT_DIR="$HOME/.config/systemd/user"
 
 say() { echo -e "\e[32m==>\e[0m $*"; }
@@ -104,13 +106,16 @@ if [[ -f $UNIT_DIR/aresta-auto.timer ]]; then
   systemctl --user disable --now aresta-auto.timer >/dev/null 2>&1 || true
 fi
 
-for file in "$APP_BIN" "$APP_DESKTOP" "$UNIT_DIR/aresta-auto.timer" "$UNIT_DIR/aresta-auto.service"; do
+for file in "$APP_BIN" "$APP_DESKTOP" "$APP_ICON" "$UNIT_DIR/aresta-auto.timer" "$UNIT_DIR/aresta-auto.service"; do
   if [[ -f $file ]]; then
     say "Removing $file"
     rm "$file"
   fi
 done
 
+if command -v gtk-update-icon-cache >/dev/null && [[ -d $ICON_THEME ]]; then
+  gtk-update-icon-cache -q -t -f "$ICON_THEME" || true
+fi
 
 systemctl --user daemon-reload || true
 
