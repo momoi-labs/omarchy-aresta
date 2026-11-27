@@ -1,26 +1,34 @@
-# omarchy-cupertino
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/lockup-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/brand/lockup-light.svg">
+    <img alt="Aresta" src="assets/brand/lockup-light.svg" width="360">
+  </picture>
+</h1>
 
-A macOS look for [Omarchy](https://omarchy.org) 4.5 or newer.
+<p align="center">A crafted desktop, with rounded edges.</p>
+
+Aresta is a desktop look for [Omarchy](https://omarchy.org) 4.5 or newer,
+inspired by macOS.
 
 | Part | What you get |
 | --- | --- |
-| [Menu bar](#menu-bar) | A Mac-style top bar in place of the Omarchy bar |
+| [Menu bar](#menu-bar) | A slim top bar in place of the Omarchy bar |
 | [Control Center](#control-center) | Floating controls for Wi-Fi, Bluetooth, Focus, theme, Night Light, display, sound and media |
-| [Spotlight](#spotlight) | The Omarchy menu drawn as macOS Spotlight |
+| [Search](#search) | The Omarchy menu as one search field |
 | [Title bars](#title-bars-and-windows) | Traffic lights on floating workspaces, rounded corners everywhere |
-| [Themes](#themes) | Works with every Omarchy theme, plus OSX Light and OSX Dark |
-| [Shortcuts](#keyboard-shortcuts) | Super+Tab, Super+Q and other macOS keys on Super |
-| [Cupertino Settings](#cupertino-settings) | One app that turns each part on or off |
+| [Themes](#themes) | Works with every Omarchy theme, plus Aresta Light and Aresta Dark |
+| [Shortcuts](#keyboard-shortcuts) | Super+Tab, Super+Q and other app keys on Super |
+| [Aresta Settings](#aresta-settings) | One app that turns each part on or off |
 
 Each part has a switch. Turning one off gives back Omarchy's own behavior.
 See [Install](#install) to get started.
 
 ## Menu bar
 
-![Turning on the Cupertino menu bar in Cupertino Settings to replace the default Omarchy bar](docs/media/menu-bar.gif)
+![Turning on the Aresta menu bar in Aresta Settings to replace the default Omarchy bar](docs/media/menu-bar.gif)
 
-The menu bar replaces the Omarchy bar. It is sized and spaced like the macOS
-menu bar.
+The menu bar replaces the Omarchy bar.
 
 - **Left:** the Omarchy menu button and the focused app's name.
 - **Right:** your status widgets, third-party ones too, and the date and time.
@@ -33,8 +41,7 @@ menu bar.
 ![Opening the Control Center pills, then the Wi-Fi and the sound panels, in the top-right corner](docs/media/control-center.gif)
 
 The Control Center button sits next to the clock. It opens a group of
-floating pills in the top-right corner, in the style of macOS Tahoe. The
-pills:
+floating pills in the top-right corner. The pills:
 
 - turn Wi-Fi, Bluetooth and Focus on or off;
 - switch between the light and the dark theme, and turn the night light on
@@ -48,9 +55,9 @@ as the Wi-Fi or the sound panel, in the same corner.
 While it is on, the bar hides Omarchy's network, Bluetooth, sound, system
 monitor and battery icons, unless you keep one in the bar.
 
-## Spotlight
+## Search
 
-![Opening Spotlight, then searching for an app and doing math](docs/media/spotlight.gif)
+![Opening Aresta Search, then searching for an app and doing math](docs/media/search.gif)
 
 Super+Space, the bar's menu button and `omarchy-menu` open one search field
 with a blinking cursor. Results show apps first, then menu rows with their
@@ -88,17 +95,17 @@ title bars.
 
 ## Themes
 
-![OSX Light on the left and OSX Dark on the right](docs/media/themes.png)
+![Aresta Light on the left and Aresta Dark on the right](docs/media/themes.png)
 
 Every installed Omarchy theme is supported. The menu bar, Control Center,
-Spotlight, title bars, app switcher and Cupertino Settings follow your active
-theme's colors. In Cupertino Settings under Appearance, pick any installed
+Aresta Search, title bars, app switcher and Aresta Settings follow your active
+theme's colors. In Aresta Settings under Appearance, pick any installed
 Omarchy theme as your light theme or dark theme, and switch manually or on Auto
 (sunrise/sunset or a custom schedule).
 
-Two macOS-style themes are included: **OSX Light** and **OSX Dark**, each with
-Yaru blue icons and an original gradient background. Pick them in Cupertino
-Settings, the Omarchy theme menu or with `omarchy-theme-set "osx light"`.
+Two themes are included: **Aresta Light** and **Aresta Dark**, each with Yaru
+blue icons and an original gradient background. Pick them in Aresta Settings,
+the Omarchy theme menu or with `omarchy-theme-set "Aresta Light"`.
 
 ## Keyboard shortcuts
 
@@ -123,23 +130,23 @@ The switcher replaces Omarchy's next and previous workspace bindings on
 Super+Tab and Super+Shift+Tab. It is its own shell plugin, so it keeps
 working when you switch back to the Omarchy bar.
 
-## Cupertino Settings
+## Aresta Settings
 
-![The Appearance section of Cupertino Settings, with the theme preview and the Auto schedule](docs/media/settings.png)
+![The Appearance section of Aresta Settings, with the theme preview and the Auto schedule](docs/media/settings.png)
 
-Cupertino Settings is a small app in the style of macOS System Settings.
-Open it from the app launcher.
+Aresta Settings is a small app with one section for each part. Open it from
+the app launcher.
 
 | Section | What you set |
 | --- | --- |
-| Appearance | Light, Dark or Auto; the light and the dark theme from the installed Omarchy themes, in lists that follow the themes you add or remove while the window is open; window shadows; translucent panel backgrounds and opacity for Control Center, Spotlight and the app switcher; the Control Center and the status panels in the top-right corner. It also shows the colors of the current theme. Auto picks the light theme at sunrise and the dark theme at sunset, or at the two times you set under Schedule, Custom. |
+| Appearance | Light, Dark or Auto; the light and the dark theme from the installed Omarchy themes, in lists that follow the themes you add or remove while the window is open; window shadows; translucent panel backgrounds and opacity for Control Center, Aresta Search and the app switcher; the Control Center and the status panels in the top-right corner. It also shows the colors of the current theme. Auto picks the light theme at sunrise and the dark theme at sunset, or at the two times you set under Schedule, Custom. |
 | Wallpaper | The current wallpaper and a switch that keeps it when the theme changes. It lists the pictures of the theme, of `~/.config/omarchy/backgrounds/<theme>` and of folders you add. Add Photo copies a picture into `~/.config/omarchy/backgrounds/<theme>`. |
 | Menu Bar | The menu bar itself; desktops in the bar (after the menus, in the center or before the status icons, as numbers or dots); the bar background opacity; the clock format. |
-| Spotlight | Spotlight itself (off gives back the Omarchy menu); size from 80% to 150%; a gray or theme accent selected row; the filter buttons; open with only the search field until you type; keyboard hints at the bottom of the card; lock the card's place and size; put it back at its default place and height. |
+| Search | Aresta Search itself (off gives back the Omarchy menu); size from 80% to 150%; a gray or theme accent selected row; the filter buttons; open with only the search field until you type; keyboard hints at the bottom of the card; lock the card's place and size; put it back at its default place and height. |
 | Title Bars | The title bars themselves, with a preview of two windows on your wallpaper; title bars on tiled windows too; button position (left or right); grey traffic lights on unfocused windows; icons in the traffic lights on hover; title alignment; traffic light size. Off gives back Omarchy's own title bars. |
 | Control Center | The Control Center itself (off gives back Omarchy's bar icons); the controls the panel shows; the Omarchy icons that also stay in the menu bar. |
 | Keyboard | Quit app, Cycle windows, the app switcher and the Quake console keys on or off, and new shortcuts for them. Omarchy's own bindings show as read-only. |
-| Cupertino | Options that macOS does not have: rounded corners and their radius and shape, the thin border, the shadow and the bar size. |
+| Aresta | Rounded corners and their radius and shape, the thin border, the shadow and the bar size. |
 
 Turning a part off gives back Omarchy's own behavior: the Omarchy bar, its
 status icons, title bars, square corners, colored border, menu, or its
@@ -147,8 +154,7 @@ Super+Q, `` Super+` ``, `` Super+Shift+` ``, Super+Tab and Super+Shift+Tab
 bindings.
 
 Changes apply at once. The app saves them to
-`~/.config/omarchy-cupertino/settings.toml`, which the Hyprland config and the
-bar read. Without that file, every option keeps its default.
+`~/.config/aresta/settings.toml`, which the Hyprland config and the bar read. Without that file, every option keeps its default.
 
 The app is written in Rust with [cxx-qt](https://github.com/KDAB/cxx-qt) and
 QML. To build it by hand you need Rust (`cargo`) and Qt 6:
@@ -160,28 +166,31 @@ cargo build --release --manifest-path app/Cargo.toml
 ## Install
 
 ```sh
+git clone https://github.com/momoi-labs/omarchy-aresta
+cd omarchy-aresta
 ./install.sh
 ```
 
-It links `hypr/omarchy-cupertino.lua` into `~/.config/hypr`, adds
-`require("hypr.omarchy-cupertino")` to `~/.config/hypr/hyprland.lua` before
+It links `hypr/aresta.lua` into `~/.config/hypr`, adds
+`require("hypr.aresta")` to `~/.config/hypr/hyprland.lua` before
 `require("default.hypr.toggles")`, and reloads Hyprland. Before it edits
-`hyprland.lua`, it copies the file to `$CUPERTINO_BACKUP_DIR/hyprland.lua.orig`
-(default `/tmp/omarchy-cupertino`). It also links the repository into
-`~/.config/omarchy/plugins` and selects the Cupertino bar, after it copies
-`~/.config/omarchy/shell.json` to `$CUPERTINO_BACKUP_DIR/shell.json.orig`.
+`hyprland.lua`, it copies the file to `$ARESTA_BACKUP_DIR/hyprland.lua.orig`
+(default `/tmp/aresta`). It also links the repository into
+`~/.config/omarchy/plugins` and selects the Aresta bar, after it copies
+`~/.config/omarchy/shell.json` to `$ARESTA_BACKUP_DIR/shell.json.orig`.
 It links `switcher/` into `~/.config/omarchy/plugins` and enables it. It
 links `menu/` into `~/.config/omarchy/plugins` and enables it, which turns off
 the Omarchy menu. It links `control-center/` into
 `~/.config/omarchy/plugins` and enables it.
-It links `themes/osx-light` and `themes/osx-dark` into
+It links `themes/aresta-light` and `themes/aresta-dark` into
 `~/.config/omarchy/themes`, and links a `theme-set` hook into
 `~/.config/omarchy/hooks/theme-set.d` that keeps the current wallpaper on a
-theme switch unless you turn that off. Finally, it builds Cupertino Settings
-with `cargo` and installs it to `~/.local/bin/cupertino-settings`, with a
-launcher entry in `~/.local/share/applications`.
-It also installs the `cupertino-auto` systemd user timer, which runs
-`cupertino-settings --auto` every minute for Auto appearance. Auto reads your
+theme switch unless you turn that off. Finally, it builds Aresta Settings
+with `cargo` and installs it to `~/.local/bin/aresta-settings`, with a
+launcher entry in `~/.local/share/applications` and its icon in
+`~/.local/share/icons/hicolor/scalable/apps`.
+It also installs the `aresta-auto` systemd user timer, which runs
+`aresta-settings --auto` every minute for Auto appearance. Auto reads your
 location from `~/.local/state/omarchy/settings/weather.json`, else from
 `https://geo.omarchy.org/`, and computes sunrise and sunset on your computer.
 With a Custom schedule, Auto uses your local time and needs no location.
@@ -194,10 +203,10 @@ Running the script again changes nothing.
 ```
 
 It restores `shell.json` from the backup (or selects the default bar when
-the file changed since), disables the Spotlight menu so the Omarchy menu
+the file changed since), disables Aresta Search so the Omarchy menu
 comes back, disables the Control Center, removes the plugin links, the theme links, the hook
-link, the `require` line, the Hyprland link, the Cupertino Settings binary
-and launcher entry and the `cupertino-auto` timer, then reloads Hyprland. It
+link, the `require` line, the Hyprland link, the Aresta Settings binary,
+launcher entry and icon and the `aresta-auto` timer, then reloads Hyprland. It
 keeps your settings file.
 
 ## Credits
@@ -206,3 +215,8 @@ The title bar code is based on the
 [macOS Dock plugin](https://github.com/rafabertholdo/omarchy-macos) by Rafael Bertholdo
 (MIT). The app switcher is based on Renan Tonheiro's Switch Magic plugin
 (MIT). See `LICENSE`.
+
+The wordmark uses [Urbanist](https://fonts.google.com/specimen/Urbanist) (SIL
+Open Font License 1.1).
+
+macOS is a trademark of Apple Inc. Aresta is not affiliated with Apple.
