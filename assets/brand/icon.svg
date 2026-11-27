@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Aresta">
+  <defs>
+    <linearGradient id="aresta-icon-sky" gradientUnits="userSpaceOnUse" x1="290" y1="32" x2="110" y2="470"><stop offset="0.12" stop-color="#FFC772"/><stop offset="0.6" stop-color="#F6A7C8"/><stop offset="1" stop-color="#B799FF"/></linearGradient>
+    <linearGradient id="aresta-icon-mid" gradientUnits="userSpaceOnUse" x1="40" y1="470" x2="440" y2="170"><stop stop-color="#7A6CF6"/><stop offset="1" stop-color="#F6A7C8"/></linearGradient>
+    <linearGradient id="aresta-icon-base" gradientUnits="userSpaceOnUse" x1="20" y1="600" x2="820" y2="0"><stop stop-color="#4B4F86"/><stop offset="0.4" stop-color="#7A6CF6"/><stop offset="1" stop-color="#F6A7C8"/></linearGradient>
+  </defs>
+  <g transform="translate(-36.57 -36.57) scale(1.142857)">
+    <path fill="url(#aresta-icon-sky)" d="M32 32H352A128 128 0 0 1 480 160V352A128 128 0 0 1 352 480H160A128 128 0 0 1 32 352Z"/>
+    <path fill="url(#aresta-icon-mid)" d="M45.95 410.11C105 290 250 134 380 134C420 134 452 148 480 164V352A128 128 0 0 1 352 480H160A128 128 0 0 1 45.95 410.11Z"/>
+    <path fill="url(#aresta-icon-base)" d="M57.77 429.03C122 330 232 237 340 237C396 237 444 250 480 268V352A128 128 0 0 1 352 480H160A128 128 0 0 1 57.77 429.03Z"/>
+  </g>
+</svg>

@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Aresta">
+  <path fill="#B799FF" d="M0 0H366A146 146 0 0 1 512 146V366A146 146 0 0 1 366 512H146A146 146 0 0 1 0 366Z"/>
+  <path fill="#7A6CF6" d="M512 192V366A146 146 0 0 1 366 512H146A146 146 0 0 1 0 366V320Z"/>
+</svg>
