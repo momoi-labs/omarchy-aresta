@@ -74,6 +74,14 @@ Window {
     { icon: "\uf011", label: qsTr("System"), menu: true }
   ]
 
+  readonly property var previewApps: [
+    { name: qsTr("Files"), glyph: "\uf07b", top: "#4aa8ff", bottom: "#0a6cf0" },
+    { name: qsTr("Terminal"), glyph: "\uf120", top: "#48484a", bottom: "#1c1c1e" },
+    { name: qsTr("Music"), glyph: "\uf001", top: "#ff6b78", bottom: "#fa233b" },
+    { name: qsTr("Calculator"), glyph: "\uf1ec", top: "#ffb340", bottom: "#ff9500" },
+    { name: qsTr("Settings"), glyph: "\uf013", top: "#aeaeb2", bottom: "#7c7c80" }
+  ]
+
   readonly property var previewDesktops: [
     { id: 1, occupied: true, current: false },
     { id: 2, occupied: true, current: true },
@@ -243,17 +251,22 @@ Window {
         { type: "toggle", key: "cc_bar_power", requires: "control_center_enabled", locked: !battery, label: qsTr("Battery in the menu bar"), hint: battery ? "" : qsTr("This computer has no battery") }
       ] }
     ] },
-    { id: "keyboard", name: qsTr("Keyboard"), block: 2, groups: [
+    { id: "switcher", name: qsTr("App Switcher"), block: 1, groups: [
+      { rows: [
+        { type: "toggle", key: "switcher_enabled", label: qsTr("Use the Aresta app switcher"), hint: qsTr("Off brings back Omarchy's Super+Tab and Super+Shift+Tab, which go to the next and previous workspace") },
+        { type: "switcher", label: qsTr("App switcher preview") }
+      ] },
+      { title: qsTr("Shortcuts"), rows: [
+        { type: "shortcut", key: "shortcut_switcher_next", label: qsTr("Switch apps"), hint: qsTr("Hold the first modifier to keep the switcher open") },
+        { type: "shortcut", key: "shortcut_switcher_previous", label: qsTr("Switch apps backwards") }
+      ] }
+    ] },
+    { id: "keyboard", name: qsTr("Shortcuts"), block: 2, groups: [
       { title: qsTr("Keyboard Shortcuts"), rows: [
         { type: "toggle", key: "quit_enabled", label: qsTr("Use Quit app"), hint: qsTr("Off brings back Omarchy's Super+Q, which closes only the window") },
         { type: "shortcut", key: "shortcut_quit", label: qsTr("Quit app"), hint: qsTr("Closes every window of the app, on all workspaces") },
         { type: "toggle", key: "cycle_enabled", label: qsTr("Use Cycle windows"), hint: qsTr("Off brings back Omarchy's Super+`, which toggles the Quake console") },
         { type: "shortcut", key: "shortcut_cycle", label: qsTr("Cycle windows of the same app"), hint: qsTr("Skips minimized windows") }
-      ] },
-      { title: qsTr("App Switcher"), rows: [
-        { type: "toggle", key: "switcher_enabled", label: qsTr("Use the Aresta app switcher"), hint: qsTr("Off brings back Omarchy's Super+Tab and Super+Shift+Tab, which go to the next and previous workspace") },
-        { type: "shortcut", key: "shortcut_switcher_next", label: qsTr("Switch apps"), hint: qsTr("Hold the first modifier to keep the switcher open") },
-        { type: "shortcut", key: "shortcut_switcher_previous", label: qsTr("Switch apps backwards") }
       ] },
       { title: qsTr("Windows"), rows: [
         { type: "omarchy", label: qsTr("Close window"), keys: ["Super", "W"] },
@@ -718,6 +731,7 @@ Window {
                       : modelData.type === "bar" ? barRow
                       : modelData.type === "titlebars" ? titleBarsRow
                       : modelData.type === "search" ? searchRow
+                      : modelData.type === "switcher" ? switcherRow
                       : modelData.type === "cc" ? ccRow : settingRow
 
                     Component {
@@ -1770,6 +1784,136 @@ Window {
               }
             }
           }
+        }
+      }
+    }
+  }
+
+  Component {
+    id: switcherRow
+
+    Item {
+      id: switcher
+      readonly property bool aresta: store.revision >= 0 && store.flag("switcher_enabled")
+      readonly property bool translucent: store.revision >= 0 && store.flag("panels_translucent")
+      readonly property real panelAlpha: Math.max(0.3, Math.min(1, (store.revision >= 0 ? store.number("panels_opacity") : 70) / 100))
+      readonly property bool darkBg: look.background.hslLightness < 0.5
+      readonly property color surface: look.mix(0.1)
+      readonly property var apps: window.previewApps
+      readonly property int selected: 1
+      readonly property real padding: 26
+      readonly property real paddingTop: 27
+      readonly property real cell: 102
+      readonly property real gap: 14
+      readonly property real naturalWidth: padding * 2 + apps.length * cell + (apps.length - 1) * gap
+      readonly property real zoom: Math.min(0.7, (desk.width - 40) / naturalWidth)
+      implicitHeight: 214
+
+      function px(points) { return points * zoom }
+
+      Rectangle {
+        id: desk
+        x: 12
+        y: 12
+        width: parent.width - 24
+        height: 190
+        radius: 10
+        color: look.controlSoft
+        border.width: 1
+        border.color: look.separator
+        clip: true
+
+        RoundedImage {
+          radius: 9
+          anchors.fill: parent
+          anchors.margins: 1
+          source: window.fileUrl(store.currentWallpaper)
+          sourceSize.width: 1400
+          fillMode: Image.PreserveAspectCrop
+          asynchronous: true
+        }
+
+        Rectangle {
+          id: strip
+          anchors.centerIn: parent
+          width: switcher.px(switcher.naturalWidth)
+          height: switcher.px(156)
+          radius: switcher.px(47)
+          color: switcher.translucent ? Qt.alpha(switcher.surface, switcher.panelAlpha) : switcher.surface
+          border.width: 1
+          border.color: switcher.translucent ? (switcher.darkBg ? Qt.rgba(1, 1, 1, 0.22) : Qt.rgba(0, 0, 0, 0.14)) : Qt.alpha(look.text, 0.12)
+
+          Rectangle {
+            anchors.fill: parent
+            anchors.margins: 1
+            radius: parent.radius - 1
+            visible: switcher.translucent
+            gradient: Gradient {
+              GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, switcher.darkBg ? 0.07 : 0.22) }
+              GradientStop { position: 0.45; color: "transparent" }
+            }
+          }
+
+          Repeater {
+            model: switcher.apps
+
+            Item {
+              id: slot
+              required property var modelData
+              required property int index
+              x: switcher.px(switcher.padding + index * (switcher.cell + switcher.gap))
+              y: switcher.px(switcher.paddingTop)
+              width: switcher.px(switcher.cell)
+              height: width
+
+              Rectangle {
+                anchors.fill: parent
+                radius: switcher.px(27)
+                visible: slot.index === switcher.selected
+                color: Qt.alpha(look.text, 0.28)
+              }
+
+              Rectangle {
+                anchors.centerIn: parent
+                width: switcher.px(78)
+                height: width
+                radius: switcher.px(18)
+                border.width: 1
+                border.color: Qt.rgba(0, 0, 0, 0.12)
+                gradient: Gradient {
+                  GradientStop { position: 0.0; color: slot.modelData.top }
+                  GradientStop { position: 1.0; color: slot.modelData.bottom }
+                }
+
+                Text {
+                  anchors.centerIn: parent
+                  text: slot.modelData.glyph
+                  color: "#ffffff"
+                  font.family: look.fontFamily
+                  font.pixelSize: switcher.px(40)
+                }
+              }
+            }
+          }
+
+          Text {
+            readonly property real center: switcher.px(switcher.padding + switcher.selected * (switcher.cell + switcher.gap) + switcher.cell / 2)
+            x: center - width / 2
+            y: switcher.px(switcher.paddingTop + switcher.cell + 17) - baselineOffset
+            text: switcher.apps[switcher.selected].name
+            color: look.text
+            font.family: look.fontFamily
+            font.pixelSize: switcher.px(13)
+            font.weight: Font.DemiBold
+          }
+        }
+
+        Rectangle {
+          visible: !switcher.aresta
+          anchors.fill: parent
+          anchors.margins: 1
+          radius: 9
+          color: Qt.alpha(look.background, 0.5)
         }
       }
     }
