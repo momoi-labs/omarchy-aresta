@@ -35,7 +35,7 @@ pub fn staged(path: &Path) -> PathBuf {
         .and_then(|directory| {
             let file = path.strip_prefix(directory.join("backgrounds")).ok()?;
             let staged = state().join("current/theme/backgrounds").join(file);
-            staged.is_file().then_some(staged)
+            (fs::read(&staged).ok()? == fs::read(path).ok()?).then_some(staged)
         })
         .unwrap_or_else(|| path.to_path_buf())
 }
