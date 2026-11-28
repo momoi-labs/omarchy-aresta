@@ -173,6 +173,7 @@ Item {
       targetScreen = screenForFocus()
       selected = delta > 0 ? Math.min(1, apps.length - 1) : apps.length - 1
       opened = true
+      if (apps.some(function(app) { return !app.icon })) iconScan.running = true
       return
     }
     if (apps.length > 0) selected = (selected + delta + apps.length) % apps.length
@@ -253,6 +254,7 @@ Item {
           if (!index[name] || score > index[name].score) index[name] = { path: path, score: score }
         }
         root.iconIndex = index
+        if (root.apps.some(function(app) { return !app.icon && root.iconFor(DesktopEntries.heuristicLookup(app.appId), app.appId) })) root.reconcile()
       }
     }
   }
