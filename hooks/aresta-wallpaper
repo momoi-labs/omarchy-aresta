@@ -4,14 +4,60 @@ THEME="$1"
 STATE="$HOME/.local/state/omarchy"
 LAST="$STATE/aresta-last-theme"
 SETTINGS="$HOME/.config/aresta/settings.toml"
+STAGED="$STATE/current/theme/backgrounds"
 PREVIOUS=$(cat "$LAST" 2>/dev/null || true)
 printf '%s\n' "$THEME" >"$LAST"
 
-grep -Eq '^[[:space:]]*wallpaper_keep[[:space:]]*=[[:space:]]*false[[:space:]]*$' "$SETTINGS" 2>/dev/null && exit 0
+setting() {
+  sed -nE "s/^[[:space:]]*$1[[:space:]]*=[[:space:]]*\"?([^\"]*)\"?[[:space:]]*$/\1/p" "$SETTINGS" 2>/dev/null | tail -n1
+}
+
+own() {
+  local dir
+  for dir in "$HOME/.config/omarchy/themes/$1" "${OMARCHY_PATH:-/usr/share/omarchy}/themes/$1"; do
+    [[ -d $dir ]] && { printf '%s\n' "$dir/backgrounds"; return; }
+  done
+}
+
+pictures() {
+  local dir file
+  for dir in "$(own "$1")" "$HOME/.config/omarchy/backgrounds/$1"; do
+    [[ -n $dir ]] || continue
+    for file in "$dir"/*; do
+      [[ -f $file && ${file,,} =~ \.(jpg|jpeg|png|gif|bmp|webp)$ ]] && printf '%s\n' "$file"
+    done | LC_ALL=C sort
+  done
+}
+
 [[ -n $PREVIOUS && ${PREVIOUS##*/} == "$PREVIOUS" && $PREVIOUS != "$THEME" ]] || exit 0
 
 KEPT=$(cat "$STATE/theme-backgrounds/$PREVIOUS" 2>/dev/null || true)
-if [[ ${KEPT%/*} == "$STATE/current/theme/backgrounds" && ($PREVIOUS != aresta-* || $THEME != aresta-*) ]]; then
+if [[ $(setting wallpaper_keep) == false ]]; then
+  LIGHT=$(setting light_theme)
+  DARK=$(setting dark_theme)
+  LIGHT=${LIGHT:-aresta-light}
+  DARK=${DARK:-aresta-dark}
+  [[ "$PREVIOUS/$THEME" == "$LIGHT/$DARK" || "$PREVIOUS/$THEME" == "$DARK/$LIGHT" ]] || exit 0
+
+  mapfile -t OLD < <(pictures "$PREVIOUS")
+  mapfile -t NEW < <(pictures "$THEME")
+  NAME=${KEPT##*/}
+  MATCH=
+  for FILE in "${NEW[@]}"; do
+    [[ ${FILE##*/} == "$NAME" ]] && { MATCH=$FILE; break; }
+  done
+  if [[ -z $MATCH ]]; then
+    for INDEX in "${!OLD[@]}"; do
+      FILE=${OLD[$INDEX]}
+      if [[ $(readlink -f "$FILE") == "$KEPT" || (${KEPT%/*} == "$STAGED" && $FILE == "$(own "$PREVIOUS")/$NAME") ]]; then
+        MATCH=${NEW[$INDEX]:-}
+        break
+      fi
+    done
+  fi
+  [[ ${MATCH%/*} == "$(own "$THEME")" && -f $STAGED/${MATCH##*/} ]] && MATCH="$STAGED/${MATCH##*/}"
+  KEPT=$MATCH
+elif [[ ${KEPT%/*} == "$STAGED" && ($PREVIOUS != aresta-* || $THEME != aresta-*) ]]; then
   for DIR in "$HOME/.config/omarchy/themes/$PREVIOUS" "${OMARCHY_PATH:-/usr/share/omarchy}/themes/$PREVIOUS"; do
     [[ -f $DIR/backgrounds/${KEPT##*/} ]] && { KEPT="$DIR/backgrounds/${KEPT##*/}"; break; }
   done
