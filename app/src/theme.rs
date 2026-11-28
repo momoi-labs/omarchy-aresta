@@ -2,6 +2,8 @@ use std::fs;
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 pub type Stamp = Vec<(PathBuf, Option<(u64, u64, i64, i64)>)>;
 
@@ -199,6 +201,12 @@ pub fn appearance(mode: &str, was_auto: bool, light: &str, dark: &str) -> Appear
     }
 }
 
+pub fn newest(requests: &Arc<AtomicU64>) -> impl Fn() -> bool + use<> {
+    let requests = requests.clone();
+    let mine = requests.fetch_add(1, Ordering::SeqCst) + 1;
+    move || requests.load(Ordering::SeqCst) == mine
+}
+
 pub fn switch(
     slug: &str,
     command: Command,
@@ -340,6 +348,27 @@ mod tests {
         std::thread::sleep(std::time::Duration::from_millis(150));
         switch_in(&home, "day", set("day", "0"), |current| current == "night").unwrap();
         first.join().unwrap().unwrap();
+        assert_eq!(fs::read_to_string(&name).unwrap().trim(), "day");
+    }
+
+    #[test]
+    fn an_older_request_that_gets_the_lock_last_sets_nothing() {
+        let home = scratch("order");
+        let state = home.join(".local/state/omarchy/current");
+        fs::create_dir_all(&state).unwrap();
+        let name = state.join("theme.name");
+        fs::write(&name, "day\n").unwrap();
+        let set = |slug: &str| {
+            let mut command = Command::new("sh");
+            command.args(["-c", "echo $0 >$1", slug]);
+            command.arg(&name);
+            command
+        };
+        let requests = Arc::default();
+        let to_night = newest(&requests);
+        let to_day = newest(&requests);
+        switch_in(&home, "day", set("day"), |_| to_day()).unwrap();
+        switch_in(&home, "night", set("night"), |_| to_night()).unwrap();
         assert_eq!(fs::read_to_string(&name).unwrap().trim(), "day");
     }
 

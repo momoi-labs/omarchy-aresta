@@ -178,6 +178,8 @@ use cxx_qt_lib::{QString, QStringList};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::sync::Arc;
+use std::sync::atomic::AtomicU64;
 use std::time::{Duration, Instant, SystemTime};
 
 const RELOAD_DELAY: Duration = Duration::from_millis(250);
@@ -202,6 +204,7 @@ pub struct BackendRust {
     thumbnails: i32,
     thumbnail_queue: thumbnail::Queue,
     modes: Vec<(String, bool)>,
+    theme_requests: Arc<AtomicU64>,
     themes_stamp: theme::Stamp,
     themes_at: Option<Instant>,
     plugins: Vec<String>,
@@ -232,6 +235,7 @@ impl Default for BackendRust {
             thumbnails: 0,
             thumbnail_queue: thumbnail::Queue::default(),
             modes: Vec::new(),
+            theme_requests: Arc::default(),
             themes_stamp: theme::Stamp::new(),
             themes_at: None,
             plugins: Vec::new(),
@@ -382,12 +386,13 @@ impl qobject::Backend {
         let keep = matches!(self.settings.get("wallpaper_keep"), Some(Value::Flag(true)));
         let slug = slug.to_string();
         let modes = self.modes.clone();
+        let newest = theme::newest(&self.theme_requests);
         let thread = self.qt_thread();
         std::thread::spawn(move || {
             let mut command = theme::set_command(&slug);
             command.stdout(Stdio::null()).stderr(Stdio::null());
             let result = theme::switch(&slug, command, |current| {
-                if mode == Some(dark_in(&modes, current)) {
+                if !newest() || mode == Some(dark_in(&modes, current)) {
                     return false;
                 }
                 wallpaper::prepare(&slug, keep);
@@ -673,8 +678,10 @@ impl qobject::Backend {
             &self.slug_of("light_theme"),
             &self.slug_of("dark_theme"),
         );
-        self.as_mut()
-            .store(&QString::from("appearance_auto"), Value::Flag(choice.auto));
+        if choice.auto != was_auto {
+            self.as_mut()
+                .store(&QString::from("appearance_auto"), Value::Flag(choice.auto));
+        }
         if choice.start_auto {
             self.run_auto();
         } else if let Some((slug, dark)) = choice.theme {
