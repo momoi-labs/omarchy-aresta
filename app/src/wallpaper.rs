@@ -1,6 +1,7 @@
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
 
 use crate::theme;
 
@@ -30,6 +31,16 @@ fn bundled(path: &Path) -> Option<PathBuf> {
     )
 }
 
+pub fn staged(path: &Path) -> PathBuf {
+    theme::directory(&theme::current_name())
+        .and_then(|directory| {
+            let file = path.strip_prefix(directory.join("backgrounds")).ok()?;
+            let staged = state().join("current/theme/backgrounds").join(file);
+            (fs::read(&staged).ok()? == fs::read(path).ok()?).then_some(staged)
+        })
+        .unwrap_or_else(|| path.to_path_buf())
+}
+
 pub fn current() -> Option<PathBuf> {
     let path = fs::canonicalize(state().join("current/background")).ok()?;
     Some(bundled(&path).unwrap_or(path))
@@ -53,6 +64,19 @@ pub fn pin(slug: &str) {
     if fs::create_dir_all(&directory).is_ok() {
         let _ = fs::write(directory.join(slug), format!("{}\n", path.display()));
     }
+}
+
+pub fn prepare(slug: &str, keep: bool) {
+    if keep {
+        pin(slug);
+        return;
+    }
+    let hook = theme::home().join(".config/omarchy/hooks/theme-set.d/aresta-wallpaper");
+    let _ = Command::new("bash")
+        .arg(hook)
+        .args([slug, "prepare"])
+        .stdin(Stdio::null())
+        .status();
 }
 
 pub fn images(directory: &Path) -> Vec<PathBuf> {

@@ -180,7 +180,7 @@ Window {
     { id: "wallpaper", name: qsTr("Wallpaper"), block: 1, groups: [
       { rows: [
         { type: "wallpaper", label: qsTr("Current wallpaper") },
-        { type: "toggle", key: "wallpaper_keep", label: qsTr("Keep this wallpaper when the theme changes"), hint: qsTr("Off: each theme shows its own wallpaper, as Omarchy does by default") }
+        { type: "toggle", key: "wallpaper_keep", label: qsTr("Keep this wallpaper when the theme changes"), hint: qsTr("Off: your light and dark themes show the matching wallpaper. Other themes show their own.") }
       ] },
       { kind: "sources", rows: [{ label: qsTr("Add Photo"), hint: qsTr("Add Folder") }] }
     ] },
@@ -844,7 +844,7 @@ Window {
 
         Text {
           topPadding: 6
-          text: store.revision >= 0 && store.flag("wallpaper_keep") ? qsTr("Stays when you change the theme.") : qsTr("Changes with the theme.")
+          text: store.revision >= 0 && store.flag("wallpaper_keep") ? qsTr("Stays when you change the theme.") : qsTr("Light and dark show the matching wallpaper.")
           color: look.textSecondary
           font.family: look.fontFamily
           font.pixelSize: 12

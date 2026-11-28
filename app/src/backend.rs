@@ -178,6 +178,8 @@ use cxx_qt_lib::{QString, QStringList};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::sync::Arc;
+use std::sync::atomic::AtomicU64;
 use std::time::{Duration, Instant, SystemTime};
 
 const RELOAD_DELAY: Duration = Duration::from_millis(250);
@@ -202,6 +204,7 @@ pub struct BackendRust {
     thumbnails: i32,
     thumbnail_queue: thumbnail::Queue,
     modes: Vec<(String, bool)>,
+    theme_requests: Arc<AtomicU64>,
     themes_stamp: theme::Stamp,
     themes_at: Option<Instant>,
     plugins: Vec<String>,
@@ -232,6 +235,7 @@ impl Default for BackendRust {
             thumbnails: 0,
             thumbnail_queue: thumbnail::Queue::default(),
             modes: Vec::new(),
+            theme_requests: Arc::default(),
             themes_stamp: theme::Stamp::new(),
             themes_at: None,
             plugins: Vec::new(),
@@ -252,6 +256,16 @@ fn spawn(program: &str, args: &[&str]) -> Result<(), String> {
     let mut command = Command::new(program);
     command.args(args);
     run_detached(command, program)
+}
+
+fn dark_in(modes: &[(String, bool)], name: &str) -> bool {
+    let slug = theme::slug(name);
+    modes
+        .iter()
+        .find(|(name, _)| theme::slug(name) == slug)
+        .map(|(_, dark)| *dark)
+        .or_else(|| theme::directory(&slug).and_then(|directory| theme::is_dark(&directory)))
+        .unwrap_or(true)
 }
 
 fn run_detached(mut command: Command, program: &str) -> Result<(), String> {
@@ -368,14 +382,24 @@ impl qobject::Backend {
         }
     }
 
-    fn apply_theme(mut self: Pin<&mut Self>, slug: &str) {
+    fn apply_theme(self: Pin<&mut Self>, slug: &str, mode: Option<bool>) {
         let keep = matches!(self.settings.get("wallpaper_keep"), Some(Value::Flag(true)));
-        if keep {
-            wallpaper::pin(slug);
-        }
-        let command = theme::set_command(slug);
-        let result = run_detached(command, "omarchy-theme-set");
-        self.as_mut().report(result);
+        let slug = slug.to_string();
+        let modes = self.modes.clone();
+        let newest = theme::newest(&self.theme_requests);
+        let thread = self.qt_thread();
+        std::thread::spawn(move || {
+            let mut command = theme::set_command(&slug);
+            command.stdout(Stdio::null()).stderr(Stdio::null());
+            let result = theme::switch(&slug, command, |current| {
+                if !newest() || mode == Some(dark_in(&modes, current)) {
+                    return false;
+                }
+                wallpaper::prepare(&slug, keep);
+                true
+            });
+            let _ = thread.queue(move |backend| backend.report(result));
+        });
     }
 
     fn run_auto(mut self: Pin<&mut Self>) {
@@ -601,13 +625,7 @@ impl qobject::Backend {
     }
 
     pub fn theme_dark(&self, name: &QString) -> bool {
-        let slug = theme::slug(&name.to_string());
-        self.modes
-            .iter()
-            .find(|(name, _)| theme::slug(name) == slug)
-            .map(|(_, dark)| *dark)
-            .or_else(|| theme::directory(&slug).and_then(|directory| theme::is_dark(&directory)))
-            .unwrap_or(true)
+        dark_in(&self.modes, &name.to_string())
     }
 
     pub fn theme_colors(&self, name: &QString) -> QStringList {
@@ -650,21 +668,25 @@ impl qobject::Backend {
     }
 
     pub fn set_appearance(mut self: Pin<&mut Self>, mode: &QString) {
-        let mode = mode.to_string();
-        let auto = mode == "auto";
-        self.as_mut()
-            .store(&QString::from("appearance_auto"), Value::Flag(auto));
-        if auto {
-            self.run_auto();
-            return;
+        let was_auto = matches!(
+            self.settings.get("appearance_auto"),
+            Some(Value::Flag(true))
+        );
+        let choice = theme::appearance(
+            &mode.to_string(),
+            was_auto,
+            &self.slug_of("light_theme"),
+            &self.slug_of("dark_theme"),
+        );
+        if choice.auto != was_auto {
+            self.as_mut()
+                .store(&QString::from("appearance_auto"), Value::Flag(choice.auto));
         }
-        let key = if mode == "dark" {
-            "dark_theme"
-        } else {
-            "light_theme"
-        };
-        let slug = self.slug_of(key);
-        self.apply_theme(&slug);
+        if choice.start_auto {
+            self.run_auto();
+        } else if let Some((slug, dark)) = choice.theme {
+            self.apply_theme(&slug, Some(dark));
+        }
     }
 
     pub fn pick_theme(mut self: Pin<&mut Self>, dark: bool, name: &QString) {
@@ -674,7 +696,7 @@ impl qobject::Backend {
             .store(&QString::from(key), Value::Text(slug.clone()));
         let current = self.theme_name().clone();
         if self.theme_dark(&current) == dark && current.to_string() != slug {
-            self.apply_theme(&slug);
+            self.apply_theme(&slug, None);
         }
     }
 
@@ -724,7 +746,8 @@ impl qobject::Backend {
     }
 
     pub fn set_wallpaper(mut self: Pin<&mut Self>, path: &QString) {
-        let result = spawn("omarchy-theme-bg-set", &[&path.to_string()]);
+        let path = wallpaper::staged(Path::new(&path.to_string()));
+        let result = spawn("omarchy-theme-bg-set", &[&path.display().to_string()]);
         self.as_mut().report(result);
     }
 

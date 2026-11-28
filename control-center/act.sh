@@ -18,17 +18,20 @@ case "$1" in
   focus) omarchy-shell notifications toggleDnd ;;
   nightlight) omarchy-toggle-nightlight ;;
   theme)
+    mkdir -p "$HOME/.local/state/aresta" || exit 1
+    { exec 7>"$HOME/.local/state/aresta/theme-lock"; } 2>/dev/null || exit 1
+    flock 7 || exit 1
     light_theme=$(setting_text light_theme aresta-light)
     dark_theme=$(setting_text dark_theme aresta-dark)
+    current=""
+    [[ -f $HOME/.local/state/omarchy/current/theme.name ]] && current=$(tr -d '\n' <"$HOME/.local/state/omarchy/current/theme.name")
     if [[ $2 == light ]]; then
       target=$light_theme
     elif [[ $2 == dark ]]; then
       target=$dark_theme
     elif [[ -z $2 ]]; then
       mode=""
-      current=""
       [[ -f $HOME/.local/state/omarchy/current/theme/colors.toml ]] && mode=$(sed -nE 's/^[[:space:]]*mode[[:space:]]*=[[:space:]]*"([^"]*)"[[:space:]]*$/\1/p' "$HOME/.local/state/omarchy/current/theme/colors.toml" | head -n1)
-      [[ -f $HOME/.local/state/omarchy/current/theme.name ]] && current=$(tr -d '\n' <"$HOME/.local/state/omarchy/current/theme.name")
       if [[ $mode == light || $current == "$light_theme" ]]; then
         target=$dark_theme
       else
@@ -37,7 +40,9 @@ case "$1" in
     else
       exit 1
     fi
-    omarchy-theme-set "$target"
+    [[ $target == "$current" ]] && exit 0
+    bash "$HOME/.config/omarchy/hooks/theme-set.d/aresta-wallpaper" "$target" prepare 7>&-
+    omarchy-theme-set "$target" 7>&-
     ;;
   brightness)
     [[ $2 =~ ^[0-9]+$ ]] || exit 1
