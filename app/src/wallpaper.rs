@@ -1,6 +1,7 @@
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
 
 use crate::theme;
 
@@ -63,6 +64,19 @@ pub fn pin(slug: &str) {
     if fs::create_dir_all(&directory).is_ok() {
         let _ = fs::write(directory.join(slug), format!("{}\n", path.display()));
     }
+}
+
+pub fn prepare(slug: &str, keep: bool) {
+    if keep {
+        pin(slug);
+        return;
+    }
+    let hook = theme::home().join(".config/omarchy/hooks/theme-set.d/aresta-wallpaper");
+    let _ = Command::new("bash")
+        .arg(hook)
+        .args([slug, "prepare"])
+        .stdin(Stdio::null())
+        .status();
 }
 
 pub fn images(directory: &Path) -> Vec<PathBuf> {

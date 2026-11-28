@@ -1,13 +1,11 @@
 #!/bin/bash
 
 THEME="$1"
+MODE="${2:-}"
 STATE="$HOME/.local/state/omarchy"
 LAST="$STATE/aresta-last-theme"
 SETTINGS="$HOME/.config/aresta/settings.toml"
 STAGED="$STATE/current/theme/backgrounds"
-PREVIOUS=$(cat "$LAST" 2>/dev/null || true)
-[[ $(cat "$STATE/current/theme.name" 2>/dev/null) == "$THEME" ]] || exit 0
-printf '%s\n' "$THEME" >"$LAST"
 
 setting() {
   sed -nE "s/^[[:space:]]*$1[[:space:]]*=[[:space:]]*\"?([^\"]*)\"?[[:space:]]*$/\1/p" "$SETTINGS" 2>/dev/null | tail -n1
@@ -31,9 +29,18 @@ pictures() {
   done
 }
 
+if [[ $MODE == prepare ]]; then
+  PREVIOUS=$(cat "$STATE/current/theme.name" 2>/dev/null || true)
+  KEPT=$(readlink -f "$STATE/current/background" 2>/dev/null || true)
+  [[ -n $THEME && ${THEME##*/} == "$THEME" && $(setting wallpaper_keep) == false ]] || exit 0
+else
+  PREVIOUS=$(cat "$LAST" 2>/dev/null || true)
+  [[ $(cat "$STATE/current/theme.name" 2>/dev/null) == "$THEME" ]] || exit 0
+  printf '%s\n' "$THEME" >"$LAST"
+  KEPT=$(cat "$STATE/theme-backgrounds/$PREVIOUS" 2>/dev/null || true)
+fi
 [[ -n $PREVIOUS && ${PREVIOUS##*/} == "$PREVIOUS" && $PREVIOUS != "$THEME" ]] || exit 0
 
-KEPT=$(cat "$STATE/theme-backgrounds/$PREVIOUS" 2>/dev/null || true)
 if [[ $(setting wallpaper_keep) == false ]]; then
   LIGHT=$(setting light_theme)
   DARK=$(setting dark_theme)
@@ -56,6 +63,13 @@ if [[ $(setting wallpaper_keep) == false ]]; then
         break
       fi
     done
+  fi
+  if [[ $MODE == prepare ]]; then
+    [[ -n $MATCH ]] || exit 0
+    [[ ${MATCH%/*} == "$(own "$THEME")" ]] && MATCH="$STAGED/${MATCH##*/}"
+    mkdir -p "$STATE/theme-backgrounds"
+    printf '%s\n' "$MATCH" >"$STATE/theme-backgrounds/$THEME"
+    exit 0
   fi
   [[ ${MATCH%/*} == "$(own "$THEME")" && -f $STAGED/${MATCH##*/} ]] && MATCH="$STAGED/${MATCH##*/}"
   KEPT=$MATCH

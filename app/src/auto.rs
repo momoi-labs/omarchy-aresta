@@ -248,9 +248,8 @@ pub fn run(force: bool) -> Result<(), String> {
         return Ok(());
     };
     if theme::current_name() != *slug {
-        if matches!(settings.get("wallpaper_keep"), Some(Value::Flag(true))) {
-            wallpaper::pin(slug);
-        }
+        let keep = matches!(settings.get("wallpaper_keep"), Some(Value::Flag(true)));
+        wallpaper::prepare(slug, keep);
         let status = theme::set_command(slug)
             .stdin(Stdio::null())
             .status()

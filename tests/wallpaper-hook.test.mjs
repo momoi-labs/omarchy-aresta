@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url"
 
 const hook = fileURLToPath(new URL("../hooks/aresta-wallpaper", import.meta.url))
 
-function switchTheme({ keep, from = "day", to = "night", current, pictures }) {
+function switchTheme({ keep, from = "day", to = "night", current, pictures, prepare = false, remembered }) {
   const home = mkdtempSync(join(tmpdir(), "aresta-hook-"))
   const state = join(home, ".local/state/omarchy")
   const staged = join(state, "current/theme/backgrounds")
@@ -31,19 +31,30 @@ function switchTheme({ keep, from = "day", to = "night", current, pictures }) {
   )
   mkdirSync(join(state, "theme-backgrounds"), { recursive: true })
   writeFileSync(join(state, "aresta-last-theme"), `${from}\n`)
-  writeFileSync(join(state, "theme-backgrounds", from), `${current(paths)}\n`)
-  cpSync(dirname(paths.own(to)), join(state, "current/theme"), { recursive: true })
-  writeFileSync(join(state, "current/theme.name"), `${to}\n`)
+  cpSync(dirname(paths.own(prepare ? from : to)), join(state, "current/theme"), { recursive: true })
+  writeFileSync(join(state, "current/theme.name"), `${prepare ? from : to}\n`)
   writeFileSync(join(home, "start.png"), "start")
-  symlinkSync(join(home, "start.png"), join(state, "current/background"))
+  if (prepare) {
+    if (remembered) writeFileSync(join(state, "theme-backgrounds", to), `${remembered(paths)}\n`)
+    symlinkSync(current(paths), join(state, "current/background"))
+  } else {
+    writeFileSync(join(state, "theme-backgrounds", from), `${current(paths)}\n`)
+    symlinkSync(join(home, "start.png"), join(state, "current/background"))
+  }
   const bin = join(home, "bin")
   mkdirSync(bin)
   writeFileSync(join(bin, "omarchy-theme-bg-set"), '#!/bin/bash\nprintf "%s" "$1" >"$HOME/set"\n')
   chmodSync(join(bin, "omarchy-theme-bg-set"), 0o755)
-  const run = spawnSync("bash", [hook, to], {
+  const run = spawnSync("bash", prepare ? [hook, to, "prepare"] : [hook, to], {
     env: { HOME: home, PATH: `${bin}:/usr/bin:/bin`, OMARCHY_PATH: join(home, "omarchy") },
   })
-  const set = existsSync(join(home, "set")) ? readFileSync(join(home, "set"), "utf8").replace(home, "~") : null
+  const result = join(home, "set")
+  const next = join(state, "theme-backgrounds", to)
+  let set = existsSync(result) ? readFileSync(result, "utf8").replace(home, "~") : null
+  if (prepare) {
+    assert.equal(set, null)
+    set = existsSync(next) ? readFileSync(next, "utf8").trim().replace(home, "~") : null
+  }
   rmSync(home, { recursive: true })
   assert.equal(run.status, 0)
   return set
@@ -111,5 +122,30 @@ test("keep on sets the picture of the previous theme again", () => {
   assert.equal(
     switchTheme({ keep: true, pictures, current: p => join(p.staged, "1-a.webp") }),
     "~/.config/omarchy/themes/day/backgrounds/1-a.webp",
+  )
+})
+
+test("prepare remembers the pair for the next theme before the switch", () => {
+  const pictures = [
+    ["own", "day", ["1-a.webp", "2-b.webp", "3-c.webp"]],
+    ["own", "night", ["1-a.webp", "2-y.webp"]],
+    ["own", "third", ["1-a.webp"]],
+    ["yours", "day", ["robin.png"]],
+    ["yours", "night", ["robin.png"]],
+    ["other", null, ["trip.jpg"]],
+  ]
+  const remembered = p => join(p.own("night"), "2-y.webp")
+  const prepared = options => switchTheme({ keep: false, prepare: true, pictures, remembered, ...options })
+  assert.equal(prepared({ current: p => join(p.staged, "1-a.webp") }), stagedPath("1-a.webp"))
+  assert.equal(prepared({ current: p => join(p.own("day"), "2-b.webp") }), stagedPath("2-y.webp"))
+  assert.equal(prepared({ current: p => join(p.yours("day"), "robin.png") }), yoursPath("night", "robin.png"))
+  assert.equal(
+    prepared({ current: p => join(p.other, "trip.jpg") }),
+    "~/.config/omarchy/themes/night/backgrounds/2-y.webp",
+  )
+  assert.equal(prepared({ to: "third", current: p => join(p.staged, "1-a.webp"), remembered: undefined }), null)
+  assert.equal(
+    prepared({ keep: true, current: p => join(p.staged, "1-a.webp") }),
+    "~/.config/omarchy/themes/night/backgrounds/2-y.webp",
   )
 })

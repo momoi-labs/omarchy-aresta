@@ -37,6 +37,7 @@ case "$1" in
     else
       exit 1
     fi
+    bash "$HOME/.config/omarchy/hooks/theme-set.d/aresta-wallpaper" "$target" prepare
     omarchy-theme-set "$target"
     ;;
   brightness)

@@ -370,9 +370,7 @@ impl qobject::Backend {
 
     fn apply_theme(mut self: Pin<&mut Self>, slug: &str) {
         let keep = matches!(self.settings.get("wallpaper_keep"), Some(Value::Flag(true)));
-        if keep {
-            wallpaper::pin(slug);
-        }
+        wallpaper::prepare(slug, keep);
         let command = theme::set_command(slug);
         let result = run_detached(command, "omarchy-theme-set");
         self.as_mut().report(result);
