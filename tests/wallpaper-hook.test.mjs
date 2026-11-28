@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url"
 
 const hook = fileURLToPath(new URL("../hooks/aresta-wallpaper", import.meta.url))
 
-function switchTheme({ keep, from = "day", to = "night", current, pictures, prepare = false, remembered }) {
+function switchTheme({ keep, from = "day", to = "night", current, pictures, prepare = false, remembered, link }) {
   const home = mkdtempSync(join(tmpdir(), "aresta-hook-"))
   const state = join(home, ".local/state/omarchy")
   const staged = join(state, "current/theme/backgrounds")
@@ -24,6 +24,7 @@ function switchTheme({ keep, from = "day", to = "night", current, pictures, prep
     mkdirSync(directory, { recursive: true })
     for (const name of names) writeFileSync(join(directory, name), `${folder} ${theme} ${name}`)
   }
+  if (link) symlinkSync(...link(paths))
   mkdirSync(join(home, ".config/aresta"), { recursive: true })
   writeFileSync(
     join(home, ".config/aresta/settings.toml"),
@@ -142,6 +143,13 @@ test("prepare remembers the pair for the next theme before the switch", () => {
   assert.equal(
     prepared({ current: p => join(p.other, "trip.jpg") }),
     "~/.config/omarchy/themes/night/backgrounds/2-y.webp",
+  )
+  assert.equal(
+    prepared({
+      current: p => join(p.staged, "3-c.webp"),
+      link: p => [join(p.other, "trip.jpg"), join(p.own("night"), "3-c.webp")],
+    }),
+    "~/.config/omarchy/themes/night/backgrounds/3-c.webp",
   )
   assert.equal(prepared({ to: "third", current: p => join(p.staged, "1-a.webp"), remembered: undefined }), null)
   assert.equal(
