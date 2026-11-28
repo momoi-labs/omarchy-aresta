@@ -202,4 +202,8 @@ EOF
 systemctl --user daemon-reload
 systemctl --user enable --now aresta-auto.timer >/dev/null 2>&1
 
+say "Restarting the Omarchy shell"
+omarchy-restart-shell ||
+  fail "Aresta is installed, but omarchy-restart-shell failed with the error above; run it again to load the new version"
+
 say "Done."
