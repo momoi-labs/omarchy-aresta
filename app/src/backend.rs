@@ -724,7 +724,8 @@ impl qobject::Backend {
     }
 
     pub fn set_wallpaper(mut self: Pin<&mut Self>, path: &QString) {
-        let result = spawn("omarchy-theme-bg-set", &[&path.to_string()]);
+        let path = wallpaper::staged(Path::new(&path.to_string()));
+        let result = spawn("omarchy-theme-bg-set", &[&path.display().to_string()]);
         self.as_mut().report(result);
     }
 
