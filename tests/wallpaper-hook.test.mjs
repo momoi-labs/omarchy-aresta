@@ -74,14 +74,14 @@ test("keep off falls back to the same position in the list", () => {
   const pictures = [
     ["own", "day", ["1-a.webp", "2-b.webp"]],
     ["own", "night", ["1-x.webp", "2-y.webp"]],
-    ["yours", "day", ["robin.png"]],
-    ["yours", "night", ["brook.png"]],
+    ["yours", "day", [".hidden.png", "robin.png"]],
+    ["yours", "night", ["brook.png", "franky.png"]],
   ]
   assert.equal(switchTheme({ keep: false, pictures, current: p => join(p.staged, "2-b.webp") }), stagedPath("2-y.webp"))
   assert.equal(switchTheme({ keep: false, pictures, current: p => join(p.own("day"), "2-b.webp") }), stagedPath("2-y.webp"))
   assert.equal(
     switchTheme({ keep: false, pictures, current: p => join(p.yours("day"), "robin.png") }),
-    yoursPath("night", "brook.png"),
+    yoursPath("night", "franky.png"),
   )
 })
 

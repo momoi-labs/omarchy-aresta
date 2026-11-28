@@ -6,6 +6,7 @@ LAST="$STATE/aresta-last-theme"
 SETTINGS="$HOME/.config/aresta/settings.toml"
 STAGED="$STATE/current/theme/backgrounds"
 PREVIOUS=$(cat "$LAST" 2>/dev/null || true)
+[[ $(cat "$STATE/current/theme.name" 2>/dev/null) == "$THEME" ]] || exit 0
 printf '%s\n' "$THEME" >"$LAST"
 
 setting() {
@@ -21,6 +22,7 @@ own() {
 
 pictures() {
   local dir file
+  shopt -s dotglob
   for dir in "$(own "$1")" "$HOME/.config/omarchy/backgrounds/$1"; do
     [[ -n $dir ]] || continue
     for file in "$dir"/*; do
