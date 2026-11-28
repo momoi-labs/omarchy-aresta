@@ -1,7 +1,7 @@
 use std::fs;
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 pub type Stamp = Vec<(PathBuf, Option<(u64, u64, i64, i64)>)>;
 
@@ -178,6 +178,63 @@ pub fn with_mode() -> Option<Vec<(String, bool)>> {
     Some(modes_in(&roots(), installed()?))
 }
 
+#[derive(Debug, PartialEq)]
+pub struct Appearance {
+    pub auto: bool,
+    pub start_auto: bool,
+    pub theme: Option<(String, bool)>,
+}
+
+pub fn appearance(mode: &str, was_auto: bool, light: &str, dark: &str) -> Appearance {
+    let auto = mode == "auto";
+    let wants_dark = mode == "dark";
+    let theme = (!auto).then(|| {
+        let slug = if wants_dark { dark } else { light };
+        (slug.to_string(), wants_dark)
+    });
+    Appearance {
+        auto,
+        start_auto: auto && !was_auto,
+        theme,
+    }
+}
+
+pub fn switch(
+    slug: &str,
+    command: Command,
+    prepare: impl FnOnce(&str) -> bool,
+) -> Result<(), String> {
+    switch_in(&home(), slug, command, prepare)
+}
+
+fn switch_in(
+    home: &Path,
+    slug: &str,
+    mut command: Command,
+    prepare: impl FnOnce(&str) -> bool,
+) -> Result<(), String> {
+    let state = home.join(".local/state/aresta");
+    let _lock = fs::create_dir_all(&state)
+        .and_then(|()| fs::File::create(state.join("theme-lock")))
+        .and_then(|file| file.lock().map(|()| file))
+        .map_err(|error| format!("{}: {error}", state.join("theme-lock").display()))?;
+    let current = fs::read_to_string(home.join(".local/state/omarchy/current/theme.name"))
+        .map(|name| name.trim().to_string())
+        .unwrap_or_default();
+    if current == slug || !prepare(&current) {
+        return Ok(());
+    }
+    let status = command
+        .stdin(Stdio::null())
+        .status()
+        .map_err(|error| format!("omarchy-theme-set: {error}"))?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(format!("omarchy-theme-set: {status}"))
+    }
+}
+
 pub fn set_command(slug: &str) -> Command {
     let mut command = Command::new("omarchy-theme-set");
     command.arg(slug);
@@ -197,6 +254,121 @@ mod tests {
 
     fn names(list: &[&str]) -> Vec<String> {
         list.iter().map(|name| name.to_string()).collect()
+    }
+
+    fn switch_from(name: &str, current: &str, slug: &str, go: bool) -> (bool, bool) {
+        let home = scratch(name);
+        let state = home.join(".local/state/omarchy/current");
+        fs::create_dir_all(&state).unwrap();
+        fs::write(state.join("theme.name"), format!("{current}\n")).unwrap();
+        let mut command = Command::new("touch");
+        command.arg(home.join("set"));
+        let mut prepared = false;
+        let prepare = |_: &str| {
+            prepared = true;
+            go
+        };
+        switch_in(&home, slug, command, prepare).unwrap();
+        (prepared, home.join("set").exists())
+    }
+
+    #[test]
+    fn the_theme_already_on_is_not_set_again() {
+        assert_eq!(
+            switch_from("same", "nosferatu", "nosferatu", true),
+            (false, false)
+        );
+    }
+
+    #[test]
+    fn another_theme_gets_its_wallpaper_and_is_set() {
+        assert_eq!(
+            switch_from("other", "nosferatu-light", "nosferatu", true),
+            (true, true)
+        );
+    }
+
+    #[test]
+    fn a_switch_that_is_called_off_under_the_lock_sets_nothing() {
+        assert_eq!(
+            switch_from("off", "nosferatu-light", "nosferatu", false),
+            (true, false)
+        );
+    }
+
+    #[test]
+    fn a_failed_theme_command_is_an_error() {
+        let home = scratch("failed");
+        let result = switch_in(&home, "nosferatu", Command::new("false"), |_| true);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn no_lock_means_no_switch() {
+        let home = scratch("lock");
+        fs::create_dir_all(home.join(".local/state")).unwrap();
+        fs::write(home.join(".local/state/aresta"), "").unwrap();
+        let mut command = Command::new("touch");
+        command.arg(home.join("set"));
+        let mut prepared = false;
+        let prepare = |_: &str| {
+            prepared = true;
+            true
+        };
+        assert!(switch_in(&home, "nosferatu", command, prepare).is_err());
+        assert!(!prepared && !home.join("set").exists());
+    }
+
+    #[test]
+    fn the_last_choice_wins_over_a_switch_in_progress() {
+        let home = scratch("race");
+        let state = home.join(".local/state/omarchy/current");
+        fs::create_dir_all(&state).unwrap();
+        let name = state.join("theme.name");
+        fs::write(&name, "day\n").unwrap();
+        let set = |slug: &str, wait: &str| {
+            let mut command = Command::new("sh");
+            command.args(["-c", "sleep $0; echo $1 >$2", wait, slug]);
+            command.arg(&name);
+            command
+        };
+        let to_night = set("night", "0.4");
+        let first = {
+            let home = home.clone();
+            std::thread::spawn(move || switch_in(&home, "night", to_night, |_| true))
+        };
+        std::thread::sleep(std::time::Duration::from_millis(150));
+        switch_in(&home, "day", set("day", "0"), |current| current == "night").unwrap();
+        first.join().unwrap().unwrap();
+        assert_eq!(fs::read_to_string(&name).unwrap().trim(), "day");
+    }
+
+    #[test]
+    fn auto_starts_only_when_it_was_off() {
+        let start = |mode, was_auto| appearance(mode, was_auto, "day", "night").start_auto;
+        assert!(start("auto", false));
+        assert!(!start("auto", true));
+        assert!(!start("dark", true));
+        assert!(!start("light", false));
+    }
+
+    #[test]
+    fn light_and_dark_leave_auto_and_name_their_theme() {
+        let pick = |mode, was_auto| {
+            let choice = appearance(mode, was_auto, "day", "night");
+            (choice.auto, choice.theme)
+        };
+        for was_auto in [false, true] {
+            assert_eq!(
+                pick("dark", was_auto),
+                (false, Some(("night".to_string(), true)))
+            );
+            assert_eq!(
+                pick("light", was_auto),
+                (false, Some(("day".to_string(), false)))
+            );
+            assert_eq!(pick("auto", was_auto), (true, None));
+        }
     }
 
     #[test]

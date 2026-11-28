@@ -247,17 +247,17 @@ pub fn run(force: bool) -> Result<(), String> {
     let Some(Value::Text(slug)) = settings.get(key) else {
         return Ok(());
     };
-    if theme::current_name() != *slug {
-        let keep = matches!(settings.get("wallpaper_keep"), Some(Value::Flag(true)));
-        wallpaper::prepare(slug, keep);
-        let status = theme::set_command(slug)
-            .stdin(Stdio::null())
-            .status()
-            .map_err(|error| format!("omarchy-theme-set: {error}"))?;
-        if !status.success() {
-            return Err(format!("omarchy-theme-set: {status}"));
+    let keep = matches!(settings.get("wallpaper_keep"), Some(Value::Flag(true)));
+    theme::switch(slug, theme::set_command(slug), |_| {
+        let on = matches!(
+            Settings::load().get("appearance_auto"),
+            Some(Value::Flag(true))
+        );
+        if on {
+            wallpaper::prepare(slug, keep);
         }
-    }
+        on
+    })?;
     fs::write(transition_path(), format!("{}\n", plan.current.at))
         .map_err(|error| format!("{}: {error}", transition_path().display()))
 }
