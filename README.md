@@ -145,7 +145,8 @@ the app launcher.
 | Search | Aresta Search itself (off gives back the Omarchy menu); size from 80% to 150%; a gray or theme accent selected row; the filter buttons; open with only the search field until you type; keyboard hints at the bottom of the card; lock the card's place and size; put it back at its default place and height. |
 | Title Bars | The title bars themselves, with a preview of two windows on your wallpaper; title bars on tiled windows too; button position (left or right); grey traffic lights on unfocused windows; icons in the traffic lights on hover; title alignment; traffic light size. Off gives back Omarchy's own title bars. |
 | Control Center | The Control Center itself (off gives back Omarchy's bar icons); the controls the panel shows; the Omarchy icons that also stay in the menu bar. |
-| Keyboard | Quit app, Cycle windows, the app switcher and the Quake console keys on or off, and new shortcuts for them. Omarchy's own bindings show as read-only. |
+| App Switcher | The Aresta App Switcher itself, with a preview of the strip on your wallpaper (off gives back Omarchy's Super+Tab and Super+Shift+Tab, which go to the next and previous workspace); new shortcuts for Switch apps and Switch apps backwards. |
+| Shortcuts | Quit app, Cycle windows and the Quake console keys on or off, and new shortcuts for them. Omarchy's own bindings show as read-only. |
 | Aresta | Rounded corners and their radius and shape, the thin border, the shadow and the bar size. |
 
 Turning a part off gives back Omarchy's own behavior: the Omarchy bar, its
